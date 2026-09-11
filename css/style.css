@@ -125,6 +125,7 @@ button{font-family:var(--font-body);}
 .badge.acik{background:#E5F3EA;color:var(--green-600);}
 .badge.kapali{background:#F1ECE3;color:var(--ink-400);}
 .badge.mesai_disi{background:#FBF0E1;color:var(--amber-500);}
+.badge.member{background:#EDE9DE;color:var(--ink-600);}
 .firm-actions{display:flex;gap:8px;flex-shrink:0;}
 .icon-btn{
   width:36px;height:36px;border-radius:var(--radius-sm);border:1px solid var(--line-200);
