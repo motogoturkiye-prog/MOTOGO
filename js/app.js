@@ -60,7 +60,7 @@ function sortedByDistance(list){
 }
 
 function statusLabel(s){
-  return s === 'acik' ? 'Şu an açık' : s === 'mesai_disi' ? 'Mesai dışı' : 'Kapalı';
+  return 'MotoGo Üyesi';
 }
 
 function renderFirms(){
@@ -92,7 +92,7 @@ function renderFirms(){
           <div class="firm-name">${f.name}${district ? ` <span class="firm-district">- ${district}</span>` : ''}</div>
           <div class="firm-meta">
             <span>${f.region || ''}</span>
-            <span class="badge ${f.status || 'kapali'}">${dist ? dist + ' · ' : ''}${statusLabel(f.status)}</span>
+            <span class="badge member">${dist ? dist + ' · ' : ''}${statusLabel(f.status)}</span>
           </div>
         </div>
       </div>
