@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MotoGo Kokpit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/kokpit.css">
+</head>
+<body class="kokpit-body">
+
+  <div class="kokpit-shell">
+
+    <div class="kokpit-topbar">
+      <!-- STORE LİNKİ BURAYA EKLENECEK — href="#" şimdilik yer tutucu -->
+      <a href="#" class="kokpit-logo" aria-label="MotoGo Store">
+        <img src="img/logo.png" alt="MotoGo">
+      </a>
+      <div class="kokpit-network-label">CANLI YAYIN AĞI</div>
+    </div>
+
+    <!-- Sağ üst köşede sabit duran, nabız atan Yol Yardım rozeti -->
+    <a href="yardim/index.html" class="sos-badge" aria-label="Yol Yardım">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      <span>YARDIM</span>
+    </a>
+
+    <div class="gauge-wrap">
+      <div class="gauge-outer">
+        <div class="gauge-inner">
+          <button class="gauge-play-btn" id="gaugePlayBtn" aria-label="Oynat">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+          <p class="gauge-sub" id="nowPlayingSub">YAYIN MOLADA</p>
+          <p class="gauge-title" id="nowPlayingTitle">Yükleniyor…</p>
+        </div>
+        <div class="next-up-pill" id="nextUpText">Çizelge yükleniyor…</div>
+      </div>
+    </div>
+
+    <p class="road-heading">Yol Boyunca</p>
+    <div class="road-strip" id="roadStrip"></div>
+
+  </div>
+
+  <div class="video-modal" id="videoModal">
+    <div class="video-modal-inner">
+      <button class="video-modal-close" id="modalClose" aria-label="Kapat">×</button>
+      <iframe id="modalFrame" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    </div>
+  </div>
+
+  <script src="js/program-data.js"></script>
+  <script src="js/kokpit.js"></script>
+</body>
+</html>
