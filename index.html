@@ -3,63 +3,39 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MotoGo Yol Yardım</title>
+<title>MotoGo TV — Canlı Yayın</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tv.css">
 </head>
-<body>
+<body class="tv-body">
 
-  <header class="topbar">
-    <div class="container topbar-inner">
-      <div class="brand">
-        <a href="https://www.motogo.tr/" aria-label="MotoGo Türkiye ana sayfa">
-          <img src="img/logo.png" alt="MotoGo Türkiye" class="brand-logo">
-        </a>
-      </div>
-      <div class="status-pill off" id="locPill">
-        <span class="dot"></span>
-        <span id="locPillText">Konum kapalı</span>
-      </div>
-    </div>
-  </header>
+  <div class="tv-shell">
 
-  <main class="container">
-    <div class="hero">
-      <h1>Yolda mı Kaldın? Hiç Sorun Yok!</h1>
-      <p>Durumunu seç, destek al. MotoGo daima seninle!</p>
+    <div class="tv-topbar">
+      <a href="https://www.motogo.tr/" class="tv-logo" aria-label="MotoGo Türkiye ana sayfa">
+        <img src="img/logo.png" alt="MotoGo">
+      </a>
+      <div class="tv-label">Canlı Yayın Ağı</div>
     </div>
 
-    <section>
-      <div class="section-head">
-        <span class="num">1</span>
-        <h2>Durumunu seç</h2>
+    <div class="tv-player-wrap">
+      <iframe id="playerFrame" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+      <div class="tv-idle" id="idleState">
+        <div class="tv-idle-dot"></div>
+        <p>Çizelgede şu an bir bölüm yok</p>
       </div>
-      <div class="cat-grid" id="catGrid"></div>
-    </section>
-
-    <section>
-      <div class="section-head">
-        <span class="num">2</span>
-        <h2 id="firmSectionTitle">En yakın üye firmalar</h2>
-      </div>
-      <p class="direct-hint">Listeden bir firmaya doğrudan ulaşabilir, ya da aşağıdaki butonla konumunu paylaşıp en yakınını otomatik bulabilirsin.</p>
-      <div class="firm-list" id="firmList">
-        <div class="empty-note">Önce yukarıdan bir arıza türü seç, o kategorideki üye firmaları burada göreceksin.</div>
-      </div>
-    </section>
-
-    <div class="cta-wrap">
-      <button class="cta-btn" id="ctaBtn" disabled>
-        📍 Konumumu Paylaş ve Yardım İste
-      </button>
-      <div class="cta-note" id="ctaNote">Seçili kategoriye göre en yakın üyeye WhatsApp'tan konumun ve talebin iletilir.</div>
     </div>
-  </main>
 
-  <div class="toast" id="toast"></div>
+    <div class="tv-info">
+      <p class="tv-now-label">Şimdi</p>
+      <p class="tv-now-title" id="nowTitle">Yükleniyor…</p>
+      <p class="tv-next" id="nextText">Çizelge yükleniyor…</p>
+    </div>
 
-  <script src="js/firms-data.js"></script>
-  <script src="js/app.js"></script>
+  </div>
+
+  <script src="js/tv-program-data.js"></script>
+  <script src="js/tv.js"></script>
 </body>
 </html>
