@@ -8,14 +8,16 @@
 // listede yazdığın sıradır.
 
 const TV_PROGRAMS = [
-  { title: "MotoGo TV", youtubeId: "KFERd5JfYSE" },
-  { title: "MotoGo Video 2", youtubeId: "krvZ6AowbhI" },
-  { title: "MotoGo Video 3", youtubeId: "C8I4odsI7r0" },
-  { title: "MotoGo Video 4", youtubeId: "gKIIRHsk6f4" },
-  { title: "MotoGo Video 5", youtubeId: "P545bpMAUzg" },
-  { title: "MotoGo Video 6", youtubeId: "enVonxtu6uc" },
-  { title: "MotoGo Video 7", youtubeId: "77YQi8DblE4" },
-  { title: "MotoGo Video 8", youtubeId: "XvLjnMTNzRs" },
+  { title: "MotoGo Prime Sunar.. İleri Sürüşün Standartları..", youtubeId: "0hjy2AkI8Fw" },
+  { title: "Şehir İçi İçin ADV Alınır mı?", youtubeId: "KFERd5JfYSE" },
+  { title: "Motorcu Rotaları / Yol Hikayeleri", youtubeId: "krvZ6AowbhI" },
+  { title: "Motosiklette Dikkat Hayat Kurtarır!", youtubeId: "C8I4odsI7r0" },
+  { title: "MotoGo Prime Başlıyor!", youtubeId: "6CBadda6rtc" },
+  { title: "İleri ve Güvenli Sürüş // Ankara Enduro Motosiklet Kulübünün Katkılarıyla", youtubeId: "gKIIRHsk6f4" },
+  { title: "Motosiklet Ehliyetinizi Aldınız mı?", youtubeId: "enVonxtu6uc" },
+  { title: "Yaprak Döner Yenimahalle Şubesinden MotoGo Üyelerine İndirimler Başladı..!", youtubeId: "P545bpMAUzg" },
+  { title: "Motosiklet Ehliyeti Nasıl Alınır?", youtubeId: "77YQi8DblE4" },
+  { title: "MotoGo İle Bayhas Motors Ankara'dayız!", youtubeId: "XvLjnMTNzRs" },
 
   // Yeni video eklerken bu formatta ekle:
   // { title: "Video Başlığı", youtubeId: "VIDEO_ID_BURAYA" },
