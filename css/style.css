@@ -1,0 +1,269 @@
+/* ==========================================================================
+   MotoGo Yol Yardım — Tasarım Token'ları
+   Motosiklet yol yardımı temalı; asfalt/gece rengi + acil durum kırmızısı.
+   ========================================================================== */
+
+:root{
+  --navy-950:#0B121F;
+  --navy-900:#111B2C;
+  --navy-800:#182640;
+  --navy-700:#233355;
+  --red-600:#C1392B;
+  --red-700:#A32E22;
+  --red-050:#FBEAE7;
+  --amber-500:#D98A2B;
+  --green-600:#2E8B57;
+  --cream-050:#F6F3EC;
+  --paper-000:#FFFFFF;
+  --line-200:#E6E1D6;
+  --ink-900:#1C1B18;
+  --ink-600:#5B5850;
+  --ink-400:#8B8778;
+
+  --font-display:'Space Grotesk', 'Segoe UI', sans-serif;
+  --font-body:'Inter', 'Segoe UI', sans-serif;
+
+  --radius-sm:6px;
+  --radius-md:10px;
+  --radius-lg:16px;
+  --shadow-card:0 1px 2px rgba(17,27,44,0.06), 0 8px 20px -12px rgba(17,27,44,0.18);
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:var(--font-body);
+  background:var(--cream-050);
+  color:var(--ink-900);
+  -webkit-font-smoothing:antialiased;
+  line-height:1.5;
+}
+h1,h2,h3,h4{font-family:var(--font-display);margin:0;letter-spacing:-0.01em;}
+a{color:inherit;}
+button{font-family:var(--font-body);}
+:focus-visible{outline:2px solid var(--red-600);outline-offset:2px;}
+
+.container{max-width:720px;margin:0 auto;padding:0 20px;}
+
+/* ---------- Header ---------- */
+.topbar{
+  background:linear-gradient(180deg,var(--navy-950),var(--navy-900));
+  color:#fff;
+  padding:10px 0;
+  border-bottom:3px solid var(--red-600);
+}
+.topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.brand{display:flex;align-items:center;gap:12px;}
+.brand-mark{
+  width:42px;height:42px;border-radius:var(--radius-md);
+  background:var(--red-600);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-weight:700;font-size:19px;
+  flex-shrink:0;
+}
+.brand-logo{height:1.3cm;width:auto;display:block;}
+.brand-text .name{font-size:17px;font-weight:600;color:#fff;}
+.brand-text .tag{font-size:12.5px;color:#B9C2D4;margin-top:1px;}
+.status-pill{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.14);
+  border-radius:999px;padding:6px 12px;font-size:12.5px;color:#D9DEE9;
+  white-space:nowrap;
+}
+
+/* Canlı Yayın butonu — sabit, hafif nabız atan kırmızı sekme */
+@keyframes liveTvPulse{
+  0%   { box-shadow:0 0 0 0 rgba(193,57,43,0.5); }
+  70%  { box-shadow:0 0 0 8px rgba(193,57,43,0); }
+  100% { box-shadow:0 0 0 0 rgba(193,57,43,0); }
+}
+.live-tv-btn{
+  display:flex;align-items:center;gap:7px;
+  background:var(--red-600);color:#fff;text-decoration:none;
+  border-radius:999px;padding:7px 14px 7px 12px;font-size:12.5px;font-weight:600;
+  white-space:nowrap;animation:liveTvPulse 2s infinite;flex-shrink:0;
+}
+.live-tv-dot{width:7px;height:7px;border-radius:50%;background:#fff;}
+.status-pill .dot{width:7px;height:7px;border-radius:50%;background:var(--ink-400);}
+.status-pill.on .dot{background:var(--green-600);}
+.status-pill.off .dot{background:var(--amber-500);}
+
+/* ---------- Hero / intro ---------- */
+.hero{padding:28px 0 6px;}
+.hero h1{font-size:26px;color:var(--navy-950);}
+.hero p{margin:8px 0 0;color:var(--ink-600);font-size:15px;max-width:52ch;}
+
+/* ---------- Section label ---------- */
+.section-head{display:flex;align-items:baseline;gap:10px;margin:30px 0 14px;}
+.section-head .num{
+  width:24px;height:24px;border-radius:50%;background:var(--navy-950);color:#fff;
+  font-size:12.5px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.section-head h2{font-size:15.5px;color:var(--navy-950);}
+
+/* ---------- Category grid ---------- */
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.cat-card{
+  background:var(--paper-000);
+  border:1.5px solid var(--line-200);
+  border-radius:var(--radius-lg);
+  padding:16px 14px;
+  text-align:left;
+  cursor:pointer;
+  box-shadow:var(--shadow-card);
+  transition:border-color .15s ease, transform .1s ease;
+}
+.cat-card:hover{border-color:var(--red-600);}
+.cat-card:active{transform:scale(0.98);}
+.cat-card.selected{border-color:var(--red-600);background:var(--red-050);}
+.cat-card .icon{font-size:24px;display:block;margin-bottom:8px;}
+.cat-card .title{font-weight:600;font-size:15px;color:var(--navy-950);}
+.cat-card .sub{font-size:12.5px;color:var(--ink-600);margin-top:2px;}
+
+/* ---------- Firm list ---------- */
+.firm-list{display:flex;flex-direction:column;gap:10px;}
+.firm-card{
+  background:var(--paper-000);
+  border:1px solid var(--line-200);
+  border-radius:var(--radius-md);
+  padding:13px 14px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  box-shadow:var(--shadow-card);
+}
+.firm-info{display:flex;align-items:center;gap:12px;min-width:0;}
+.firm-name{font-weight:600;font-size:14.5px;color:var(--navy-950);}
+.firm-district{font-weight:700;color:var(--navy-950);white-space:nowrap;}
+.firm-meta{font-size:12.5px;color:var(--ink-600);margin-top:1px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.badge{font-size:11px;padding:2px 7px;border-radius:999px;font-weight:600;}
+.badge.acik{background:#E5F3EA;color:var(--green-600);}
+.badge.kapali{background:#F1ECE3;color:var(--ink-400);}
+.badge.mesai_disi{background:#FBF0E1;color:var(--amber-500);}
+.badge.member{background:#EDE9DE;color:var(--ink-600);}
+.firm-actions{display:flex;gap:8px;flex-shrink:0;}
+.icon-btn{
+  width:36px;height:36px;border-radius:var(--radius-sm);border:1px solid var(--line-200);
+  background:var(--paper-000);display:flex;align-items:center;justify-content:center;
+  font-size:15px;text-decoration:none;color:var(--navy-950);cursor:pointer;
+}
+.icon-btn.call{color:var(--navy-950);}
+
+.empty-note{
+  border:1.5px dashed var(--line-200);border-radius:var(--radius-md);
+  padding:18px;text-align:center;color:var(--ink-600);font-size:13.5px;
+}
+
+/* ---------- CTA ---------- */
+.cta-wrap{
+  position:sticky;bottom:0;left:0;right:0;
+  margin:24px -20px 0;padding:14px 20px calc(14px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,rgba(246,243,236,0) 0%,var(--cream-050) 22%);
+}
+.cta-btn{
+  width:100%;background:var(--red-600);color:#fff;border:none;border-radius:var(--radius-md);
+  padding:16px 18px;font-size:15.5px;font-weight:600;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  box-shadow:0 6px 16px -8px rgba(193,57,43,0.45);
+}
+.cta-btn:disabled{background:#D9D4C7;color:var(--ink-400);box-shadow:none;cursor:not-allowed;}
+.cta-btn:hover:not(:disabled){background:var(--red-700);}
+.cta-note{text-align:center;font-size:12px;color:var(--ink-400);margin-top:10px;}
+.direct-hint{
+  text-align:center;font-size:12px;color:var(--ink-400);
+  margin:2px 0 16px;
+}
+
+/* ---------- Toast ---------- */
+.toast{
+  position:fixed;left:16px;right:16px;bottom:16px;max-width:688px;margin:0 auto;
+  background:var(--navy-950);color:#fff;border-radius:var(--radius-md);
+  padding:13px 16px;font-size:13.5px;box-shadow:0 12px 30px -10px rgba(0,0,0,0.4);
+  transform:translateY(120%);opacity:0;transition:transform .25s ease, opacity .25s ease;
+  z-index:60;
+}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.error{background:var(--red-700);}
+
+/* ==========================================================================
+   Yönetim Paneli
+   ========================================================================== */
+.admin-body{background:var(--navy-950);min-height:100vh;}
+.admin-shell{max-width:920px;margin:0 auto;padding:26px 20px 60px;}
+
+.login-card{
+  max-width:380px;margin:80px auto 0;background:var(--paper-000);border-radius:var(--radius-lg);
+  padding:32px 28px;box-shadow:0 20px 50px -20px rgba(0,0,0,0.5);
+}
+.login-card h1{font-size:19px;color:var(--navy-950);margin-bottom:4px;}
+.login-card p{color:var(--ink-600);font-size:13px;margin:0 0 20px;}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:12.5px;font-weight:600;color:var(--navy-950);margin-bottom:5px;}
+.field input,.field select,.field textarea{
+  width:100%;padding:10px 12px;border:1.5px solid var(--line-200);border-radius:var(--radius-sm);
+  font-size:14px;font-family:var(--font-body);background:#fff;color:var(--ink-900);
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--navy-700);}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:10px 16px;border-radius:var(--radius-sm);font-size:13.5px;font-weight:600;
+  border:1.5px solid transparent;cursor:pointer;
+}
+.btn-primary{background:var(--red-600);color:#fff;}
+.btn-primary:hover{background:var(--red-700);}
+.btn-ghost{background:transparent;border-color:var(--line-200);color:var(--navy-950);}
+.btn-ghost:hover{border-color:var(--navy-700);}
+.btn-block{width:100%;}
+.error-text{color:var(--red-600);font-size:12.5px;margin-top:8px;min-height:16px;}
+
+.admin-header{display:flex;align-items:center;justify-content:space-between;color:#fff;margin-bottom:22px;}
+.admin-header .brand-text .name{color:#fff;}
+.admin-panel{background:var(--cream-050);border-radius:var(--radius-lg);padding:22px;}
+.panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+.panel-head h2{font-size:17px;color:var(--navy-950);}
+
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-grid .full{grid-column:1/-1;}
+.chip-group{display:flex;gap:8px;flex-wrap:wrap;}
+.chip{
+  padding:7px 12px;border-radius:999px;border:1.5px solid var(--line-200);font-size:12.5px;
+  cursor:pointer;background:#fff;color:var(--ink-600);user-select:none;
+}
+.chip.on{background:var(--navy-950);border-color:var(--navy-950);color:#fff;}
+
+.table-wrap{margin-top:22px;overflow-x:auto;}
+table.admin-table{width:100%;border-collapse:collapse;font-size:13px;}
+table.admin-table th{
+  text-align:left;padding:10px 12px;color:var(--ink-600);font-weight:600;font-size:11.5px;
+  text-transform:none;border-bottom:1.5px solid var(--line-200);white-space:nowrap;
+}
+table.admin-table td{padding:10px 12px;border-bottom:1px solid var(--line-200);vertical-align:middle;}
+table.admin-table tr:last-child td{border-bottom:none;}
+.tbl-cats{display:flex;gap:4px;flex-wrap:wrap;}
+.tbl-cats span{font-size:10.5px;background:#EDE9DE;border-radius:5px;padding:2px 6px;color:var(--ink-600);}
+.row-actions{display:flex;gap:6px;}
+.row-actions button{
+  border:none;background:none;cursor:pointer;font-size:13px;padding:5px 8px;border-radius:6px;color:var(--ink-600);
+}
+.row-actions button:hover{background:var(--cream-050);}
+.row-actions button.danger{color:var(--red-600);}
+.status-select{padding:4px 8px;border-radius:6px;border:1px solid var(--line-200);font-size:12px;}
+.toggle{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-600);}
+
+.empty-state{padding:40px 10px;text-align:center;color:var(--ink-600);font-size:13.5px;}
+.helper-text{font-size:11.5px;color:var(--ink-400);margin-top:4px;line-height:1.4;}
+
+@media (max-width:520px){
+  .cat-grid{grid-template-columns:1fr 1fr;}
+  .form-grid{grid-template-columns:1fr;}
+  .brand-text .tag{display:none;}
+  .brand-logo{height:1.05cm;}
+
+  /* Eldivenle de rahat basılabilsin diye dokunma alanlarını büyüt */
+  .icon-btn{width:50px;height:50px;font-size:19px;}
+  .firm-actions{gap:10px;}
+  .firm-card{padding:15px 14px;}
+  .cta-btn{padding:18px 18px;font-size:16px;}
+  .live-tv-btn{padding:6px 11px 6px 10px;font-size:11.5px;}
+  .topbar-inner{flex-wrap:wrap;row-gap:8px;}
+  .cat-card{padding:18px 14px;}
+}
