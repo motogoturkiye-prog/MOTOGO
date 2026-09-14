@@ -7,9 +7,6 @@ const idleState = document.getElementById('idleState');
 const nowTitle = document.getElementById('nowTitle');
 const nextText = document.getElementById('nextText');
 
-// ---------------------------------------------------------------------------
-// Zamanlama mantığı
-// ---------------------------------------------------------------------------
 function nextOccurrence(p, from) {
   const d = new Date(from);
   d.setHours(p.hour, p.minute, 0, 0);
@@ -49,11 +46,19 @@ function formatCountdown(target, now) {
   return `${hrs} sa ${mins % 60} dk sonra`;
 }
 
-// ---------------------------------------------------------------------------
-// Ekranı güncelle
-// ---------------------------------------------------------------------------
 function render() {
   const now = new Date();
+
+  const alwaysOn = TV_PROGRAMS.find(p => p.always);
+  if (alwaysOn) {
+    playerFrame.src = `https://www.youtube.com/embed/${alwaysOn.youtubeId}?rel=0`;
+    playerFrame.style.display = 'block';
+    idleState.style.display = 'none';
+    nowTitle.textContent = alwaysOn.title;
+    nextText.textContent = 'Çizelge yakında aktif olacak.';
+    return;
+  }
+
   const { current, next } = getSchedule(TV_PROGRAMS, now);
 
   if (current) {
@@ -75,4 +80,4 @@ function render() {
 }
 
 render();
-setInterval(render, 30000); // her 30 saniyede bir çizelgeyi tazele
+setInterval(render, 30000);
