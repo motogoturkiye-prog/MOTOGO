@@ -1,9 +1,18 @@
 const idleState = document.getElementById('idleState');
 const nowTitle = document.getElementById('nowTitle');
 const nextText = document.getElementById('nextText');
+const unmuteBtn = document.getElementById('unmuteBtn');
 
 let ytPlayer = null;
 let currentIndex = 0;
+
+unmuteBtn.addEventListener('click', () => {
+  if (ytPlayer && ytPlayer.unMute) {
+    ytPlayer.unMute();
+    ytPlayer.setVolume(100);
+    unmuteBtn.style.display = 'none';
+  }
+});
 
 function updateInfo() {
   const current = TV_PROGRAMS[currentIndex];
@@ -29,7 +38,7 @@ function startPlayback() {
     videoId: TV_PROGRAMS[0].youtubeId,
     playerVars: { autoplay: 1, mute: 1, rel: 0, playsinline: 1 },
     events: {
-      onReady: updateInfo,
+      onReady: () => { updateInfo(); unmuteBtn.style.display = 'block'; },
       onStateChange: onPlayerStateChange
     }
   });
