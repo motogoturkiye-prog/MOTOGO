@@ -139,4 +139,186 @@ showResultsBtn.addEventListener('click', () => {
     resultsList.appendChild(empty);
   } else {
     firms.forEach(firm => {
-      const socialLinks = SOCIAL_ICONS.map(s =>
+      const socialLinks = SOCIAL_ICONS.map(s => {
+        if (firm[s.key]) {
+          return `<a class="social-btn" href="${firm[s.key]}" target="_blank" title="${s.title}">${s.svg}</a>`;
+        }
+        return `<span class="social-btn social-btn-disabled" title="${s.title} bağlantısı yok">${s.svg}</span>`;
+      }).join('');
+
+      const waMsg = encodeURIComponent(
+        `Merhaba, size MotoGo üzerinden ulaşıyorum. ${currentBrand.name} — ${currentSubcat.label} için bilgi almak istiyorum.`
+      );
+
+      const card = document.createElement('div');
+      card.className = 'firm-card';
+      card.innerHTML = `
+        <div class="firm-info">
+          <p class="firm-name">${firm.name}${firm.district ? ' - ' + firm.district : ''}</p>
+          <p class="firm-meta">${firm.city || ""}</p>
+          <button type="button" class="incele-btn">İncele</button>
+          <div class="firm-social-panel">${socialLinks}</div>
+        </div>
+        <a class="firm-whatsapp" href="https://wa.me/${firm.whatsapp}?text=${waMsg}" target="_blank">WhatsApp'tan Ulaş</a>
+      `;
+      card.querySelector('.incele-btn').addEventListener('click', (e) => {
+        e.currentTarget.nextElementSibling.classList.toggle('open');
+      });
+      resultsList.appendChild(card);
+    });
+  }
+
+  resultsSection.style.display = 'block';
+  resultsSection.scrollIntoView({ behavior: 'smooth' });
+});
+
+// ============================================================================
+// Hızlı Erişim satırı (marka seçmeden görünen sabit butonlar)
+// ============================================================================
+const quickGrid = document.getElementById('quickGrid');
+const yardimSection = document.getElementById('yardimSection');
+const yardimBackBtn = document.getElementById('yardimBackBtn');
+const yardimCatGrid = document.getElementById('yardimCatGrid');
+const yardimCatTitle = document.getElementById('yardimCatTitle');
+const yardimResults = document.getElementById('yardimResults');
+
+SUBCATS.forEach(sc => {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'subcat-chip';
+  btn.textContent = sc.label;
+  btn.addEventListener('click', () => {
+    if (!currentBrand) {
+      alert("Önce yukarıdan motosiklet markanızı yazın.");
+      brandInput.focus();
+      stepSearch.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+    selectSubcat(sc);
+  });
+  quickGrid.appendChild(btn);
+});
+
+const yardimQuickBtn = document.createElement('button');
+yardimQuickBtn.type = 'button';
+yardimQuickBtn.className = 'subcat-chip subcat-chip-yardim';
+yardimQuickBtn.textContent = 'Yol Yardım';
+yardimQuickBtn.addEventListener('click', openYardim);
+quickGrid.appendChild(yardimQuickBtn);
+
+function openYardim() {
+  document.getElementById('quickActions').style.display = 'none';
+  stepBrand.style.display = 'none';
+  stepCity.style.display = 'none';
+  resultsSection.style.display = 'none';
+  yardimSection.style.display = 'block';
+  renderYardimCategories();
+  yardimResults.innerHTML = '';
+  yardimSection.scrollIntoView({ behavior: 'smooth' });
+}
+
+yardimBackBtn.addEventListener('click', () => {
+  yardimSection.style.display = 'none';
+  document.getElementById('quickActions').style.display = 'block';
+});
+
+let selectedYardimCat = null;
+let userCoords = null;
+
+function renderYardimCategories() {
+  yardimCatGrid.innerHTML = '';
+  YARDIM_CATEGORIES.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'subcat-chip' + (selectedYardimCat === cat.id ? ' subcat-chip-active' : '');
+    btn.textContent = `${cat.icon} ${cat.label}`;
+    btn.addEventListener('click', () => {
+      selectedYardimCat = cat.id;
+      renderYardimCategories();
+      renderYardimResults();
+    });
+    yardimCatGrid.appendChild(btn);
+  });
+}
+
+function distanceKmYardim(a, b) {
+  const R = 6371;
+  const dLat = (b.lat - a.lat) * Math.PI / 180;
+  const dLng = (b.lng - a.lng) * Math.PI / 180;
+  const lat1 = a.lat * Math.PI / 180, lat2 = b.lat * Math.PI / 180;
+  const x = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
+}
+
+function yardimFirmsForCategory(catId) {
+  return YARDIM_FIRMS.filter(f => f.categories.includes(catId));
+}
+
+function yardimSortedByDistance(list) {
+  const alphabetical = [...list].sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+  if (!userCoords) return alphabetical;
+  return alphabetical.sort((a, b) => distanceKmYardim(userCoords, a) - distanceKmYardim(userCoords, b));
+}
+
+function yardimWaLink(firm, withLocation) {
+  const cat = YARDIM_CATEGORIES.find(c => c.id === selectedYardimCat);
+  let msg = `Merhaba, MotoGo Yol Yardım üzerinden yazıyorum.\nArıza türü: ${cat ? cat.label : ''}`;
+  if (withLocation && userCoords) {
+    msg += `\nKonumum: https://maps.google.com/?q=${userCoords.lat},${userCoords.lng}`;
+  }
+  msg += `\nYardımınızı rica ederim.`;
+  return `https://wa.me/${firm.whatsapp}?text=${encodeURIComponent(msg)}`;
+}
+
+function renderYardimResults() {
+  const cat = YARDIM_CATEGORIES.find(c => c.id === selectedYardimCat);
+  const list = yardimSortedByDistance(yardimFirmsForCategory(selectedYardimCat));
+
+  let html = `<p class="field-title" style="margin-top:20px;">${cat.label} hizmeti veren firmalar</p>`;
+
+  if (list.length === 0) {
+    html += `<div class="empty-state">Bu kategori için henüz üye firma yok.</div>`;
+  } else {
+    list.forEach(f => {
+      const dist = (userCoords) ? `${distanceKmYardim(userCoords, f).toFixed(1)} km · ` : '';
+      const district = (f.region || '').split(',')[0].trim();
+      html += `
+        <div class="firm-card">
+          <div class="firm-info">
+            <p class="firm-name">${f.name}${district ? ' - ' + district : ''}</p>
+            <p class="firm-meta">${dist}${f.region}</p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <a class="firm-whatsapp" href="${yardimWaLink(f, false)}" target="_blank">WhatsApp'tan Ulaş</a>
+            ${f.phone ? `<a class="firm-whatsapp" style="background:var(--panel);border:1px solid var(--line);" href="tel:${f.phone}">📞 Ara</a>` : ''}
+          </div>
+        </div>`;
+    });
+    html += `<button type="button" class="cta-btn" id="yardimLocationBtn">📍 Konumumu Paylaş ve En Yakına Ulaş</button>`;
+  }
+
+  yardimResults.innerHTML = html;
+
+  const locBtn = document.getElementById('yardimLocationBtn');
+  if (locBtn) {
+    locBtn.addEventListener('click', () => {
+      if (!navigator.geolocation) { alert("Tarayıcınız konum paylaşımını desteklemiyor."); return; }
+      locBtn.disabled = true;
+      locBtn.textContent = '📍 Konum alınıyor...';
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          renderYardimResults();
+          const nearest = yardimSortedByDistance(yardimFirmsForCategory(selectedYardimCat))[0];
+          if (nearest) window.open(yardimWaLink(nearest, true), '_blank');
+        },
+        () => {
+          locBtn.disabled = false;
+          locBtn.textContent = '📍 Konumumu Paylaş ve En Yakına Ulaş';
+          alert("Konum izni verilmedi. Listeden bir firmaya doğrudan WhatsApp'tan ya da telefonla ulaşabilirsiniz.");
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    });
+  }
+}
