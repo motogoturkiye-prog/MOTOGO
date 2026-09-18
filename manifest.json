@@ -1,0 +1,13 @@
+{
+  "name": "MotoGo",
+  "short_name": "MotoGo",
+  "description": "Markanızı seçin, gerisini bize bırakın.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0a0c10",
+  "theme_color": "#C1392B",
+  "icons": [
+    { "src": "img/logo.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "img/logo.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
