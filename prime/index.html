@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MotoGo Prime</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tv.css">
+</head>
+<body class="tv-body">
+
+  <div class="tv-shell">
+
+    <div class="tv-topbar">
+      <a href="https://motogo.com.tr/" target="_blank" class="tv-logo" aria-label="MotoGo Marka Arama">
+        <img src="../img/logo.png" alt="MotoGo">
+      </a>
+      <div class="tv-label">MotoGo Prime</div>
+    </div>
+
+    <div class="tv-player-wrap">
+      <div id="playerFrame"></div>
+      <button class="tv-unmute-btn" id="unmuteBtn" style="display:none;">🔊 Sesi Aç</button>
+      <div class="tv-idle" id="idleState">
+        <div class="tv-idle-dot"></div>
+        <p>Çizelgede şu an bir bölüm yok</p>
+      </div>
+    </div>
+
+    <div class="tv-info">
+      <p class="tv-now-label">Şimdi <span class="tv-live-badge" id="liveBadge" style="display:none;">🔴 CANLI</span></p>
+      <p class="tv-now-title" id="nowTitle">Yükleniyor…</p>
+      <p class="tv-next" id="nextText">Çizelge yükleniyor…</p>
+      <button class="tv-next-btn" id="nextBtn">Sıradaki Video ⏭</button>
+    </div>
+
+  </div>
+
+  <script src="js/tv-program-data.js"></script>
+  <script src="js/tv.js"></script>
+</body>
+</html>
