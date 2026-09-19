@@ -50,6 +50,7 @@ function renderSubcatGrid() {
       cityField.style.display = 'block';
       showResultsBtn.style.display = 'block';
       yardimSection.style.display = 'none';
+      resultsSection.style.display = 'none';
     });
     subcatGrid.appendChild(btn);
   });
