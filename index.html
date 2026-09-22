@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MotoGo — Motosiklet Marka, Servis, Bayi ve Yedek Parça Arama</title>
+<meta name="description" content="MotoGo ile markanızı yazın; size en yakın motosiklet servisi, yetkili bayi, yedek parça, aksesuar ve yol yardım firmasını saniyeler içinde bulun.">
+<meta property="og:title" content="MotoGo — Motosiklet Marka, Servis, Bayi ve Yedek Parça Arama">
+<meta property="og:description" content="Markanızı seçin, size en yakın motosiklet servisi, bayi, yedek parça ve yol yardım firmasını bulun.">
+<meta property="og:image" content="https://motogo.com.tr/img/icon-512.png">
+<meta property="og:url" content="https://motogo.com.tr/">
+<link rel="icon" type="image/png" sizes="192x192" href="img/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="img/icon-512.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#C1392B">
+<link rel="apple-touch-icon" href="img/icon-512.png">
+</head>
+<body>
+
+  <header class="topbar">
+    <img src="img/logo.png" alt="MotoGo" class="logo-img">
+    <div class="topbar-actions">
+      <a href="https://motogo.com.tr/prime/" target="_blank" class="pill-btn pill-live">
+        <span class="live-dot"></span> MotoGo Prime CANLI
+      </a>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <section class="hero" style="margin-top:6px;margin-bottom:16px;">
+      <h1>Markanızı Seçin,<br>Gerisini Bize Bırakın</h1>
+    </section>
+
+    <section class="form-card" id="mainForm" style="margin-top:14px;">
+      <div class="field">
+        <label><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" style="vertical-align:-3px;margin-right:4px;"><circle cx="5" cy="17" r="3"/><circle cx="19" cy="17" r="3"/><path d="M8 17h5l2-6h4M13 11l-2-4H8l-2 4M5 17l3-6"/></svg>Motosiklet Markanız</label>
+        <div class="brand-input-wrap">
+          <input type="text" id="brandInput" placeholder="Örn: BMW, Honda, Yamaha..." autocomplete="off">
+          <span class="blink-cursor" id="blinkCursor"></span>
+          <button type="button" id="filterResetBtn" class="filter-reset-btn" style="display:none;" title="Filtreleri Sıfırla">✕</button>
+        </div>
+        <div id="brandSuggestions" class="suggestions"></div>
+        <div class="brand-info-box" id="brandInfoBox">
+          <button type="button" class="brand-info-toggle" id="brandInfoToggle">
+            <span id="brandInfoLabel">Motor Kılavuzu</span>
+            <svg class="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <p class="brand-info-text" id="brandInfoText"></p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>🔍 Ne Arıyorsunuz?</label>
+        <div class="subcat-grid" id="subcatGrid" style="margin-top:14px;"></div>
+        <p class="field-title" style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line);">🆘 Yol Yardım</p>
+        <div class="subcat-grid" id="yardimCatGrid" style="margin-top:10px;"></div>
+      </div>
+
+      <div class="field" id="cityField" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);">
+        <label>📍 Hangi şehirdesiniz?</label>
+        <select id="citySelect">
+          <option value="">Şehrinizi seçin</option>
+        </select>
+      </div>
+
+      <button class="cta-btn" id="showResultsBtn" style="margin-bottom:14px;">Uygun Firmaları Göster</button>
+    </section>
+
+    <section class="results" id="results" style="display:none;">
+      <div id="resultsList"></div>
+    </section>
+
+  </main>
+
+  <section class="install-guide">
+    <h2 class="install-guide-title">📲 MotoGo'yu Telefonuna Ekle</h2>
+    <p class="install-guide-sub">Sevgili motor tutkunları, App Store ya da Google Play'e hiç gerek yok — MotoGo'yu birkaç saniyede telefonunuzun ana ekranına, tıpkı bir uygulama gibi ekleyebilirsiniz.</p>
+    <div class="install-guide-grid">
+      <div class="install-guide-card">
+        <strong>📱 iPhone (Safari)</strong>
+        <ol>
+          <li>Alt menüdeki <b>Paylaş</b> simgesine dokunun</li>
+          <li>Açılan listede <b>"Ana Ekrana Ekle"</b>yi seçin</li>
+          <li><b>Ekle</b>'ye dokunun — hazır!</li>
+        </ol>
+      </div>
+      <div class="install-guide-card">
+        <strong>🤖 Android (Chrome)</strong>
+        <ol>
+          <li>Sağ üstteki <b>⋮</b> menüsüne dokunun</li>
+          <li><b>"Ana ekrana ekle"</b>yi seçin</li>
+          <li><b>Ekle</b>'ye dokunun — hazır!</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="app-hub">
+    <h2 class="app-hub-title">🧭 MotoGo Mini Uygulamalar</h2>
+    <p class="app-hub-sub">Motosiklet hayatınızı kolaylaştıracak küçük araçlar, hepsi tek dokunuşla.</p>
+    <div class="app-hub-grid" id="appHubGrid">
+      <button type="button" class="app-hub-icon" data-panel="hava">
+        <span class="app-hub-icon-box" style="background:#2a4a5c;color:#9fd0e8;">☁️</span>
+        <span>Hava Durumu</span>
+      </button>
+      <button type="button" class="app-hub-icon" data-panel="hatirlatici">
+        <span class="app-hub-icon-box" style="background:#4a3a2a;color:#e8c090;">🔧</span>
+        <span>Hatırlatıcılar</span>
+      </button>
+      <button type="button" class="app-hub-icon" data-panel="etkinlik">
+        <span class="app-hub-icon-box" style="background:#3a3050;color:#c0a8f0;">📅</span>
+        <span>Etkinlik Takvimi</span>
+      </button>
+      <button type="button" class="app-hub-icon" data-panel="rota">
+        <span class="app-hub-icon-box" style="background:#2a4a32;color:#a8e8b8;">🗺️</span>
+        <span>Rota Önerileri</span>
+      </button>
+      <button type="button" class="app-hub-icon" data-panel="ceza">
+        <span class="app-hub-icon-box" style="background:#5a2a2a;color:#f0a8a0;">🚨</span>
+        <span>Ceza Sorgulama</span>
+      </button>
+      <button type="button" class="app-hub-icon" data-panel="guvenlik">
+        <span class="app-hub-icon-box" style="background:#1f4a48;color:#8fe0d8;">🛡️</span>
+        <span>Sürüş Güvenliği</span>
+      </button>
+    </div>
+    <div class="app-hub-panel" id="appHubPanel" style="display:none;"></div>
+  </section>
+
+  <footer class="site-footer">MotoGo Türkiye</footer>
+
+  <nav class="bottom-nav">
+    <a href="#" id="firmaGirisiNavBtn" class="bottom-nav-item">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21V8l9-5 9 5v13M9 21v-6h6v6"/></svg>
+      <span>Firma Girişi</span>
+    </a>
+    <a href="#" id="profilimNavBtn" class="bottom-nav-item">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/></svg>
+      <span>Profilim</span>
+    </a>
+    <a href="#" id="kilavuzNavBtn" class="bottom-nav-item">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      <span>Kılavuz</span>
+    </a>
+    <a href="https://wa.me/905331509890" target="_blank" class="bottom-nav-item">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      <span>Asistan</span>
+    </a>
+    <a href="https://www.motogoprime.com/category/all-products" target="_blank" class="bottom-nav-item">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3h18l-1.5 9h-15z"/><path d="M3 3l-.5 4M20.5 12l.7 4.2a1 1 0 0 1-1 1.3H4.8a1 1 0 0 1-1-1.3L4.5 12"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>
+      <span>MotoGo Store</span>
+    </a>
+  </nav>
+
+  <div id="firmaGirisiOverlay" class="profilim-overlay" style="display:none;">
+    <div class="profilim-panel">
+      <div class="profilim-header">
+        <span>🏢 Üyelik Talep Formu</span>
+        <button type="button" id="firmaGirisiCloseBtn" class="profilim-close">✕</button>
+      </div>
+      <div class="profilim-body">
+        <p class="opt-note" style="margin:-6px 0 12px;">Tarih: <span id="fgTarih"></span></p>
+
+        <div id="fgKilitKutu" style="background:var(--bg);border:1px solid var(--red);border-radius:8px;padding:12px;margin-bottom:14px;">
+          <p style="color:#fff;font-size:12.5px;font-weight:600;margin:0 0 8px;">Bu formu doldurmadan önce bir MotoGo paketi satın almanız gerekiyor.</p>
+          <a href="https://www.motogoprime.com/pricing-plans/plans-pricing" target="_blank" class="hub-save" style="display:inline-block;text-decoration:none;margin-bottom:10px;">Paketleri İncele ve Satın Al</a>
+          <label style="display:flex;align-items:flex-start;gap:8px;font-weight:400;margin:0;">
+            <input type="checkbox" id="fgPaketOnay" style="width:auto;margin:2px 0 0;">
+            <span style="font-size:12px;color:#e8e8ea;">Paketimi satın aldım, forma devam ediyorum.</span>
+          </label>
+        </div>
+
+        <div id="fgFormAlani" style="opacity:0.4;pointer-events:none;">
+
+        <p class="profilim-section">Müşteri Bilgileri</p>
+        <label>Firma Unvanı *</label>
+        <input type="text" id="fgFirmaUnvani">
+        <label>Marka İsmi</label>
+        <input type="text" id="fgMarkaIsmi">
+        <label>Yetkili Adı Soyadı *</label>
+        <input type="text" id="fgYetkiliAdSoyad">
+        <label>Adres</label>
+        <input type="text" id="fgAdres">
+        <label>Firma Telefon</label>
+        <input type="tel" id="fgFirmaTelefon">
+        <label>Yetkili GSM *</label>
+        <input type="tel" id="fgYetkiliGsm">
+        <label>E-posta</label>
+        <input type="email" id="fgEmail">
+        <label>Web</label>
+        <input type="text" id="fgWeb">
+        <label>Vergi Dairesi</label>
+        <input type="text" id="fgVergiDairesi">
+        <label>Vergi Numarası</label>
+        <input type="text" id="fgVergiNo">
+        <label>TC Kimlik No</label>
+        <input type="text" id="fgTcKimlik">
+        <label>Faaliyet Alanı</label>
+        <input type="text" id="fgFaaliyetAlani">
+        <label>Firma Özellikleri</label>
+        <textarea id="fgFirmaOzellikleri" rows="3" style="background:var(--bg);border:1px solid var(--line);color:#fff;border-radius:8px;padding:9px 12px;font-size:13.5px;width:100%;margin-bottom:12px;resize:vertical;"></textarea>
+
+        <p class="profilim-section">Hizmet ve Ödeme</p>
+        <label>Satın Alınan Hizmet Paketleri</label>
+        <input type="text" id="fgHizmetPaketleri" placeholder="Örn: Temel İşletme, Yol Yardım">
+        <label>Ödeme Planı Talebi</label>
+        <select id="fgOdemePlani">
+          <option value="">Seçin</option>
+          <option value="Nakit">Nakit</option>
+          <option value="Kredi Kartı">Kredi Kartı</option>
+        </select>
+
+        <label style="display:flex;align-items:flex-start;gap:8px;font-weight:400;margin-top:6px;">
+          <input type="checkbox" id="fgOnay" style="width:auto;margin:2px 0 0;">
+          <span style="font-size:11.5px;color:var(--text-dim);">Bilgilerimin MotoGo tarafından üyelik değerlendirmesi amacıyla işlenmesini kabul ediyorum.</span>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:8px;font-weight:400;margin-top:6px;">
+          <input type="checkbox" id="fgMesafeliSatis" style="width:auto;margin:2px 0 0;">
+          <span style="font-size:11.5px;color:var(--text-dim);">Mesafeli Satış Sözleşmesini onaylıyorum ve gönderiyorum.</span>
+        </label>
+
+        </div>
+
+        <button type="button" class="hub-save" id="fgKaydetBtn" style="width:100%;margin-top:12px;">Gönder</button>
+        <div id="fgDurum" style="margin-top:10px;font-size:12.5px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="profilimOverlay" class="profilim-overlay" style="display:none;">
+    <div class="profilim-panel">
+      <div class="profilim-header">
+        <span>👤 Profilim</span>
+        <button type="button" id="profilimCloseBtn" class="profilim-close">✕</button>
+      </div>
+      <div class="profilim-body">
+        <label>Ad Soyad *</label>
+        <input type="text" id="profAdSoyad">
+        <label>Telefon *</label>
+        <input type="tel" id="profTelefon" placeholder="05XX XXX XX XX">
+        <label>E-posta <span class="opt-note">(isteğe bağlı)</span></label>
+        <input type="email" id="profEmail">
+        <label>Kan Grubu <span class="opt-note">(isteğe bağlı)</span></label>
+        <input type="text" id="profKanGrubu" placeholder="Örn: A Rh+">
+        <label>Yaşadığı İl <span class="opt-note">(isteğe bağlı)</span></label>
+        <select id="profIl"><option value="">Seçin</option></select>
+        <button type="button" class="hub-save" id="profKaydetBtn" style="width:100%;margin-top:10px;">Kaydet</button>
+        <div id="profDurum" style="margin-top:10px;font-size:12.5px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    window.MOTOGO_SUPABASE_URL = "https://xdyrgiwastvwqgmpsihc.supabase.co";
+    window.MOTOGO_SUPABASE_KEY = "sb_publishable_wjEQ3JkigYiCIzLMyHCzdg_wCpkIkOT";
+    window.motogoSupabase = window.supabase
+      ? window.supabase.createClient(window.MOTOGO_SUPABASE_URL, window.MOTOGO_SUPABASE_KEY)
+      : null;
+  </script>
+  <script src="js/brands-data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
