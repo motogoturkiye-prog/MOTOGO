@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MotoGo — Yönetim Paneli</title>
+<style>
+  :root{
+    --bg:#0a0c10; --panel:#14171d; --line:#23262e; --red:#C1392B; --red-dark:#9c2e22;
+    --text:#ffffff; --text-dim:#9a9aa2;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    padding:16px;padding-bottom:60px;
+  }
+  h1{font-size:16px;margin:0 0 16px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px;}
+  label{display:block;font-size:12px;font-weight:600;margin:0 0 4px;color:#e8e8ea;}
+  input,select,textarea{
+    background:var(--bg);border:1px solid var(--line);color:#fff;border-radius:6px;
+    padding:8px 10px;font-size:13px;width:100%;margin-bottom:10px;font-family:inherit;
+  }
+  textarea{resize:vertical;}
+  button{
+    background:var(--red);color:#fff;border:none;border-radius:6px;
+    padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;
+  }
+  button:hover{background:var(--red-dark);}
+  button.secondary{background:var(--bg);border:1px solid var(--line);}
+  button.danger{background:#791f1f;}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+  .tab-btn{
+    background:var(--panel);border:1px solid var(--line);color:var(--text-dim);
+    padding:8px 12px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;
+  }
+  .tab-btn.active{background:var(--red);color:#fff;border-color:var(--red);}
+  .row-item{
+    background:var(--bg);border:1px solid var(--line);border-radius:8px;
+    padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;
+  }
+  .row-item-text{font-size:12.5px;color:#e8e8ea;line-height:1.5;flex:1;}
+  .row-item-text b{color:#fff;}
+  .row-actions{display:flex;gap:6px;flex-shrink:0;}
+  .row-actions button{padding:6px 10px;font-size:11.5px;}
+  #status{font-size:12.5px;margin-top:8px;}
+  #loginScreen{max-width:340px;margin:60px auto;}
+  .checkbox-group label{display:flex;align-items:center;gap:6px;font-weight:400;margin-bottom:6px;}
+  .checkbox-group input{width:auto;margin:0;}
+  .hidden{display:none;}
+  #logoutBtn{position:fixed;top:16px;right:16px;padding:7px 12px;font-size:12px;}
+</style>
+</head>
+<body>
+
+  <div id="loginScreen">
+    <h1>🔐 MotoGo Yönetim Paneli</h1>
+    <div class="card">
+      <label>E-posta</label>
+      <input type="email" id="loginEmail">
+      <label>Şifre</label>
+      <input type="password" id="loginPassword">
+      <button id="loginBtn" style="width:100%;">Giriş Yap</button>
+      <div id="loginStatus" style="font-size:12.5px;margin-top:8px;color:#f09595;"></div>
+    </div>
+  </div>
+
+  <div id="panelScreen" class="hidden">
+    <button id="logoutBtn" class="secondary">Çıkış</button>
+    <h1>🔧 MotoGo Yönetim Paneli</h1>
+    <div class="tabs" id="tabs"></div>
+    <div id="tabContent"></div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/brands-data.js"></script>
+<script>
+const SUPABASE_URL = "https://xdyrgiwastvwqgmpsihc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_wjEQ3JkigYiCIzLMyHCzdg_wCpkIkOT";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const loginScreen = document.getElementById('loginScreen');
+const panelScreen = document.getElementById('panelScreen');
+const loginStatus = document.getElementById('loginStatus');
+
+document.getElementById('loginBtn').addEventListener('click', async () => {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  loginStatus.textContent = "Giriş yapılıyor...";
+  loginStatus.style.color = "#9a9aa2";
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) {
+    loginStatus.textContent = "⚠️ " + error.message;
+    loginStatus.style.color = "#f09595";
+  } else {
+    showPanel();
+  }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await sb.auth.signOut();
+  location.reload();
+});
+
+async function checkSession() {
+  const { data } = await sb.auth.getSession();
+  if (data.session) showPanel();
+}
+checkSession();
+
+function showPanel() {
+  loginScreen.classList.add('hidden');
+  panelScreen.classList.remove('hidden');
+  renderTabs();
+  loadTab(TABLES[0].key);
+}
+
+// ---------------------------------------------------------------------------
+// Tablo tanımları
+// ---------------------------------------------------------------------------
+const SUBCAT_OPTIONS = [
+  {value:'ozelServis', label:'Özel Servis'},
+  {value:'yetkiliServis', label:'Yetkili Servis'},
+  {value:'yedekParca', label:'Yedek Parça'},
+  {value:'ekspertiz', label:'Ekspertiz'}
+];
+const YARDIM_CAT_OPTIONS = [
+  {value:'cekici', label:'Çekici / Transfer'},
+  {value:'lastik', label:'Lastik'},
+  {value:'genel_ariza', label:'Genel Arıza'}
+];
+
+const TABLES = [
+  {
+    key: 'firmalar', label: 'Firmalar', table: 'firmalar', order: 'ad',
+    listText: r => `<b>${r.ad}</b> — ${r.marka} / ${r.kategori} — ${r.sehir}${r.ilce ? ', ' + r.ilce : ''}`,
+    fields: [
+      { id:'ad', label:'Firma Adı', type:'text', required:true },
+      { id:'marka', label:'Marka', type:'select', options: BRANDS.map(b => ({value:b.key,label:b.name})), required:true },
+      { id:'kategori', label:'Kategori', type:'select', options: SUBCAT_OPTIONS, required:true },
+      { id:'sehir', label:'Şehir', type:'select', options: CITIES.map(c => ({value:c,label:c})), required:true },
+      { id:'ilce', label:'İlçe', type:'text' },
+      { id:'whatsapp', label:'WhatsApp (90XXXXXXXXXX)', type:'text' },
+      { id:'telefon', label:'Telefon (+90XXXXXXXXXX)', type:'text' },
+      { id:'instagram', label:'Instagram linki', type:'text' },
+      { id:'website', label:'Web sitesi', type:'text' },
+      { id:'aciklama', label:'Açıklama', type:'textarea' }
+    ]
+  },
+  {
+    key: 'kiralik', label: 'Kiralık Motor', table: 'kiralik_firmalar', order: 'ad',
+    listText: r => `<b>${r.ad}</b> — ${r.sehir}${r.ilce ? ', ' + r.ilce : ''}`,
+    fields: [
+      { id:'ad', label:'Firma Adı', type:'text', required:true },
+      { id:'sehir', label:'Şehir', type:'select', options: CITIES.map(c => ({value:c,label:c})), required:true },
+      { id:'ilce', label:'İlçe', type:'text' },
+      { id:'whatsapp', label:'WhatsApp', type:'text' },
+      { id:'telefon', label:'Telefon', type:'text' },
+      { id:'instagram', label:'Instagram linki', type:'text' },
+      { id:'aciklama', label:'Açıklama', type:'textarea' }
+    ]
+  },
+  {
+    key: 'avantaj', label: 'Avantaj', table: 'avantaj_kampanyalar', order: 'firma_adi',
+    listText: r => `<b>${r.firma_adi}</b> — ${r.baslik} — ${r.sehir}${r.rozet ? ' (' + r.rozet + ')' : ''}`,
+    fields: [
+      { id:'firma_adi', label:'Firma Adı', type:'text', required:true },
+      { id:'kategori', label:'Kategori (örn. Yetkili Servis, Aksesuarcı)', type:'text' },
+      { id:'sehir', label:'Şehir', type:'select', options: CITIES.map(c => ({value:c,label:c})), required:true },
+      { id:'rozet', label:'Rozet (örn. %10)', type:'text' },
+      { id:'baslik', label:'Kampanya Başlığı', type:'text', required:true },
+      { id:'aciklama', label:'Açıklama', type:'textarea' },
+      { id:'odul', label:'Ödül / Hediye (isteğe bağlı)', type:'text' },
+      { id:'whatsapp', label:'WhatsApp', type:'text' },
+      { id:'telefon', label:'Telefon', type:'text' }
+    ]
+  },
+  {
+    key: 'yardim', label: 'Yol Yardım', table: 'yardim_firmalari', order: 'ad',
+    listText: r => `<b>${r.ad}</b> — ${r.sehir} — ${(r.kategoriler||[]).join(', ')}`,
+    fields: [
+      { id:'ad', label:'Firma Adı', type:'text', required:true },
+      { id:'sehir', label:'Şehir', type:'select', options: CITIES.map(c => ({value:c,label:c})), required:true },
+      { id:'bolge_metni', label:'Bölge açıklaması (örn. Etimesgut, Ankara · ...)', type:'text' },
+      { id:'kategoriler', label:'Hizmet Kategorileri', type:'checkboxes', options: YARDIM_CAT_OPTIONS, required:true },
+      { id:'whatsapp', label:'WhatsApp', type:'text' },
+      { id:'telefon', label:'Telefon', type:'text' },
+      { id:'website', label:'Web sitesi', type:'text' },
+      { id:'instagram', label:'Instagram linki', type:'text' },
+      { id:'lat', label:'Enlem (lat, isteğe bağlı)', type:'text' },
+      { id:'lng', label:'Boylam (lng, isteğe bağlı)', type:'text' }
+    ]
+  },
+  {
+    key: 'kilavuz', label: 'Motor Kılavuzu', table: 'motor_kilavuzu', order: 'marka', idField: 'marka',
+    listText: r => `<b>${BRANDS.find(b=>b.key===r.marka)?.name || r.marka}</b>`,
+    fields: [
+      { id:'marka', label:'Marka', type:'select', options: BRANDS.map(b => ({value:b.key,label:b.name})), required:true },
+      { id:'bilgi', label:'Marka Hakkında Bilgi', type:'textarea', required:true }
+    ]
+  }
+];
+
+let editingId = null;
+
+function renderTabs() {
+  const tabs = document.getElementById('tabs');
+  tabs.innerHTML = '';
+  TABLES.forEach(t => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn';
+    btn.textContent = t.label;
+    btn.addEventListener('click', () => loadTab(t.key));
+    btn.dataset.key = t.key;
+    tabs.appendChild(btn);
+  });
+}
+
+function setActiveTab(key) {
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.key === key);
+  });
+}
+
+function fieldInputHtml(f, value) {
+  if (f.type === 'select') {
+    const opts = f.options.map(o => `<option value="${o.value}" ${value===o.value?'selected':''}>${o.label}</option>`).join('');
+    return `<select id="f_${f.id}"><option value="">Seçin</option>${opts}</select>`;
+  }
+  if (f.type === 'textarea') {
+    return `<textarea id="f_${f.id}" rows="3">${value || ''}</textarea>`;
+  }
+  if (f.type === 'checkboxes') {
+    const vals = value || [];
+    const boxes = f.options.map(o => `
+      <label><input type="checkbox" value="${o.value}" ${vals.includes(o.value)?'checked':''} class="cb_${f.id}"> ${o.label}</label>
+    `).join('');
+    return `<div class="checkbox-group" id="f_${f.id}_group">${boxes}</div>`;
+  }
+  return `<input type="text" id="f_${f.id}" value="${value != null ? value : ''}">`;
+}
+
+function readFieldValue(f) {
+  if (f.type === 'checkboxes') {
+    return Array.from(document.querySelectorAll('.cb_' + f.id)).filter(c => c.checked).map(c => c.value);
+  }
+  const el = document.getElementById('f_' + f.id);
+  const v = el.value.trim();
+  if (f.id === 'lat' || f.id === 'lng') return v ? parseFloat(v) : null;
+  return v || null;
+}
+
+async function loadTab(key) {
+  setActiveTab(key);
+  editingId = null;
+  const def = TABLES.find(t => t.key === key);
+  const content = document.getElementById('tabContent');
+  content.innerHTML = `
+    <div class="card">
+      <h3 id="formTitle" style="margin:0 0 12px;font-size:14px;">Yeni ${def.label} Ekle</h3>
+      <div id="formFields"></div>
+      <button id="saveBtn">Ekle</button>
+      <button id="cancelEditBtn" class="secondary hidden" style="margin-left:8px;">İptal</button>
+      <div id="status"></div>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 12px;font-size:14px;">Kayıtlı ${def.label}</h3>
+      <div id="listArea">Yükleniyor...</div>
+    </div>
+  `;
+  renderForm(def, {});
+  document.getElementById('saveBtn').addEventListener('click', () => saveRow(def));
+  document.getElementById('cancelEditBtn').addEventListener('click', () => loadTab(key));
+  await refreshList(def);
+}
+
+function renderForm(def, values) {
+  const formFields = document.getElementById('formFields');
+  formFields.innerHTML = def.fields.map(f => `
+    <label>${f.label}${f.required ? ' *' : ''}</label>
+    ${fieldInputHtml(f, values[f.id])}
+  `).join('');
+}
+
+async function refreshList(def) {
+  const listArea = document.getElementById('listArea');
+  const { data, error } = await sb.from(def.table).select('*').order(def.order);
+  if (error) {
+    listArea.innerHTML = `<div style="color:#f09595;font-size:12.5px;">Hata: ${error.message}</div>`;
+    return;
+  }
+  if (!data || data.length === 0) {
+    listArea.innerHTML = `<div style="color:#9a9aa2;font-size:12.5px;">Henüz kayıt yok.</div>`;
+    return;
+  }
+  listArea.innerHTML = '';
+  data.forEach(row => {
+    const item = document.createElement('div');
+    item.className = 'row-item';
+    item.innerHTML = `
+      <div class="row-item-text">${def.listText(row)}</div>
+      <div class="row-actions">
+        <button class="secondary edit-btn">Düzenle</button>
+        <button class="danger del-btn">Sil</button>
+      </div>
+    `;
+    item.querySelector('.edit-btn').addEventListener('click', () => startEdit(def, row));
+    item.querySelector('.del-btn').addEventListener('click', () => deleteRow(def, row));
+    listArea.appendChild(item);
+  });
+}
+
+function startEdit(def, row) {
+  editingId = def.idField ? row[def.idField] : row.id;
+  document.getElementById('formTitle').textContent = `${def.label} Düzenle`;
+  document.getElementById('saveBtn').textContent = 'Güncelle';
+  document.getElementById('cancelEditBtn').classList.remove('hidden');
+  renderForm(def, row);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function saveRow(def) {
+  const status = document.getElementById('status');
+  const data = {};
+  for (const f of def.fields) {
+    const val = readFieldValue(f);
+    if (f.required && (val === null || (Array.isArray(val) && val.length === 0))) {
+      status.textContent = `⚠️ "${f.label}" zorunludur.`;
+      status.style.color = '#f09595';
+      return;
+    }
+    data[f.id] = val;
+  }
+  status.textContent = 'Kaydediliyor...';
+  status.style.color = '#9a9aa2';
+
+  let result;
+  if (editingId !== null) {
+    const idField = def.idField || 'id';
+    result = await sb.from(def.table).update(data).eq(idField, editingId);
+  } else {
+    result = await sb.from(def.table).insert(data);
+  }
+
+  if (result.error) {
+    status.textContent = '⚠️ ' + result.error.message;
+    status.style.color = '#f09595';
+  } else {
+    status.textContent = '✅ Kaydedildi.';
+    status.style.color = '#9a9aa2';
+    loadTab(def.key);
+  }
+}
+
+async function deleteRow(def, row) {
+  if (!confirm('Bu kaydı silmek istediğinize emin misiniz?')) return;
+  const idField = def.idField || 'id';
+  const { error } = await sb.from(def.table).delete().eq(idField, row[idField]);
+  if (error) {
+    alert('Hata: ' + error.message);
+  } else {
+    refreshList(def);
+  }
+}
+</script>
+</body>
+</html>
