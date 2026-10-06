@@ -1,0 +1,23 @@
+name: Supabase canli tut
+
+# Her 2 gunde bir Supabase'e kucuk bir okuma istegi atar; ucretsiz proje hareketsizlikten durmasin.
+# Supabase cevap vermezse is "basarisiz" olur ve GitHub sana e-posta gonderir.
+on:
+  schedule:
+    - cron: '17 5 */2 * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Supabase'e istek at
+        run: |
+          kod=$(curl -s -o /dev/null -m 30 -w "%{http_code}" \
+            -H "apikey: sb_publishable_wjEQ3JkigYiCIzLMyHCzdg_wCpkIkOT" \
+            "https://xdyrgiwastvwqgmpsihc.supabase.co/rest/v1/yardim_firmalari?select=id&limit=1")
+          echo "Supabase cevap kodu: $kod"
+          if [ "$kod" != "200" ]; then
+            echo "Supabase beklenen cevabi vermedi. Proje durmus olabilir."
+            exit 1
+          fi
