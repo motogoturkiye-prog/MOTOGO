@@ -318,13 +318,15 @@ const TABLES = [
       { id:'tur', label:'Üyelik türü', type:'select', required:true, options:[{value:'bireysel', label:'Bireysel'}, {value:'kurumsal', label:'Kurumsal'}] },
       { id:'ad', label:'Üye adı soyadı / Firma unvanı', type:'text', required:true },
       { id:'iletisim', label:'Telefon', type:'text' },
-      { id:'paket', label:'Satın aldığı paket (elle seç)', type:'select', options:[
-        {value:'Ücretsiz bireysel', label:'Ücretsiz bireysel'}, {value:'Ücretli üyelik', label:'Ücretli üyelik (tüm ücretli uygulamalar)'},
-        {value:'Kurumsal Giriş', label:'Kurumsal Giriş'}, {value:'Kurumsal Tam', label:'Kurumsal Tam'}, {value:'Yol Yardım', label:'Yol Yardım'},
-        {value:'Temel İşletme', label:'Temel İşletme'}, {value:'Çoklu Hizmet', label:'Çoklu Hizmet'}, {value:'Avantaj', label:'Avantaj'}, {value:'Diğer', label:'Diğer'} ] },
+      { id:'paket', label:'Satın aldığı paket (bir satır = bir paket; ikinci paketi alırsa yeni satır ekle)', type:'select', options:[
+        {value:'Ücretsiz bireysel', label:'Ücretsiz bireysel üyelik'},
+        {value:'Motorcu Uygulamaları Paketi', label:'Motorcu Uygulamaları Paketi (bireysel, ücretli)'},
+        {value:'Kurumsal Üyelik Paketi', label:'Kurumsal Üyelik Paketi (firma)'},
+        {value:'Temel İşletme Paketi', label:'Temel İşletme Paketi (firma)'},
+        {value:'Yol Yardım Paketi', label:'Yol Yardım Paketi (firma)'} ] },
       { id:'baslangic', label:'Üyelik başlangıç tarihi (boş bırakırsan bugün)', type:'date' },
-      { id:'bitis', label:'Üyelik bitiş tarihi (süresiz için 2099-12-31)', type:'date', required:true },
-      { id:'rota_imaj_bitis', label:'Ücretli uygulamalar bitiş tarihi (ödeme geldiğinde doldur)', type:'date' },
+      { id:'bitis', label:'Paketin bitiş tarihi (bireysel ücretsiz üyelikte 2099-12-31 bırak)', type:'date', required:true },
+      { id:'rota_imaj_bitis', label:'Ücretli uygulamalar bitiş tarihi (sadece Motorcu Uygulamaları Paketi satıldıysa yaz, uygulamaları açar)', type:'date' },
       { id:'kod', label:'Üye kodu (otomatik, değiştirme)', type:'text' },
       { id:'cihaz_sifirla', label:'Cihazları sıfırla', type:'select', options:[{value:'evet', label:'Evet, sıfırla'}] }
     ]
