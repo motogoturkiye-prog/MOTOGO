@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#0b0c0f; --panel:#14161b; --panel2:#1b1e25; --line:#2a2e37; --text:#f2f3f5; --dim:#9aa0ab;
+  --red:#c0392b; --red2:#e5483b;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#0b0c0f; --panel:#14161b; --panel2:#1b1e25; --line:#2a2e37; --text:#f2f3f5; --dim:#9aa0ab; --red:#c0392b; --red2:#e5483b; }
+}
+:root[data-theme="dark"]{ --bg:#0b0c0f; --panel:#14161b; --panel2:#1b1e25; --line:#2a2e37; --text:#f2f3f5; --dim:#9aa0ab; --red:#c0392b; --red2:#e5483b; }
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+*,*::before,*::after{box-sizing:inherit;}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%;}
+button,input,select{font-family:inherit;color:inherit;}
+.wrap{max-width:520px;margin:0 auto;padding:12px 14px 60px;}
+h1{margin:4px 0 4px;font-size:21px;line-height:1.2;}
+.sub{margin:0 0 12px;color:var(--dim);font-size:13.5px;}
+.stage{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--bg);padding:8px 0 10px;}
+.stageIn{display:flex;justify-content:center;background:#000;border-radius:12px;padding:6px;}
+canvas{display:block;max-width:100%;max-height:34vh;border-radius:8px;background:#000;}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px;}
+.card h2{margin:0 0 8px;font-size:15.5px;}
+.lab{display:block;font-size:12.5px;color:var(--dim);font-weight:600;margin:10px 0 5px;}
+.inp,.sel{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;color:var(--text);font-size:15px;padding:10px 12px;min-height:44px;}
+.seg{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+.seg button{flex:1;border:0;background:var(--panel2);color:var(--dim);font-weight:700;font-size:13px;padding:10px 4px;min-height:44px;cursor:pointer;}
+.seg button[aria-pressed="true"]{background:var(--red);color:#fff;}
+.btn{border:0;border-radius:12px;background:var(--red);color:#fff;font-weight:800;font-size:15.5px;padding:14px;min-height:50px;cursor:pointer;width:100%;}
+.btn.g{background:var(--panel2);border:1px solid var(--line);color:var(--text);font-weight:700;}
+.btn[disabled]{opacity:.5;cursor:default;}
+.drop{display:block;border:2px dashed var(--line);border-radius:14px;padding:16px 12px;text-align:center;color:var(--dim);cursor:pointer;}
+.drop b{color:var(--text);display:block;font-size:15px;margin-bottom:2px;}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-top:10px;}
+.th{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#000;aspect-ratio:9/12;}
+.th video,.th img{width:100%;height:100%;object-fit:cover;display:block;}
+.th span{position:absolute;left:4px;bottom:4px;background:rgba(0,0,0,.65);border-radius:6px;font-size:10.5px;padding:2px 6px;}
+.th button{position:absolute;top:3px;right:3px;width:28px;height:28px;border:0;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;font-size:14px;cursor:pointer;}
+.note{color:var(--dim);font-size:12.5px;margin:8px 0 0;}
+.bar{height:6px;background:var(--panel2);border-radius:6px;overflow:hidden;margin-top:10px;}
+.bar i{display:block;height:100%;width:0;background:var(--red2);}
+.status{margin:8px 0 0;font-size:13.5px;color:var(--dim);min-height:20px;}
+.err{color:#f09595;}
+video#out{width:100%;max-height:70vh;background:#000;border-radius:12px;}
+.row{display:flex;gap:8px;flex-wrap:wrap;}
+.sw{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.sw button{width:36px;height:36px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0;}
+.sw button[aria-pressed="true"]{border-color:#fff;box-shadow:0 0 0 2px var(--red);}
+.sw input[type=color]{width:44px;height:36px;border:0;background:none;padding:0;}
+input[type=range]{width:100%;accent-color:var(--red);}
+.chk{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:14px;}
+.chk input{width:20px;height:20px;accent-color:var(--red);}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto !important;}}
+</style>
+<style>
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.ozet{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.oz{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;}
+.oz span{display:block;font-size:12px;color:var(--dim);} .oz b{font-size:17px;}
+.trip{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px;cursor:pointer;}
+.trip b{font-size:15.5px;} .trip .m{color:var(--dim);font-size:13px;margin-top:2px;}
+.etiket{display:inline-block;border-radius:999px;font-size:11.5px;font-weight:700;padding:3px 9px;margin-left:6px;}
+.e-yak{background:#3a2e07;color:#f1c40f;} .e-bit{background:#12331f;color:#2ecc71;} .e-pl{background:#1b2a4a;color:#8fb4ff;}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin:10px 0;padding-bottom:2px;}
+.tabs button{flex:0 0 auto;border:1px solid var(--line);background:var(--panel2);color:var(--dim);border-radius:999px;font-weight:700;font-size:13px;padding:9px 14px;min-height:40px;cursor:pointer;}
+.tabs button[aria-pressed="true"]{background:var(--red);border-color:var(--red);color:#fff;}
+.li{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);padding:9px 0;font-size:14px;}
+.li input[type=checkbox]{width:22px;height:22px;accent-color:var(--red);flex:0 0 auto;}
+.li span{flex:1;} .li.done span{color:var(--dim);text-decoration:line-through;}
+.li button{background:none;border:0;color:var(--dim);font-size:18px;cursor:pointer;}
+.grp{margin:12px 0 2px;font-size:12.5px;color:var(--dim);font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+table{width:100%;border-collapse:collapse;font-size:13.5px;}
+th{color:var(--dim);font-weight:600;text-align:right;padding:6px 4px;border-bottom:1px solid var(--line);}
+td{padding:6px 3px;border-bottom:1px solid var(--line);text-align:right;}
+th:first-child,td:first-child{text-align:left;}
+td input{width:100%;min-width:64px;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);padding:8px 6px;font-size:14px;text-align:right;}
+.pos{color:#2ecc71;} .neg{color:#f09595;}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0;}
+.chip{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:999px;font-size:13px;padding:8px 12px;min-height:38px;cursor:pointer;}
+</style>
+<title>Aktivite Planım</title>
+</head>
+<body>
+<div class="wrap">
+  <h1>Aktivite Planım</h1>
+  <p class="sub">Gezilerini planla, hazırlığını ve bütçeni takip et, dönüşte planla gerçeği karşılaştır. Veriler yalnızca bu telefonda saklanır.</p>
+  <div id="app"></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var $=function(s){return document.querySelector(s);};
+var KEY='mg_aktivite_v1';
+var db=load(), view='list', tab='plan', openId=null;
+function load(){ try{ var d=JSON.parse(localStorage.getItem(KEY)); if(d&&d.trips) return d; }catch(e){} return {trips:[]}; }
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify(db)); }catch(e){} }
+function pad(n){ return n<10?'0'+n:''+n; }
+function ymd(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function uid(){ return 't'+Math.random().toString(36).slice(2,9)+Date.now().toString(36); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+function tl(n){ return (Math.round((+n||0)*100)/100).toLocaleString('tr-TR',{maximumFractionDigits:2})+' TL'; }
+function sayi(n){ return (Math.round((+n||0)*10)/10).toLocaleString('tr-TR',{maximumFractionDigits:1}); }
+function tarihTR(s){ return s?(s.slice(8)+'.'+s.slice(5,7)+'.'+s.slice(0,4)):'-'; }
+function gunKaldi(s){ var a=new Date(s+'T00:00:00'), b=new Date(); b.setHours(0,0,0,0); return Math.round((a-b)/86400000); }
+var KAT=[['konaklama','Konaklama'],['yakit','Yakıt'],['yemek','Yemek'],['bakim','Bakım / tamir'],['diger','Diğer']];
+var SABLON={
+  'Temel':['Ehliyet ve ruhsat','Sigorta ve muayene belgesi','Kask ve eldiven','Telefon şarj kablosu ve powerbank','Nakit ve kart','İlk yardım seti','Lastik tamir seti ve pompa','Yağ, zincir ve lastik basıncı kontrolü','Yakıt deposunu doldur'],
+  'Kamp':['Çadır','Uyku tulumu ve mat','Kafa lambası / fener','Kamp ocağı ve tüp','Mutfak seti','Su ve yiyecek','Çöp poşeti','Çakmak ve kibrit','Çok amaçlı bıçak / alet'],
+  'Uzun yol':['Yedek anahtar','Bagaj bağlama ağı / ip','Yedek kıyafet','Yağmurluk','Zincir yağı','Rota ve konaklama bilgileri','Acil durum numaraları','Yol yardım hattı kayıtlı']
+};
+function yeniGezi(){
+  var b=new Date(); b.setDate(b.getDate()+7); var e=new Date(b); e.setDate(e.getDate()+2);
+  var t={id:uid(),ad:'Yeni gezi',bas:ymd(b),bit:ymd(e),durum:'plan',hat:{g7:true,g1:true,h3:true},rota:{bas:'',bit:'',duraklar:[],kmPlan:0},akt:[],hazir:[],butce:{},kmGercek:0,litre:0,not:''};
+  KAT.forEach(function(k){ t.butce[k[0]]={p:0,g:0}; });
+  db.trips.push(t); save(); return t;
+}
+function trip(){ return db.trips.filter(function(t){ return t.id===openId; })[0]; }
+function topPlan(t){ return KAT.reduce(function(s,k){ return s+(+t.butce[k[0]].p||0); },0); }
+function topGercek(t){ return KAT.reduce(function(s,k){ return s+(+t.butce[k[0]].g||0); },0); }
+function hazirYuzde(t){ return t.hazir.length?Math.round(t.hazir.filter(function(x){return x.yapildi;}).length/t.hazir.length*100):0; }
+
+function ciz(){ if(view==='list') liste(); else gezi(); }
+function liste(){
+  var T=db.trips.slice().sort(function(a,b){ return a.bas<b.bas?-1:1; });
+  var km=T.reduce(function(s,t){ return s+(+t.kmGercek||0); },0), harc=T.reduce(function(s,t){ return s+topGercek(t); },0);
+  var yak=T.filter(function(t){ return t.durum!=='bitti'&&gunKaldi(t.bit)>=0; })[0];
+  var h='<div class="ozet"><div class="oz"><span>Toplam gezi</span><b>'+T.length+'</b></div><div class="oz"><span>Toplam km</span><b>'+sayi(km)+'</b></div><div class="oz"><span>Toplam harcama</span><b>'+tl(harc)+'</b></div><div class="oz"><span>Yaklaşan gezi</span><b>'+(yak?(gunKaldi(yak.bas)>0?gunKaldi(yak.bas)+' gün kaldı':'Bugün / devam'):'-')+'</b></div></div>';
+  h+='<button class="btn" id="yeni" type="button">Yeni gezi planla</button><div style="height:12px"></div>';
+  if(!T.length) h+='<p class="note">Henüz gezi yok. İlk planını oluştur: tarihler, rota, hazırlık listesi ve bütçe tek yerde.</p>';
+  T.slice().reverse().forEach(function(t){
+    var k=gunKaldi(t.bas), et=t.durum==='bitti'?'<span class="etiket e-bit">Bitti</span>':(k<=7&&k>=0?'<span class="etiket e-yak">'+(k===0?'Bugün':k+' gün kaldı')+'</span>':'<span class="etiket e-pl">Planlandı</span>');
+    h+='<div class="trip" data-id="'+t.id+'"><b>'+esc(t.ad)+'</b>'+et+'<div class="m">'+tarihTR(t.bas)+' - '+tarihTR(t.bit)+(t.rota.bas?' · '+esc(t.rota.bas)+(t.rota.bit?' > '+esc(t.rota.bit):''):'')+'</div><div class="m">Hazırlık %'+hazirYuzde(t)+' · Bütçe '+tl(topPlan(t))+(t.durum==='bitti'?' · Gerçek '+tl(topGercek(t)):'')+'</div></div>';
+  });
+  $('#app').innerHTML=h;
+  $('#yeni').addEventListener('click',function(){ var t=yeniGezi(); openId=t.id; view='trip'; tab='plan'; ciz(); window.scrollTo(0,0); });
+  [].forEach.call(document.querySelectorAll('.trip'),function(el){ el.addEventListener('click',function(){ openId=el.dataset.id; view='trip'; tab='plan'; ciz(); window.scrollTo(0,0); }); });
+}
+function gezi(){
+  var t=trip(); if(!t){ view='list'; ciz(); return; }
+  var h='<button class="btn g" id="geri" type="button" style="width:auto;padding:0 16px;min-height:40px">‹ Gezilerim</button>';
+  h+='<h2 style="margin:12px 0 0">'+esc(t.ad)+'</h2><div class="tabs">'+[['plan','Plan'],['hazir','Hazırlık'],['butce','Bütçe'],['rota','Rota'],['sonuc','Sonuç']].map(function(x){ return '<button type="button" data-t="'+x[0]+'" aria-pressed="'+(tab===x[0])+'">'+x[1]+'</button>'; }).join('')+'</div>';
+  h+='<div class="card">'+({plan:sekPlan,hazir:sekHazir,butce:sekButce,rota:sekRota,sonuc:sekSonuc}[tab])(t)+'</div>';
+  $('#app').innerHTML=h;
+  $('#geri').addEventListener('click',function(){ view='list'; ciz(); window.scrollTo(0,0); });
+  [].forEach.call(document.querySelectorAll('.tabs button'),function(b){ b.addEventListener('click',function(){ tab=b.dataset.t; ciz(); }); });
+  bagla(t);
+}
+function sekPlan(t){
+  var h='<label class="lab" for="ad">Gezi adı</label><input class="inp" id="ad" type="text" maxlength="40" value="'+esc(t.ad)+'">';
+  h+='<div class="two"><div><label class="lab" for="bas">Başlangıç</label><input class="inp" id="bas" type="date" value="'+t.bas+'"></div><div><label class="lab" for="bit">Bitiş</label><input class="inp" id="bit" type="date" value="'+t.bit+'"></div></div>';
+  h+='<span class="lab">Hatırlatmalar (takvime eklenir)</span><label class="chk"><input type="checkbox" id="g7"'+(t.hat.g7?' checked':'')+'> Gezi 7 gün kala</label><label class="chk"><input type="checkbox" id="g1"'+(t.hat.g1?' checked':'')+'> Gezi 1 gün kala</label><label class="chk"><input type="checkbox" id="h3"'+(t.hat.h3?' checked':'')+'> Çıkıştan 3 gün önce "hazırlıkları tamamla"</label>';
+  h+='<button class="btn" id="ics" type="button" style="margin-top:12px">Takvime ekle (hatırlatmalı)</button><p class="note">Dosyayı açınca telefonunun takvimine eklenir ve hatırlatmalar orada çalar.</p>';
+  h+='<h2 style="margin-top:16px">Aktiviteler</h2>';
+  t.akt.slice().sort(function(a,b){ return (a.gun+a.saat)<(b.gun+b.saat)?-1:1; }).forEach(function(a){ h+='<div class="li'+(a.yapildi?' done':'')+'"><input type="checkbox" data-a="'+a.id+'"'+(a.yapildi?' checked':'')+' aria-label="Yapıldı"><span>'+(a.gun?tarihTR(a.gun).slice(0,5)+' ':'')+(a.saat?a.saat+' · ':'')+esc(a.ad)+'</span><button type="button" data-ad="'+a.id+'" aria-label="Sil">×</button></div>'; });
+  h+='<div class="two" style="margin-top:8px"><input class="inp" id="aGun" type="date" value="'+t.bas+'" aria-label="Gün"><input class="inp" id="aSaat" type="time" aria-label="Saat"></div><input class="inp" id="aAd" type="text" maxlength="50" placeholder="Aktivite (örn: Şelale yürüyüşü)" style="margin-top:8px"><button class="btn g" id="aEkle" type="button" style="margin-top:8px">Aktivite ekle</button>';
+  return h;
+}
+function sekHazir(t){
+  var h='<p class="note" style="margin-top:0">Hazırlık %'+hazirYuzde(t)+' ('+t.hazir.filter(function(x){return x.yapildi;}).length+'/'+t.hazir.length+')</p><div class="bar"><i style="width:'+hazirYuzde(t)+'%"></i></div>';
+  h+='<span class="lab">Hazır listeden ekle</span><div class="chips">'+Object.keys(SABLON).map(function(k){ return '<button class="chip" type="button" data-sab="'+k+'">+ '+k+'</button>'; }).join('')+'</div>';
+  var gr={}; t.hazir.forEach(function(x){ (gr[x.grup]=gr[x.grup]||[]).push(x); });
+  Object.keys(gr).forEach(function(g){ h+='<div class="grp">'+esc(g)+'</div>'; gr[g].forEach(function(x){ h+='<div class="li'+(x.yapildi?' done':'')+'"><input type="checkbox" data-h="'+x.id+'"'+(x.yapildi?' checked':'')+' aria-label="Hazır"><span>'+esc(x.ad)+'</span><button type="button" data-hd="'+x.id+'" aria-label="Sil">×</button></div>'; }); });
+  h+='<div class="row" style="margin-top:10px"><input class="inp" id="hAd" type="text" maxlength="50" placeholder="Kendi maddeni yaz" style="flex:1"><button class="btn g" id="hEkle" type="button" style="width:auto;padding:0 16px">Ekle</button></div>';
+  return h;
+}
+function sekButce(t){
+  var h='<div style="overflow-x:auto"><table><thead><tr><th>Kalem</th><th>Plan (TL)</th><th>Gerçek (TL)</th><th>Fark</th></tr></thead><tbody>';
+  KAT.forEach(function(k){ var b=t.butce[k[0]], f=(+b.p||0)-(+b.g||0); h+='<tr><td>'+k[1]+'</td><td><input type="number" inputmode="decimal" min="0" data-b="'+k[0]+'" data-k="p" value="'+(b.p||'')+'"></td><td><input type="number" inputmode="decimal" min="0" data-b="'+k[0]+'" data-k="g" value="'+(b.g||'')+'"></td><td class="'+((+b.g||0)>0?(f>=0?'pos':'neg'):'')+'">'+((+b.g||0)>0?sayi(f):'-')+'</td></tr>'; });
+  var P=topPlan(t), G=topGercek(t);
+  h+='<tr><td><b>Toplam</b></td><td><b>'+sayi(P)+'</b></td><td><b>'+sayi(G)+'</b></td><td class="'+(G>0?(P-G>=0?'pos':'neg'):'')+'"><b>'+(G>0?sayi(P-G):'-')+'</b></td></tr></tbody></table></div>';
+  h+='<p class="note">Fark: planlanan eksi gerçekleşen. Yeşil bütçenin altında, kırmızı bütçeyi aştığın anlamına gelir.</p>';
+  return h;
+}
+function sekRota(t){
+  var r=t.rota, h='<div class="two"><div><label class="lab" for="rBas">Nereden</label><input class="inp" id="rBas" type="text" maxlength="40" value="'+esc(r.bas)+'"></div><div><label class="lab" for="rBit">Nereye</label><input class="inp" id="rBit" type="text" maxlength="40" value="'+esc(r.bit)+'"></div></div>';
+  h+='<span class="lab">Ara duraklar</span>';
+  r.duraklar.forEach(function(d,i){ h+='<div class="li"><span>'+(i+1)+'. '+esc(d)+'</span><button type="button" data-rd="'+i+'" aria-label="Sil">×</button></div>'; });
+  h+='<div class="row" style="margin-top:6px"><input class="inp" id="rDur" type="text" maxlength="40" placeholder="Durak ekle" style="flex:1"><button class="btn g" id="rEkle" type="button" style="width:auto;padding:0 16px">Ekle</button></div>';
+  h+='<label class="lab" for="kmPlan">Planlanan toplam yol (km)</label><input class="inp" id="kmPlan" type="number" inputmode="decimal" min="0" value="'+(r.kmPlan||'')+'">';
+  if(r.bas&&r.bit){ var u='https://www.google.com/maps/dir/?api=1&origin='+encodeURIComponent(r.bas)+'&destination='+encodeURIComponent(r.bit)+(r.duraklar.length?'&waypoints='+encodeURIComponent(r.duraklar.join('|')):'')+'&travelmode=driving'; h+='<a class="btn g" href="'+u+'" target="_blank" rel="noopener" style="margin-top:12px;display:flex;align-items:center;justify-content:center;text-decoration:none">Rotayı haritada aç</a>'; }
+  return h;
+}
+function sekSonuc(t){
+  var P=topPlan(t), G=topGercek(t), tuk=(t.litre>0&&t.kmGercek>0)?(t.litre/t.kmGercek*100):0;
+  var h='<div class="two"><div><label class="lab" for="kmG">Gerçekleşen yol (km)</label><input class="inp" id="kmG" type="number" inputmode="decimal" min="0" value="'+(t.kmGercek||'')+'"></div><div><label class="lab" for="lt">Harcanan yakıt (litre)</label><input class="inp" id="lt" type="number" inputmode="decimal" min="0" value="'+(t.litre||'')+'"></div></div>';
+  h+='<div class="ozet" style="margin-top:12px"><div class="oz"><span>Km (plan / gerçek)</span><b>'+sayi(t.rota.kmPlan)+' / '+sayi(t.kmGercek)+'</b></div><div class="oz"><span>Bütçe (plan / gerçek)</span><b>'+sayi(P)+' / '+sayi(G)+'</b></div><div class="oz"><span>Bütçe farkı</span><b class="'+(G>0?(P-G>=0?'pos':'neg'):'')+'">'+(G>0?(P-G>=0?'+':'')+sayi(P-G)+' TL':'-')+'</b></div><div class="oz"><span>Yakıt tüketimi</span><b>'+(tuk?sayi(tuk)+' L/100 km':'-')+'</b></div></div>';
+  h+='<label class="lab" for="not">Notlar</label><textarea class="inp" id="not" rows="3" maxlength="400" style="min-height:80px">'+esc(t.not)+'</textarea>';
+  h+='<label class="chk"><input type="checkbox" id="bitti"'+(t.durum==='bitti'?' checked':'')+'> Gezi tamamlandı</label>';
+  h+='<button class="btn g" id="sil" type="button" style="margin-top:14px">Bu geziyi sil</button>';
+  return h;
+}
+function bagla(t){
+  var on=function(id,ev,fn){ var e=$('#'+id); if(e) e.addEventListener(ev,fn); };
+  var kaydet=function(){ save(); };
+  if(tab==='plan'){
+    on('ad','input',function(){ t.ad=this.value; kaydet(); }); on('bas','change',function(){ t.bas=this.value; if(t.bit<t.bas) t.bit=t.bas; kaydet(); ciz(); }); on('bit','change',function(){ t.bit=this.value; kaydet(); });
+    ['g7','g1','h3'].forEach(function(k){ on(k,'change',function(){ t.hat[k]=this.checked; kaydet(); }); });
+    on('ics','click',function(){ indirICS(t); });
+    on('aEkle','click',function(){ var ad=$('#aAd').value.trim(); if(!ad) return; t.akt.push({id:uid(),gun:$('#aGun').value,saat:$('#aSaat').value,ad:ad,yapildi:false}); kaydet(); ciz(); });
+    [].forEach.call(document.querySelectorAll('[data-a]'),function(c){ c.addEventListener('change',function(){ t.akt.forEach(function(a){ if(a.id===c.dataset.a) a.yapildi=c.checked; }); kaydet(); ciz(); }); });
+    [].forEach.call(document.querySelectorAll('[data-ad]'),function(c){ c.addEventListener('click',function(){ t.akt=t.akt.filter(function(a){ return a.id!==c.dataset.ad; }); kaydet(); ciz(); }); });
+  }
+  if(tab==='hazir'){
+    [].forEach.call(document.querySelectorAll('[data-sab]'),function(b){ b.addEventListener('click',function(){ var g=b.dataset.sab; SABLON[g].forEach(function(ad){ if(!t.hazir.some(function(x){ return x.ad===ad&&x.grup===g; })) t.hazir.push({id:uid(),grup:g,ad:ad,yapildi:false}); }); kaydet(); ciz(); }); });
+    on('hEkle','click',function(){ var ad=$('#hAd').value.trim(); if(!ad) return; t.hazir.push({id:uid(),grup:'Benim listem',ad:ad,yapildi:false}); kaydet(); ciz(); });
+    [].forEach.call(document.querySelectorAll('[data-h]'),function(c){ c.addEventListener('change',function(){ t.hazir.forEach(function(x){ if(x.id===c.dataset.h) x.yapildi=c.checked; }); kaydet(); ciz(); }); });
+    [].forEach.call(document.querySelectorAll('[data-hd]'),function(c){ c.addEventListener('click',function(){ t.hazir=t.hazir.filter(function(x){ return x.id!==c.dataset.hd; }); kaydet(); ciz(); }); });
+  }
+  if(tab==='butce'){ [].forEach.call(document.querySelectorAll('[data-b]'),function(i){ i.addEventListener('change',function(){ t.butce[i.dataset.b][i.dataset.k]=+i.value||0; kaydet(); ciz(); }); }); }
+  if(tab==='rota'){
+    on('rBas','input',function(){ t.rota.bas=this.value; kaydet(); }); on('rBit','input',function(){ t.rota.bit=this.value; kaydet(); }); on('kmPlan','input',function(){ t.rota.kmPlan=+this.value||0; kaydet(); });
+    on('rBas','change',ciz); on('rBit','change',ciz);
+    on('rEkle','click',function(){ var d=$('#rDur').value.trim(); if(!d) return; t.rota.duraklar.push(d); kaydet(); ciz(); });
+    [].forEach.call(document.querySelectorAll('[data-rd]'),function(c){ c.addEventListener('click',function(){ t.rota.duraklar.splice(+c.dataset.rd,1); kaydet(); ciz(); }); });
+  }
+  if(tab==='sonuc'){
+    on('kmG','change',function(){ t.kmGercek=+this.value||0; kaydet(); ciz(); }); on('lt','change',function(){ t.litre=+this.value||0; kaydet(); ciz(); }); on('not','input',function(){ t.not=this.value; kaydet(); });
+    on('bitti','change',function(){ t.durum=this.checked?'bitti':'plan'; kaydet(); });
+    on('sil','click',function(){ if(confirm('Bu gezi silinsin mi?')){ db.trips=db.trips.filter(function(x){ return x.id!==t.id; }); save(); view='list'; ciz(); } });
+  }
+}
+
+/* ---- Takvim dosyası (.ics) ---- */
+function icsKac(s){ return String(s||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n'); }
+function ekle(s,n){ var d=new Date(s+'T12:00:00'); d.setDate(d.getDate()+n); return ymd(d); }
+function icsMetin(t){
+  var d8=function(s){ return s.replace(/-/g,''); }, st=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d+/,'');
+  var L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Aktivite Planim//TR','CALSCALE:GREGORIAN'];
+  function ev(id,s,e,baslik,acik,alarmlar){ L.push('BEGIN:VEVENT','UID:'+id+'@aktivite-planim','DTSTAMP:'+st,'DTSTART;VALUE=DATE:'+d8(s),'DTEND;VALUE=DATE:'+d8(ekle(e,1)),'SUMMARY:'+icsKac(baslik),'DESCRIPTION:'+icsKac(acik)); alarmlar.forEach(function(a){ L.push('BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+icsKac(baslik),'TRIGGER;RELATED=START:'+a,'END:VALARM'); }); L.push('END:VEVENT'); }
+  var al=[]; if(t.hat.g7) al.push('-P6DT15H'); if(t.hat.g1) al.push('-PT15H');
+  var acik=(t.rota.bas?'Rota: '+t.rota.bas+(t.rota.bit?' > '+t.rota.bit:'')+'\n':'')+(t.akt.length?'Aktiviteler: '+t.akt.map(function(a){ return a.ad; }).join(', ')+'\n':'')+'Bütçe: '+topPlan(t)+' TL';
+  ev(t.id,t.bas,t.bit,t.ad,acik,al);
+  if(t.hat.h3){ var hg=ekle(t.bas,-3); ev(t.id+'-hazirlik',hg,hg,t.ad+': hazırlıkları tamamla',t.hazir.length?('Eksik: '+t.hazir.filter(function(x){return !x.yapildi;}).length+' madde'):'Hazırlık listeni kontrol et.',['PT9H']); }
+  L.push('END:VCALENDAR'); return L.join('\r\n');
+}
+function indirICS(t){
+  var a=document.createElement('a'), blob=new Blob([icsMetin(t)],{type:'text/calendar;charset=utf-8'});
+  a.href=URL.createObjectURL(blob); a.download=(t.ad||'gezi').replace(/[^A-Za-z0-9ğüşıöçĞÜŞİÖÇ_-]+/g,'-')+'.ics'; document.body.appendChild(a); a.click(); a.remove();
+}
+ciz();
+window.__akt={db:function(){return db;},yeni:function(){ var t=yeniGezi(); openId=t.id; view='trip'; ciz(); return t.id; },ics:function(){ return icsMetin(trip()); }};
+
+})();
+</script>
+</body>
+</html>
