@@ -40,6 +40,13 @@ canvas{display:block;max-width:100%;max-height:44vh;width:auto;height:auto;borde
 .styles button[aria-pressed="true"]{border-color:var(--red);background:#2a1614;}
 input[type=range]{width:100%;accent-color:var(--red);}
 .hint{color:var(--dim);font-size:12.5px;margin:8px 0 0;}
+.styles.lays{grid-template-columns:repeat(2,1fr);}
+.styles.lays button{min-height:52px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.styles.lays button span{display:inline;font-size:20px;margin:0;}
+.accs{display:flex;gap:10px;flex-wrap:wrap;}
+.accs button{width:44px;height:44px;border-radius:50%;border:3px solid var(--line);cursor:pointer;padding:0;}
+.accs button[aria-pressed="true"]{border-color:#fff;box-shadow:0 0 0 2px var(--red);}
+.row .inp{min-width:0;}
 .row{display:flex;gap:8px;margin-top:10px;}
 #out{display:none;width:100%;border-radius:10px;margin-top:10px;max-height:none;}
 .toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:#222;border:1px solid var(--line);color:#fff;padding:10px 14px;border-radius:12px;font-size:13.5px;opacity:0;pointer-events:none;transition:.25s;max-width:92%;z-index:50;text-align:center;}
@@ -64,6 +71,21 @@ input[type=range]{width:100%;accent-color:var(--red);}
     <div class="styles" id="styles"></div>
     <label class="lab" for="kRange">Şiddet: <span id="kv">70</span></label>
     <input type="range" id="kRange" min="0" max="100" value="70">
+  </div>
+
+  <div class="card">
+    <h2>Afiş</h2>
+    <p class="hint" style="margin-top:0">Fotoğrafının üstüne afiş düzeni koy. Renk tarzların aynen çalışır. "Klasik yazı" seçersen sadece aşağıdaki Yazı bölümü kullanılır.</p>
+    <div class="styles lays" id="lays"></div>
+    <div class="row"><button type="button" class="btn g" id="btnKaris">🎲 Karıştır</button></div>
+    <label class="lab">Vurgu rengi</label>
+    <div class="accs" id="accs"></div>
+    <label class="lab">Afiş bilgileri (boş bıraktığın yer afişte görünmez)</label>
+    <input type="text" id="fMotor" class="inp" maxlength="30" placeholder="Motor: örn. BMW R 1250 GS">
+    <div class="row"><input type="text" id="fKm" class="inp" maxlength="12" placeholder="Km: örn. 1240"><input type="text" id="fTarih" class="inp" maxlength="22" placeholder="Tarih: örn. 12 Temmuz 2026"></div>
+    <div class="row"><input type="text" id="fBas" class="inp" maxlength="20" placeholder="Başlangıç: örn. Ankara"><input type="text" id="fBit" class="inp" maxlength="20" placeholder="Varış: örn. Sinop"></div>
+    <div class="row"><button type="button" class="btn g" id="btnRota">🗺️ Rota İmaj'daki son rotamı getir</button></div>
+    <p class="hint" id="rotaHint">Rota İmaj'da bir rota hazırladıysan, harita çizgisi ve mesafe afişe otomatik gelir.</p>
   </div>
 
   <div class="card">
@@ -129,7 +151,7 @@ input[type=range]{width:100%;accent-color:var(--red);}
 "use strict";
 var $=function(s){return document.querySelector(s);};
 var DIMS={"4:5":[1080,1350],"9:16":[1080,1920],"1:1":[1080,1080]};
-var S={img:null,style:"dag",k:0.7,fmt:"4:5",fit:"cover",pos:"alt",tst:"kalin",col:"beyaz",frm:"yok",orig:false,out:null};
+var S={img:null,style:"dag",k:0.7,fmt:"4:5",fit:"cover",pos:"alt",tst:"kalin",col:"beyaz",frm:"yok",orig:false,out:null,lay:"yok",acc:"#f9eb22",geo:null};
 
 /* ---------- Yardımcılar ---------- */
 function rng(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0; var t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
@@ -235,9 +257,191 @@ function fontFor(px,bold){
   if(S.tst==="daktilo") return "700 "+px+"px 'Courier New',Courier,monospace";
   return "900 "+px+"px 'Arial Black',Impact,-apple-system,'Segoe UI',Arial,sans-serif";
 }
+/* ---------- Afiş ---------- */
+var ACCS=[{id:"sari",ad:"Sarı",c:"#f9eb22"},{id:"kirmizi",ad:"Kırmızı",c:"#e5483b"},{id:"turuncu",ad:"Turuncu",c:"#ff8a3d"},{id:"mavi",ad:"Mavi",c:"#3fb7ff"},{id:"yesil",ad:"Yeşil",c:"#38d996"},{id:"beyaz",ad:"Beyaz",c:"#ffffff"}];
+var SANS="-apple-system,'Segoe UI',Roboto,Arial,sans-serif";
+function lum(h){ var n=parseInt(h.slice(1),16); return (0.299*(n>>16&255)+0.587*(n>>8&255)+0.114*(n&255))/255; }
+function onAcc(h){ return lum(h)>0.55?"#111111":"#ffffff"; }
+function accOnLight(h){ return lum(h)>0.45?"#16181d":h; }
+function rrect(c,x,y,w,h,r){ c.beginPath(); c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath(); }
+function sp(c,t,x,y,gap,al){
+  var w=0,i; for(i=0;i<t.length;i++) w+=c.measureText(t[i]).width+gap; w-=gap;
+  var x0=al==="center"?x-w/2:(al==="right"?x-w:x), old=c.textAlign; c.textAlign="left";
+  for(i=0;i<t.length;i++){ c.fillText(t[i],x0,y); x0+=c.measureText(t[i]).width+gap; }
+  c.textAlign=old; return w;
+}
+function wrapAll(c,text,maxW){
+  var words=text.split(/\s+/), lines=[], cur="";
+  words.forEach(function(wd){ var t=cur?cur+" "+wd:wd; if(c.measureText(t).width>maxW&&cur){ lines.push(cur); cur=wd; } else cur=t; });
+  if(cur) lines.push(cur); return lines;
+}
+function tLines(c,t,maxW,px,minPx,maxL){
+  if(S.tst==="kalin") t=t.toUpperCase(); var ls=[t]; maxL=maxL||3;
+  for(;px>=minPx;px-=3){ c.font=fontFor(px); ls=wrapAll(c,t,maxW); if(ls.length<=maxL) break; }
+  if(px<minPx) px=minPx; c.font=fontFor(px); return {ls:ls.slice(0,maxL),px:px};
+}
+function fitOne(c,t,maxW,px,minPx,fnt){ while(px>minPx){ c.font=fnt(px); if(c.measureText(t).width<=maxW) break; px-=2; } c.font=fnt(px); return px; }
+function routeBox(geo,w,h){
+  var a=1e9,b=-1e9,l=1e9,r=-1e9; geo.forEach(function(p){ a=Math.min(a,p[0]); b=Math.max(b,p[0]); l=Math.min(l,p[1]); r=Math.max(r,p[1]); });
+  var cl=Math.cos((a+b)/2*Math.PI/180), gw=(r-l)*cl||1e-6, gh=(b-a)||1e-6, sc=Math.min(w/gw,h/gh), ox=(w-gw*sc)/2, oy=(h-gh*sc)/2;
+  return geo.map(function(p){ return [ox+((p[1]-l)*cl)*sc, oy+(b-p[0])*sc]; });
+}
+function drawRoute(c,geo,x,y,w,h,col,lw,glow){
+  if(!geo||geo.length<2) return false; var P=routeBox(geo,w,h);
+  c.save(); c.translate(x,y); c.lineJoin="round"; c.lineCap="round";
+  if(glow){ c.shadowColor=col; c.shadowBlur=glow; }
+  c.strokeStyle=col; c.lineWidth=lw; c.beginPath(); P.forEach(function(p,i){ if(i) c.lineTo(p[0],p[1]); else c.moveTo(p[0],p[1]); }); c.stroke(); c.shadowBlur=0;
+  [P[0],P[P.length-1]].forEach(function(q,i){ c.beginPath(); c.arc(q[0],q[1],lw*1.7,0,Math.PI*2); c.fillStyle=i?col:"#ffffff"; c.fill(); c.lineWidth=lw*0.7; c.strokeStyle=i?"#ffffff":col; c.stroke(); });
+  c.restore(); return true;
+}
+function D(){ return {title:$("#tIn").value.trim(), sub:$("#sIn").value.trim(), motor:$("#fMotor").value.trim(), km:$("#fKm").value.trim(), tarih:$("#fTarih").value.trim(), bas:$("#fBas").value.trim(), bit:$("#fBit").value.trim(), geo:S.geo, acc:S.acc}; }
+function kmTxt(d){ if(!d.km) return ""; return /km/i.test(d.km)?d.km:d.km+" km"; }
+function stats(c,st,x,yBase,w,s,acc,al){
+  if(!st.length) return; var cw=w/st.length;
+  st.forEach(function(it,i){
+    var cx=al==="center"?x+cw*i+cw/2:x+cw*i; c.textAlign=al==="center"?"center":"left";
+    c.fillStyle=acc; c.font="800 "+(19*s)+"px "+SANS; sp(c,it[0],cx,yBase-44*s,3*s,al==="center"?"center":"left");
+    c.fillStyle="#fff"; fitOne(c,it[1],cw-14*s,36*s,18*s,function(p){ return "800 "+p+"px "+SANS; }); c.textAlign=al==="center"?"center":"left"; c.fillText(it[1],cx,yBase);
+  });
+}
+function stList(d){ var st=[]; if(kmTxt(d)) st.push(["MESAFE",kmTxt(d)]); if(d.tarih) st.push(["TARİH",d.tarih]); if(d.motor) st.push(["MOTOR",d.motor]); return st; }
+function grad(c,W,H,y0,y1,a0,a1){ var g=c.createLinearGradient(0,H*y0,0,H*y1); g.addColorStop(0,"rgba(0,0,0,"+a0+")"); g.addColorStop(1,"rgba(0,0,0,"+a1+")"); c.fillStyle=g; c.fillRect(0,Math.min(H*y0,H*y1),W,Math.abs(H*(y1-y0))); }
+
+function lSinema(c,W,H,d){
+  var s=W/1080; grad(c,W,H,0.36,1,0,0.88); grad(c,W,H,0,0.16,0.55,0);
+  c.textBaseline="alphabetic"; c.fillStyle=d.acc; c.font="800 "+(25*s)+"px "+SANS; sp(c,"MOTOGO TÜRKİYE SUNAR",W/2,H*0.062,7*s,"center");
+  var y=H-H*0.07, cr=[d.motor,kmTxt(d),d.tarih].filter(Boolean).join("   •   ");
+  c.textAlign="center";
+  if(cr){ c.fillStyle="rgba(255,255,255,.92)"; c.font="700 "+(26*s)+"px "+SANS; sp(c,cr.toUpperCase(),W/2,y,3*s,"center"); y-=58*s; }
+  c.fillStyle=d.acc; c.fillRect(W/2-60*s,y-2*s,120*s,5*s); y-=40*s;
+  var tl=tLines(c,d.title||"Yolculuk",W*0.86,128*s,54*s,3);
+  c.fillStyle="#fff"; c.textAlign="center"; c.shadowColor="rgba(0,0,0,.6)"; c.shadowBlur=18*s; c.font=fontFor(tl.px);
+  for(var i=tl.ls.length-1;i>=0;i--){ c.fillText(tl.ls[i],W/2,y); y-=tl.px*1.08; }
+  c.shadowBlur=0; if(d.sub){ c.font="600 "+(30*s)+"px "+SANS; c.fillStyle="rgba(255,255,255,.9)"; c.fillText(d.sub,W/2,y+tl.px*0.1-4*s); }
+}
+function lKart(c,W,H,d){
+  var s=W/1080, m=W*0.045, ph=Math.max(H*0.29,W*0.30), px=m, py=H-m-ph, pw=W-2*m; grad(c,W,H,0.55,1,0,0.45);
+  c.save(); rrect(c,px,py,pw,ph,28*s); c.fillStyle="rgba(10,12,16,.88)"; c.fill(); c.lineWidth=3*s; c.strokeStyle=d.acc; c.stroke(); c.restore();
+  var pad=34*s, has=d.geo&&d.geo.length>1, mw=has?ph*0.8:0;
+  if(has) drawRoute(c,d.geo,px+pad,py+pad,mw-pad,ph-2*pad,d.acc,7*s,14*s);
+  var tx=px+pad+(has?mw+14*s:0), tw=px+pw-pad-tx;
+  c.textAlign="left"; c.textBaseline="alphabetic"; c.fillStyle="#fff";
+  var tl=tLines(c,d.title||"Yolculuk",tw,58*s,30*s,2), y=py+pad+tl.px*0.9; c.font=fontFor(tl.px);
+  tl.ls.forEach(function(l){ c.fillText(l,tx,y); y+=tl.px*1.08; });
+  if(d.sub){ c.font="600 "+(24*s)+"px "+SANS; c.fillStyle="rgba(255,255,255,.75)"; c.fillText(d.sub.slice(0,44),tx,y-4*s); }
+  stats(c,stList(d).slice(0,has?2:3),tx,py+ph-pad,tw,s,d.acc,"left");
+}
+function lBuyuk(c,W,H,d){
+  var s=W/1080; c.fillStyle="rgba(8,10,14,.5)"; c.fillRect(0,0,W,H); grad(c,W,H,0,0.3,0.5,0); grad(c,W,H,0.7,1,0,0.7);
+  c.textBaseline="alphabetic"; c.textAlign="left"; c.fillStyle="#fff"; c.shadowColor="rgba(0,0,0,.6)"; c.shadowBlur=14*s;
+  var tl=tLines(c,d.title||"Yolculuk",W*0.84,104*s,48*s,2), y=H*0.095+tl.px*0.7; c.font=fontFor(tl.px);
+  tl.ls.forEach(function(l){ c.fillText(l,W*0.08,y); y+=tl.px*1.06; }); c.shadowBlur=0;
+  c.fillStyle=d.acc; c.fillRect(W*0.08,y-tl.px*0.55,90*s,6*s);
+  var ok=drawRoute(c,d.geo,W*0.1,H*0.27,W*0.8,H*0.42,d.acc,15*s,28*s);
+  if(!ok){ c.textAlign="center"; c.fillStyle=d.acc; fitOne(c,kmTxt(d)||"KM",W*0.8,230*s,90*s,function(p){ return "900 "+p+"px "+SANS; }); c.fillText(kmTxt(d)||"",W/2,H*0.5); }
+  c.textBaseline="alphabetic"; stats(c,stList(d),W*0.08,H-H*0.09,W*0.84,s,d.acc,"left");
+}
+function lBilet(c,W,H,d){
+  var s=W/1080, m=W*0.05, th=Math.max(H*0.25,W*0.27), tx=m, tw=W-2*m, ty=H-m-th, hh=th*0.2; grad(c,W,H,0.5,1,0,0.55);
+  c.save(); rrect(c,tx,ty,tw,th,24*s); c.clip(); c.fillStyle="#f6f1e6"; c.fillRect(tx,ty,tw,th); c.fillStyle=d.acc; c.fillRect(tx,ty,tw,hh); c.restore();
+  c.textBaseline="middle"; c.textAlign="left"; c.fillStyle=onAcc(d.acc); c.font="800 "+(25*s)+"px "+SANS;
+  var head=(d.title||"Yolculuk").toUpperCase(); fitOne(c,head,tw*0.5,25*s,14*s,function(p){ return "800 "+p+"px "+SANS; }); sp(c,head,tx+28*s,ty+hh/2,2*s,"left");
+  c.textAlign="right"; c.font="800 "+(19*s)+"px "+SANS; sp(c,"MOTOGO BİNİŞ KARTI",tx+tw-28*s,ty+hh/2,3*s,"right");
+  var bw=tw*0.30, bx=tx+tw-bw; c.fillStyle="#16181d"; c.fillRect(bx,ty+hh,bw,th-hh);
+  c.textAlign="center"; c.textBaseline="alphabetic"; c.fillStyle=d.acc; c.font="800 "+(19*s)+"px "+SANS; sp(c,"MESAFE",bx+bw/2,ty+hh+th*0.28,4*s,"center");
+  c.fillStyle="#fff"; var kv=kmTxt(d)||"—"; fitOne(c,kv,bw-30*s,64*s,26*s,function(p){ return "900 "+p+"px "+SANS; }); c.fillText(kv,bx+bw/2,ty+hh+th*0.56);
+  c.strokeStyle="rgba(0,0,0,.25)"; c.lineWidth=2*s; c.setLineDash([8*s,8*s]); c.beginPath(); c.moveTo(bx,ty+hh+8*s); c.lineTo(bx,ty+th-8*s); c.stroke(); c.setLineDash([]);
+  var lw=tw-bw-56*s, lx=tx+28*s, cy=ty+hh+(th-hh)*0.22; c.textAlign="left"; c.fillStyle="#7a7468"; c.font="800 "+(18*s)+"px "+SANS; sp(c,"BAŞLANGIÇ",lx,cy,3*s,"left");
+  c.textAlign="right"; sp(c,"VARIŞ",lx+lw,cy,3*s,"right");
+  c.fillStyle="#16181d"; var half=lw*0.44; var a=(d.bas||"BAŞLANGIÇ"), b=(d.bit||"VARIŞ");
+  c.textAlign="left"; fitOne(c,a,half,50*s,20*s,function(p){ return "900 "+p+"px "+SANS; }); c.fillText(a,lx,cy+58*s);
+  c.textAlign="right"; fitOne(c,b,half,50*s,20*s,function(p){ return "900 "+p+"px "+SANS; }); c.fillText(b,lx+lw,cy+58*s);
+  c.textAlign="center"; c.fillStyle=accOnLight(d.acc); c.font="900 "+(48*s)+"px "+SANS; c.fillText("→",lx+lw/2,cy+58*s);
+  var foot=[d.motor,d.tarih].filter(Boolean).join("   •   "); if(foot){ c.textAlign="left"; c.fillStyle="#555"; c.font="700 "+(23*s)+"px "+SANS; c.fillText(foot,lx,ty+th-24*s); }
+}
+function lDergi(c,W,H,d){
+  var s=W/1080; grad(c,W,H,0,0.28,0.6,0); grad(c,W,H,0.45,1,0,0.85);
+  c.textBaseline="alphabetic"; c.textAlign="center"; c.fillStyle="#fff"; c.shadowColor="rgba(0,0,0,.5)"; c.shadowBlur=14*s;
+  fitOne(c,"MOTOGO",W*0.86,210*s,80*s,function(p){ return "900 "+p+"px 'Arial Black',Impact,"+SANS; }); c.fillText("MOTOGO",W/2,H*0.085+160*s*0.95); c.shadowBlur=0;
+  c.fillStyle=d.acc; c.font="800 "+(23*s)+"px "+SANS; sp(c,("YOLCULUK ÖZEL"+(d.tarih?"  •  "+d.tarih.toUpperCase():"")),W/2,H*0.085+160*s+44*s,5*s,"center");
+  var y=H-H*0.075, lines=[]; if(d.sub) lines.push(d.sub); var inf=[d.motor,kmTxt(d)].filter(Boolean).join("  •  "); if(inf) lines.push(inf);
+  c.textAlign="left"; c.fillStyle="rgba(255,255,255,.92)"; c.font="700 "+(30*s)+"px "+SANS;
+  for(var i=lines.length-1;i>=0;i--){ c.fillText(lines[i].slice(0,46),W*0.07,y); y-=44*s; }
+  var tl=tLines(c,d.title||"Yolculuk",W*0.78,96*s,44*s,2); c.font=fontFor(tl.px);
+  var bh=tl.ls.length*tl.px*1.1+30*s; y-=10*s; c.fillStyle=d.acc; c.fillRect(W*0.07-18*s,y-bh,Math.max.apply(null,tl.ls.map(function(l){ return c.measureText(l).width; }))+36*s,bh);
+  c.fillStyle=onAcc(d.acc); var yy=y-bh+tl.px*0.92+12*s; tl.ls.forEach(function(l){ c.fillText(l,W*0.07,yy); yy+=tl.px*1.1; });
+}
+function lDamga(c,W,H,d){
+  var s=W/1080; grad(c,W,H,0.45,1,0,0.82); c.textBaseline="alphabetic";
+  var R=W*0.17, cx=W-W*0.04-R-10*s, cy=H*0.5+R*0.2; if(H>W*1.5) cy=H*0.42;
+  c.save(); c.translate(cx,cy); c.rotate(-0.2); c.globalAlpha=0.96;
+  c.fillStyle="rgba(8,10,14,.55)"; c.beginPath(); c.arc(0,0,R,0,Math.PI*2); c.fill();
+  c.strokeStyle=d.acc; c.lineWidth=7*s; c.beginPath(); c.arc(0,0,R,0,Math.PI*2); c.stroke(); c.lineWidth=2.5*s; c.beginPath(); c.arc(0,0,R-16*s,0,Math.PI*2); c.stroke();
+  c.textAlign="center"; c.fillStyle=d.acc; c.font="800 "+(20*s)+"px "+SANS; sp(c,"MOTOGO TÜRKİYE",0,-R*0.55,4*s,"center");
+  var kv=(d.km||"").replace(/\s*km\s*$/i,"")||"—"; c.fillStyle="#fff"; fitOne(c,kv,R*1.3,120*s,40*s,function(p){ return "900 "+p+"px "+SANS; }); c.fillText(kv,0,R*0.2);
+  c.fillStyle=d.acc; c.font="800 "+(34*s)+"px "+SANS; sp(c,"KİLOMETRE",0,R*0.2+44*s,5*s,"center");
+  if(d.tarih){ c.fillStyle="rgba(255,255,255,.9)"; c.font="700 "+(22*s)+"px "+SANS; sp(c,d.tarih.toUpperCase(),0,R*0.62,3*s,"center"); }
+  c.restore();
+  var tl=tLines(c,d.title||"Yolculuk",W*0.6,108*s,46*s,3), y=H-H*0.085-(d.sub?46*s:0)-(tl.ls.length-1)*tl.px*1.06;
+  c.textAlign="left"; c.fillStyle="#fff"; c.shadowColor="rgba(0,0,0,.6)"; c.shadowBlur=14*s; c.font=fontFor(tl.px); c.fillRect(0,0,0,0);
+  c.fillStyle=d.acc; c.fillRect(W*0.07,y-tl.px*1.05,80*s,6*s); c.fillStyle="#fff";
+  tl.ls.forEach(function(l){ c.fillText(l,W*0.07,y); y+=tl.px*1.06; }); c.shadowBlur=0;
+  if(d.sub){ c.font="600 "+(30*s)+"px "+SANS; c.fillStyle="rgba(255,255,255,.88)"; c.fillText(d.sub,W*0.07,y-tl.px*0.1+8*s); }
+}
+function lCerceve(c,W,H,d){
+  var s=W/1080, b=W*0.045, bh=Math.max(H*0.2,W*0.22);
+  var tl=tLines(c,d.title||"Yolculuk",W*0.8,70*s,34*s,2); bh=Math.max(bh,tl.ls.length*tl.px*1.06+120*s);
+  c.fillStyle="#f6f3ec"; c.fillRect(0,0,W,b); c.fillRect(0,0,b,H); c.fillRect(W-b,0,b,H); c.fillRect(0,H-bh,W,bh);
+  c.strokeStyle="rgba(0,0,0,.12)"; c.lineWidth=2*s; c.strokeRect(b,b,W-2*b,H-b-bh);
+  c.textAlign="center"; c.textBaseline="alphabetic"; c.fillStyle="#16181d";
+  var y=H-bh+tl.px*1.05+34*s; c.font=fontFor(tl.px);
+  tl.ls.forEach(function(l){ c.fillText(l,W/2,y); y+=tl.px*1.06; });
+  var inf=[d.motor,kmTxt(d),d.tarih].filter(Boolean).join("   •   "); var line=d.sub||inf;
+  c.fillStyle=accOnLight(d.acc); c.fillRect(W/2-45*s,H-bh+14*s,90*s,5*s);
+  c.fillStyle="#6b665c"; c.font="700 "+(24*s)+"px "+SANS; if(line) sp(c,line.toUpperCase().slice(0,52),W/2,H-b-6*s,3*s,"center");
+}
+function lSerit(c,W,H,d){
+  var s=W/1080; grad(c,W,H,0.4,1,0,0.7); var tl=tLines(c,d.title||"Yolculuk",W*0.84,86*s,38*s,2), bh=Math.max(H*0.135,150*s,tl.ls.length*tl.px*1.05+44*s), by=H*0.64;
+  c.save(); c.translate(0,by); c.rotate(-0.045); c.shadowColor=d.acc; c.shadowBlur=26*s; c.fillStyle=d.acc; c.fillRect(-W*0.08,0,W*1.16,bh); c.shadowBlur=0;
+  c.strokeStyle="rgba(255,255,255,.85)"; c.lineWidth=3*s; c.strokeRect(-W*0.08,-10*s,W*1.16,bh+20*s);
+  c.textAlign="center"; c.textBaseline="middle"; c.fillStyle=onAcc(d.acc);
+  var n=tl.ls.length; c.font=fontFor(tl.px);
+  tl.ls.forEach(function(l,i){ c.fillText(l,W/2,bh/2+(i-(n-1)/2)*tl.px*1.05); }); c.restore();
+  c.textBaseline="alphabetic"; if(d.sub){ c.textAlign="center"; c.fillStyle="#fff"; c.shadowColor="rgba(0,0,0,.7)"; c.shadowBlur=10*s; c.font="700 "+(32*s)+"px "+SANS; c.fillText(d.sub,W/2,by-52*s); c.shadowBlur=0; }
+  var chips=[d.motor,kmTxt(d),d.tarih].filter(Boolean), y=by+bh+70*s; if(chips.length){ c.font="800 "+(26*s)+"px "+SANS; var tot=0,ws=chips.map(function(t){ var w=c.measureText(t).width+44*s; tot+=w+14*s; return w; }); var x=W/2-(tot-14*s)/2;
+    chips.forEach(function(t,i){ c.fillStyle="rgba(8,10,14,.78)"; rrect(c,x,y-36*s,ws[i],56*s,28*s); c.fill(); c.strokeStyle=d.acc; c.lineWidth=2.5*s; c.stroke(); c.fillStyle="#fff"; c.textAlign="center"; c.fillText(t,x+ws[i]/2,y+2*s); x+=ws[i]+14*s; }); }
+}
+function lMin(c,W,H,d){
+  var s=W/1080; grad(c,W,H,0.55,1,0,0.7); grad(c,W,H,0,0.12,0.4,0); c.textBaseline="alphabetic";
+  if(d.tarih){ c.textAlign="left"; c.fillStyle="#fff"; c.font="700 "+(24*s)+"px "+SANS; sp(c,d.tarih.toUpperCase(),W*0.07,H*0.065,5*s,"left"); }
+  var tl=tLines(c,d.title||"Yolculuk",W*0.6,78*s,38*s,2), y=H-H*0.085-(d.sub?42*s:0)-(tl.ls.length-1)*tl.px*1.05;
+  c.fillStyle=d.acc; c.fillRect(W*0.07,y-tl.px*1.1,70*s,5*s); c.fillStyle="#fff"; c.textAlign="left"; c.font=fontFor(tl.px); c.shadowColor="rgba(0,0,0,.5)"; c.shadowBlur=10*s;
+  tl.ls.forEach(function(l){ c.fillText(l,W*0.07,y); y+=tl.px*1.05; }); c.shadowBlur=0;
+  if(d.sub){ c.font="600 "+(27*s)+"px "+SANS; c.fillStyle="rgba(255,255,255,.85)"; c.fillText(d.sub,W*0.07,y-tl.px*0.05+6*s); }
+  var bw=W*0.28, bx=W-W*0.07-bw, by=H-H*0.085-bw*0.6;
+  if(drawRoute(c,d.geo,bx,by,bw,bw*0.6,"#ffffff",4*s,0)){ c.textAlign="right"; c.fillStyle=d.acc; c.font="800 "+(26*s)+"px "+SANS; c.fillText(kmTxt(d),W-W*0.07,by+bw*0.6+34*s); }
+  else if(kmTxt(d)){ c.textAlign="right"; c.fillStyle=d.acc; c.font="900 "+(46*s)+"px "+SANS; c.fillText(kmTxt(d),W-W*0.07,H-H*0.085); }
+}
+var LAYS=[
+  {id:"yok",ad:"Klasik yazı",ic:"✍️",fn:null},
+  {id:"sinema",ad:"Sinema afişi",ic:"🎬",fn:lSinema},
+  {id:"kart",ad:"Rota kartı",ic:"🗺️",fn:lKart},
+  {id:"buyuk",ad:"Büyük rota",ic:"🧭",fn:lBuyuk},
+  {id:"bilet",ad:"Biniş kartı",ic:"🎫",fn:lBilet},
+  {id:"dergi",ad:"Dergi kapağı",ic:"📰",fn:lDergi},
+  {id:"damga",ad:"Mesafe damgası",ic:"🏷️",fn:lDamga},
+  {id:"cerceve",ad:"Çerçeveli poster",ic:"🖼️",fn:lCerceve},
+  {id:"serit",ad:"Neon şerit",ic:"⚡",fn:lSerit},
+  {id:"min",ad:"Sade",ic:"◽",fn:lMin}
+];
+function drawAfis(c,W,H){
+  var l=LAYS.filter(function(x){ return x.id===S.lay; })[0]; if(!l||!l.fn) return;
+  c.save(); c.textAlign="left"; c.textBaseline="alphabetic"; l.fn(c,W,H,D()); c.restore();
+}
+
 function render(cv,W,H){
   cv.width=W; cv.height=H;
-  var c=cv.getContext("2d"), s=W/1080, pol=S.frm==="polaroid";
+  var c=cv.getContext("2d"), s=W/1080, pol=S.frm==="polaroid"&&S.lay==="yok";
   var m=pol?W*0.06:0, px=m, py=m, pw=W-2*m, ph=pol?H-m-W*0.22:H;
   c.fillStyle=pol?"#f4efe6":"#000"; c.fillRect(0,0,W,H);
   var lay=document.createElement("canvas"); lay.width=Math.round(pw); lay.height=Math.round(ph);
@@ -246,6 +450,7 @@ function render(cv,W,H){
   var st=STYLES.filter(function(x){ return x.id===S.style; })[0];
   if(S.img&&!S.orig&&st&&st.fn) st.fn(lc,lw,lh,S.k);
   c.drawImage(lay,px,py,pw,ph);
+  if(S.lay!=="yok") drawAfis(c,W,H);
 
   var title=$("#tIn").value.trim(), sub=$("#sIn").value.trim(), sig=$("#imza").value.trim();
   var colMap={beyaz:"#ffffff",sari:"#f9eb22",siyah:"#111111"}, col=colMap[S.col];
@@ -256,7 +461,7 @@ function render(cv,W,H){
   if(title){ c.font=fontFor(tPx); tLines=wrapLines(c,S.tst==="kalin"?title.toUpperCase():title,maxW); }
   if(sub){ c.font=(S.tst==="daktilo"?"700 ":"600 ")+sPx+"px "+(S.tst==="zarif"?"Georgia,serif":(S.tst==="daktilo"?"'Courier New',monospace":"-apple-system,'Segoe UI',Arial,sans-serif")); sLines=wrapLines(c,sub,maxW); }
   var lineT=tPx*1.12, lineS=sPx*1.35, blockH=tLines.length*lineT+(sLines.length?sPx*0.5+sLines.length*lineS:0);
-  if(tLines.length||sLines.length){
+  if(S.lay==="yok"&&(tLines.length||sLines.length)){
     var top;
     if(pol){ top=py+ph+(H-py-ph-blockH)/2+tPx*0.9; }
     else{
@@ -282,9 +487,10 @@ function render(cv,W,H){
     c.shadowBlur=0;
   }
   if(sig){
-    c.font="700 "+Math.round(W*0.03)+"px -apple-system,'Segoe UI',Arial,sans-serif"; c.textAlign="right"; c.textBaseline="bottom";
-    c.fillStyle=pol?"#555":"rgba(255,255,255,.85)"; if(!pol){ c.shadowColor="rgba(0,0,0,.7)"; c.shadowBlur=8*s; }
-    c.fillText(sig,W-(pol?m:W*0.04),H-(pol?m*0.6:H*0.022)); c.shadowBlur=0;
+    var afis=S.lay!=="yok";
+    c.font="700 "+Math.round(W*0.03)+"px -apple-system,'Segoe UI',Arial,sans-serif"; c.textAlign="right"; c.textBaseline=afis?"top":"bottom";
+    c.fillStyle=pol?"#555":(S.lay==="cerceve"?"#333333":"rgba(255,255,255,.88)"); if(!pol&&S.lay!=="cerceve"){ c.shadowColor="rgba(0,0,0,.7)"; c.shadowBlur=8*s; }
+    if(afis) c.fillText(sig,W-W*0.04,S.lay==="cerceve"?W*0.012:H*0.022); else c.fillText(sig,W-(pol?m:W*0.04),H-(pol?m*0.6:H*0.022)); c.shadowBlur=0;
   }
   if(S.frm==="ince"){ c.strokeStyle="rgba(255,255,255,.95)"; c.lineWidth=Math.max(2,W*0.012); var i2=W*0.03; c.strokeRect(i2,i2,W-2*i2,H-2*i2); }
 }
@@ -351,7 +557,33 @@ $("#btnShare").addEventListener("click",function(){
   });
 });
 
-buildStyles(); redraw();
+function buildLays(){
+  var box=$("#lays"); box.innerHTML="";
+  LAYS.forEach(function(l){ var b=document.createElement("button"); b.type="button"; b.setAttribute("aria-pressed",String(l.id===S.lay)); b.innerHTML="<span>"+l.ic+"</span>"+l.ad;
+    b.addEventListener("click",function(){ S.lay=l.id; buildLays(); redraw(); }); box.appendChild(b); });
+}
+function buildAccs(){
+  var box=$("#accs"); box.innerHTML="";
+  ACCS.forEach(function(a){ var b=document.createElement("button"); b.type="button"; b.title=a.ad; b.setAttribute("aria-label",a.ad); b.style.background=a.c; b.setAttribute("aria-pressed",String(a.c===S.acc));
+    b.addEventListener("click",function(){ S.acc=a.c; buildAccs(); redraw(); }); box.appendChild(b); });
+}
+["#fMotor","#fKm","#fTarih","#fBas","#fBit"].forEach(function(q){ $(q).addEventListener("input",redraw); });
+$("#btnKaris").addEventListener("click",function(){
+  var ls=LAYS.filter(function(l){ return l.fn; }), l=ls[Math.floor(Math.random()*ls.length)], a=ACCS[Math.floor(Math.random()*ACCS.length)];
+  var ts=["kalin","zarif","daktilo"], t=ts[Math.floor(Math.random()*ts.length)];
+  S.lay=l.id; S.acc=a.c; S.tst=t; buildLays(); buildAccs();
+  [].forEach.call(document.querySelectorAll("#tstSeg button"),function(x){ x.setAttribute("aria-pressed",String(x.getAttribute("data-v")===t)); });
+  redraw();
+});
+$("#btnRota").addEventListener("click",function(){
+  var r=null; try{ r=JSON.parse(localStorage.getItem("motogo_son_rota")||"null"); }catch(e){}
+  if(!r||!r.geo||r.geo.length<2){ $("#rotaHint").textContent="Henüz kayıtlı rota yok. Önce Rota İmaj'da iki nokta seçip rotanı oluştur, sonra buraya dön."; toast("Kayıtlı rota bulunamadı."); return; }
+  S.geo=r.geo; if(r.km) $("#fKm").value=String(r.km); if(r.bas&&!/^(Başlangıç|Bitiş|Mola)/.test(r.bas)) $("#fBas").value=r.bas; if(r.bit&&!/^(Başlangıç|Bitiş|Mola)/.test(r.bit)) $("#fBit").value=r.bit;
+  if(r.ad&&!$("#tIn").value.trim()) $("#tIn").value=r.ad.slice(0,40);
+  if(!$("#fTarih").value&&r.t){ try{ $("#fTarih").value=new Date(r.t).toLocaleDateString("tr-TR",{day:"numeric",month:"long",year:"numeric"}); }catch(e){} }
+  $("#rotaHint").textContent="Rota geldi: "+(r.ad||"adsız rota")+(r.km?", "+r.km+" km":"")+". Afişte rota çizgisi görünecek."; toast("Rota getirildi."); redraw();
+});
+buildStyles(); buildLays(); buildAccs(); redraw();
 window.__foto={set:function(k,v){ S[k]=v; redraw(); },S:S};
 })();
 </script>
