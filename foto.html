@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Foto İmaj</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#0b0c0f; --panel:#14161b; --panel2:#1b1e25; --line:#2a2e37; --text:#f2f3f5; --dim:#9aa0ab;
+  --red:#c0392b; --red2:#e5483b; --yel:#f9eb22;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+*,*::before,*::after{box-sizing:inherit;}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%;}
+button,input,select{font-family:inherit;color:inherit;}
+.wrap{max-width:520px;margin:0 auto;padding:12px 14px 60px;}
+h1{margin:4px 0 4px;font-size:21px;line-height:1.2;}
+.sub{margin:0 0 12px;color:var(--dim);font-size:13.5px;}
+.stage{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--bg);padding:8px 0 10px;}
+.stageIn{display:flex;justify-content:center;background:#000;border-radius:12px;padding:6px;}
+canvas{display:block;max-width:100%;max-height:44vh;width:auto;height:auto;border-radius:8px;background:#000;}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px;}
+.card h2{margin:0 0 8px;font-size:15.5px;}
+.lab{display:block;font-size:12.5px;color:var(--dim);font-weight:600;margin:12px 0 5px;}
+.inp{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;color:var(--text);font-size:15px;padding:10px 12px;min-height:46px;}
+.seg{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+.seg button{flex:1;border:0;background:var(--panel2);color:var(--dim);font-weight:700;font-size:13px;padding:10px 4px;min-height:44px;cursor:pointer;}
+.seg button[aria-pressed="true"]{background:var(--red);color:#fff;}
+.btn{border:0;border-radius:12px;background:var(--red);color:#fff;font-weight:800;font-size:15.5px;padding:14px;min-height:50px;cursor:pointer;width:100%;}
+.btn.g{background:var(--panel2);border:1px solid var(--line);color:var(--text);font-weight:700;}
+.btn[disabled]{opacity:.5;cursor:default;}
+.drop{display:block;border:2px dashed var(--line);border-radius:14px;padding:16px 12px;text-align:center;color:var(--dim);cursor:pointer;}
+.drop b{color:var(--text);display:block;font-size:15px;margin-bottom:2px;}
+.styles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.styles button{background:var(--panel2);border:2px solid var(--line);border-radius:12px;padding:10px 4px;min-height:64px;cursor:pointer;color:var(--text);font-weight:700;font-size:12.5px;line-height:1.25;}
+.styles button span{display:block;font-size:22px;margin-bottom:2px;}
+.styles button[aria-pressed="true"]{border-color:var(--red);background:#2a1614;}
+input[type=range]{width:100%;accent-color:var(--red);}
+.hint{color:var(--dim);font-size:12.5px;margin:8px 0 0;}
+.row{display:flex;gap:8px;margin-top:10px;}
+#out{display:none;width:100%;border-radius:10px;margin-top:10px;max-height:none;}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:#222;border:1px solid var(--line);color:#fff;padding:10px 14px;border-radius:12px;font-size:13.5px;opacity:0;pointer-events:none;transition:.25s;max-width:92%;z-index:50;text-align:center;}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Foto İmaj</h1>
+  <p class="sub">Motorunla fotoğrafını yükle, tarzı seç, Instagram'a hazır paylaş. Fotoğrafın telefondan çıkmaz.</p>
+
+  <div class="stage"><div class="stageIn"><canvas id="cv" width="540" height="675" aria-label="Fotoğraf önizlemesi"></canvas></div></div>
+
+  <div class="card">
+    <label class="drop" for="fIn"><b id="dropT">Fotoğraf seç</b>Motorunla çekilmiş bir fotoğraf</label>
+    <input type="file" id="fIn" accept="image/*" hidden>
+    <div class="row"><button type="button" class="btn g" id="btnOrj">Orijinali göster (basılı tut)</button></div>
+  </div>
+
+  <div class="card">
+    <h2>Tarz</h2>
+    <div class="styles" id="styles"></div>
+    <label class="lab" for="kRange">Şiddet: <span id="kv">70</span></label>
+    <input type="range" id="kRange" min="0" max="100" value="70">
+  </div>
+
+  <div class="card">
+    <h2>Biçim</h2>
+    <div class="seg" id="fmtSeg" role="group" aria-label="Biçim">
+      <button type="button" data-v="4:5" aria-pressed="true">Dikey 4:5</button>
+      <button type="button" data-v="9:16" aria-pressed="false">Hikâye 9:16</button>
+      <button type="button" data-v="1:1" aria-pressed="false">Kare 1:1</button>
+    </div>
+    <label class="lab">Fotoğraf yerleşimi</label>
+    <div class="seg" id="fitSeg" role="group" aria-label="Yerleşim">
+      <button type="button" data-v="cover" aria-pressed="true">Kırp, tüm alanı doldur</button>
+      <button type="button" data-v="fit" aria-pressed="false">Sığdır, kırpma</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Yazı</h2>
+    <label class="lab" for="tIn">Başlık</label>
+    <input type="text" id="tIn" class="inp" maxlength="40" placeholder="Örnek: Karadeniz turu">
+    <label class="lab" for="sIn">Alt yazı</label>
+    <input type="text" id="sIn" class="inp" maxlength="50" placeholder="Örnek: 1.240 km · 6 gün">
+    <label class="lab" for="imza">İmza</label>
+    <input type="text" id="imza" class="inp" maxlength="30" placeholder="@kullaniciadi">
+    <label class="lab">Yazının yeri</label>
+    <div class="seg" id="posSeg" role="group" aria-label="Yazının yeri">
+      <button type="button" data-v="alt" aria-pressed="true">Alt</button>
+      <button type="button" data-v="orta" aria-pressed="false">Orta</button>
+      <button type="button" data-v="ust" aria-pressed="false">Üst</button>
+    </div>
+    <label class="lab">Yazı stili</label>
+    <div class="seg" id="tstSeg" role="group" aria-label="Yazı stili">
+      <button type="button" data-v="kalin" aria-pressed="true">Kalın</button>
+      <button type="button" data-v="zarif" aria-pressed="false">Zarif</button>
+      <button type="button" data-v="daktilo" aria-pressed="false">Daktilo</button>
+    </div>
+    <label class="lab">Yazı rengi</label>
+    <div class="seg" id="colSeg" role="group" aria-label="Yazı rengi">
+      <button type="button" data-v="beyaz" aria-pressed="true">Beyaz</button>
+      <button type="button" data-v="sari" aria-pressed="false">Sarı</button>
+      <button type="button" data-v="siyah" aria-pressed="false">Siyah</button>
+    </div>
+    <label class="lab">Çerçeve</label>
+    <div class="seg" id="frmSeg" role="group" aria-label="Çerçeve">
+      <button type="button" data-v="yok" aria-pressed="true">Yok</button>
+      <button type="button" data-v="ince" aria-pressed="false">İnce</button>
+      <button type="button" data-v="polaroid" aria-pressed="false">Polaroid</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <button type="button" class="btn" id="btnInd">Fotoğrafı hazırla ve indir</button>
+    <div class="row"><button type="button" class="btn g" id="btnShare">Paylaş (Instagram, WhatsApp)</button></div>
+    <img id="out" alt="Hazır fotoğraf">
+    <p class="hint" id="outHint" style="display:none">İndirme açılmazsa fotoğrafa basılı tutup "Fotoğraflara ekle" de.</p>
+    <p class="hint">Bu uygulama fotoğrafın atmosferini değiştirir: renk, ışık, sis ve karartma. Motoru başka bir yere taşımaz.</p>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+var $=function(s){return document.querySelector(s);};
+var DIMS={"4:5":[1080,1350],"9:16":[1080,1920],"1:1":[1080,1080]};
+var S={img:null,style:"dag",k:0.7,fmt:"4:5",fit:"cover",pos:"alt",tst:"kalin",col:"beyaz",frm:"yok",orig:false,out:null};
+
+/* ---------- Yardımcılar ---------- */
+function rng(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0; var t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function hexA(h,a){ var n=parseInt(h.slice(1),16); return "rgba("+(n>>16&255)+","+(n>>8&255)+","+(n&255)+","+a+")"; }
+function blend(c,mode,a,fill,w,h){ c.save(); c.globalCompositeOperation=mode; c.globalAlpha=Math.max(0,Math.min(1,a)); c.fillStyle=fill; c.fillRect(0,0,w,h); c.restore(); }
+function vgrad(c,w,h,y0,y1,c0,c1,mode,a){ var g=c.createLinearGradient(0,h*y0,0,h*y1); g.addColorStop(0,c0); g.addColorStop(1,c1); blend(c,mode,a,g,w,h); }
+function radial(c,w,h,x,y,r,c0,c1,mode,a){ var g=c.createRadialGradient(w*x,h*y,0,w*x,h*y,r*Math.max(w,h)); g.addColorStop(0,c0); g.addColorStop(1,c1); blend(c,mode,a,g,w,h); }
+function vignette(c,w,h,a){ var g=c.createRadialGradient(w/2,h/2,Math.min(w,h)*0.35,w/2,h/2,Math.max(w,h)*0.78); g.addColorStop(0,"rgba(0,0,0,0)"); g.addColorStop(1,"rgba(0,0,0,"+Math.max(0,Math.min(1,a))+")"); blend(c,"source-over",1,g,w,h); }
+function contrast(c,w,h,a){ c.save(); c.globalCompositeOperation="overlay"; c.globalAlpha=Math.max(0,Math.min(1,a)); c.drawImage(c.canvas,0,0,w,h); c.restore(); }
+function desat(c,w,h,a){ blend(c,"saturation",a,"#808080",w,h); }
+function vivid(c,w,h,a){ blend(c,"saturation",a,"#ff2a00",w,h); }
+var noise=null;
+function grain(c,w,h,a){
+  if(!noise){ noise=document.createElement("canvas"); noise.width=noise.height=220; var n=noise.getContext("2d"), id=n.createImageData(220,220);
+    for(var i=0;i<id.data.length;i+=4){ var v=128+(Math.random()*2-1)*90; id.data[i]=id.data[i+1]=id.data[i+2]=v; id.data[i+3]=255; } n.putImageData(id,0,0); }
+  c.save(); c.globalCompositeOperation="overlay"; c.globalAlpha=Math.max(0,Math.min(1,a)); c.fillStyle=c.createPattern(noise,"repeat"); c.fillRect(0,0,w,h); c.restore();
+}
+function bokeh(c,w,h,a){
+  var r=rng(11), cols=["#ff4fa3","#3fd0ff","#ffd24a","#7a5cff"];
+  c.save(); c.globalCompositeOperation="screen";
+  for(var i=0;i<26;i++){ var x=r()*w, y=h*(0.04+r()*0.58), rad=(0.012+r()*0.05)*w, col=cols[i%cols.length];
+    var g=c.createRadialGradient(x,y,0,x,y,rad); g.addColorStop(0,hexA(col,0.7*a)); g.addColorStop(0.6,hexA(col,0.25*a)); g.addColorStop(1,hexA(col,0));
+    c.fillStyle=g; c.beginPath(); c.arc(x,y,rad,0,Math.PI*2); c.fill(); }
+  c.restore();
+}
+
+/* ---------- Tarzlar ---------- */
+function dag(c,w,h,k){
+  blend(c,"soft-light",0.55*k,"#3f86b5",w,h);
+  blend(c,"overlay",0.22*k,"#173a52",w,h);
+  vgrad(c,w,h,0,0.5,"#8fc3ff","rgba(143,195,255,0)","soft-light",0.45*k);
+  vgrad(c,w,h,0.55,1,"rgba(225,238,245,0)","rgba(225,238,245,1)","source-over",0.30*k);
+  desat(c,w,h,0.18*k); contrast(c,w,h,0.30*k); vignette(c,w,h,0.40*k); grain(c,w,h,0.10*k);
+}
+function sehir(c,w,h,k){
+  blend(c,"multiply",0.38*k,"#232a55",w,h);
+  radial(c,w,h,0.2,0.85,0.7,"rgba(255,45,149,.9)","rgba(255,45,149,0)","soft-light",0.6*k);
+  radial(c,w,h,0.85,0.15,0.6,"rgba(0,200,255,.9)","rgba(0,200,255,0)","soft-light",0.6*k);
+  bokeh(c,w,h,0.9*k); vivid(c,w,h,0.18*k); contrast(c,w,h,0.40*k); vignette(c,w,h,0.50*k); grain(c,w,h,0.12*k);
+}
+function gun(c,w,h,k){
+  blend(c,"soft-light",0.6*k,"#ff7a2f",w,h);
+  vgrad(c,w,h,0,0.6,"#ff9a3c","rgba(255,154,60,0)","overlay",0.45*k);
+  radial(c,w,h,0.75,0.38,0.55,"rgba(255,200,110,.95)","rgba(255,200,110,0)","screen",0.55*k);
+  vgrad(c,w,h,0,0.6,"#ff8a3d","rgba(255,138,61,0)","color",0.34*k);
+  blend(c,"multiply",0.12*k,"#ffb98a",w,h);
+  vivid(c,w,h,0.12*k); contrast(c,w,h,0.25*k); vignette(c,w,h,0.35*k); grain(c,w,h,0.08*k);
+}
+function deniz(c,w,h,k){
+  blend(c,"soft-light",0.42*k,"#29b6ea",w,h);
+  vgrad(c,w,h,0.45,1,"rgba(191,238,255,0)","#bfeeff","screen",0.22*k);
+  radial(c,w,h,0.85,0.12,0.5,"rgba(255,244,214,.95)","rgba(255,244,214,0)","screen",0.5*k);
+  vivid(c,w,h,0.2*k); contrast(c,w,h,0.22*k); vignette(c,w,h,0.22*k); grain(c,w,h,0.06*k);
+}
+function patika(c,w,h,k){
+  blend(c,"soft-light",0.42*k,"#6f8f3c",w,h);
+  blend(c,"color",0.10*k,"#8a6b3a",w,h);
+  vgrad(c,w,h,0.55,1,"rgba(216,201,164,0)","#d8c9a4","source-over",0.20*k);
+  desat(c,w,h,0.12*k); contrast(c,w,h,0.30*k); vignette(c,w,h,0.45*k); grain(c,w,h,0.14*k);
+}
+function sinema(c,w,h,k){
+  blend(c,"soft-light",0.38*k,"#0aa0b0",w,h);
+  vgrad(c,w,h,0.35,1,"rgba(255,138,61,0)","#ff8a3d","soft-light",0.40*k);
+  contrast(c,w,h,0.45*k); desat(c,w,h,0.10*k); vignette(c,w,h,0.45*k); grain(c,w,h,0.10*k);
+  var bar=Math.round(h*0.075); c.fillStyle="rgba(0,0,0,"+Math.min(1,k*1.4)+")"; c.fillRect(0,0,w,bar); c.fillRect(0,h-bar,w,bar);
+}
+var STYLES=[
+  {id:"orj",ad:"Orijinal",ic:"🖼️",fn:null},
+  {id:"dag",ad:"Dağ",ic:"⛰️",fn:dag},
+  {id:"sehir",ad:"Şehir gecesi",ic:"🌃",fn:sehir},
+  {id:"gun",ad:"Gün batımı",ic:"🌅",fn:gun},
+  {id:"deniz",ad:"Deniz kenarı",ic:"🌊",fn:deniz},
+  {id:"patika",ad:"Patika",ic:"🌲",fn:patika},
+  {id:"sinema",ad:"Sinematik",ic:"🎬",fn:sinema}
+];
+
+/* ---------- Çizim ---------- */
+function drawBase(c,w,h){
+  var im=S.img;
+  if(!im){
+    var g=c.createLinearGradient(0,0,w,h); g.addColorStop(0,"#1b1e25"); g.addColorStop(1,"#2a2e37"); c.fillStyle=g; c.fillRect(0,0,w,h);
+    c.fillStyle="rgba(255,255,255,.75)"; c.textAlign="center"; c.textBaseline="middle"; c.font="700 "+(w*0.06)+"px -apple-system,Segoe UI,Arial,sans-serif";
+    c.fillText("Fotoğraf seç",w/2,h/2-w*0.03); c.font="500 "+(w*0.036)+"px -apple-system,Segoe UI,Arial,sans-serif"; c.fillStyle="rgba(255,255,255,.5)";
+    c.fillText("Motorunla çekilmiş bir fotoğraf yükle",w/2,h/2+w*0.05); return;
+  }
+  var iw=im.width, ih=im.height, sc;
+  if(S.fit==="cover"){
+    sc=Math.max(w/iw,h/ih); c.drawImage(im,(w-iw*sc)/2,(h-ih*sc)/2,iw*sc,ih*sc);
+  } else {
+    var sm=document.createElement("canvas"), sw=Math.max(8,Math.round(w/24)), sh=Math.max(8,Math.round(h/24)); sm.width=sw; sm.height=sh;
+    var sx=sm.getContext("2d"), s2=Math.max(sw/iw,sh/ih); sx.drawImage(im,(sw-iw*s2)/2,(sh-ih*s2)/2,iw*s2,ih*s2);
+    c.imageSmoothingEnabled=true; c.drawImage(sm,0,0,w,h); c.fillStyle="rgba(0,0,0,.35)"; c.fillRect(0,0,w,h);
+    sc=Math.min(w/iw,h/ih); c.drawImage(im,(w-iw*sc)/2,(h-ih*sc)/2,iw*sc,ih*sc);
+  }
+}
+function wrapLines(c,text,maxW){
+  var words=text.split(/\s+/), lines=[], cur="";
+  words.forEach(function(wd){ var t=cur?cur+" "+wd:wd; if(c.measureText(t).width>maxW&&cur){ lines.push(cur); cur=wd; } else cur=t; });
+  if(cur) lines.push(cur); return lines.slice(0,3);
+}
+function fontFor(px,bold){
+  if(S.tst==="zarif") return "italic 600 "+px+"px Georgia,'Times New Roman',serif";
+  if(S.tst==="daktilo") return "700 "+px+"px 'Courier New',Courier,monospace";
+  return "900 "+px+"px 'Arial Black',Impact,-apple-system,'Segoe UI',Arial,sans-serif";
+}
+function render(cv,W,H){
+  cv.width=W; cv.height=H;
+  var c=cv.getContext("2d"), s=W/1080, pol=S.frm==="polaroid";
+  var m=pol?W*0.06:0, px=m, py=m, pw=W-2*m, ph=pol?H-m-W*0.22:H;
+  c.fillStyle=pol?"#f4efe6":"#000"; c.fillRect(0,0,W,H);
+  var lay=document.createElement("canvas"); lay.width=Math.round(pw); lay.height=Math.round(ph);
+  var lc=lay.getContext("2d"), lw=lay.width, lh=lay.height;
+  drawBase(lc,lw,lh);
+  var st=STYLES.filter(function(x){ return x.id===S.style; })[0];
+  if(S.img&&!S.orig&&st&&st.fn) st.fn(lc,lw,lh,S.k);
+  c.drawImage(lay,px,py,pw,ph);
+
+  var title=$("#tIn").value.trim(), sub=$("#sIn").value.trim(), sig=$("#imza").value.trim();
+  var colMap={beyaz:"#ffffff",sari:"#f9eb22",siyah:"#111111"}, col=colMap[S.col];
+  if(pol&&S.col==="beyaz") col="#222222";
+  var maxW=(pol?pw:W)*0.84, tPx=Math.round(W*0.074), sPx=Math.round(W*0.038);
+  c.textAlign="center"; c.textBaseline="alphabetic";
+  var tLines=[], sLines=[];
+  if(title){ c.font=fontFor(tPx); tLines=wrapLines(c,S.tst==="kalin"?title.toUpperCase():title,maxW); }
+  if(sub){ c.font=(S.tst==="daktilo"?"700 ":"600 ")+sPx+"px "+(S.tst==="zarif"?"Georgia,serif":(S.tst==="daktilo"?"'Courier New',monospace":"-apple-system,'Segoe UI',Arial,sans-serif")); sLines=wrapLines(c,sub,maxW); }
+  var lineT=tPx*1.12, lineS=sPx*1.35, blockH=tLines.length*lineT+(sLines.length?sPx*0.5+sLines.length*lineS:0);
+  if(tLines.length||sLines.length){
+    var top;
+    if(pol){ top=py+ph+(H-py-ph-blockH)/2+tPx*0.9; }
+    else{
+      var padB=H*0.075+(S.style==="sinema"?H*0.075:0);
+      if(S.pos==="alt") top=H-padB-blockH+tPx;
+      else if(S.pos==="ust") top=H*0.075+(S.style==="sinema"?H*0.075:0)+tPx;
+      else top=(H-blockH)/2+tPx;
+      var g, y0=S.pos==="ust"?0:(S.pos==="orta"?H*0.3:H*0.55), y1=S.pos==="ust"?H*0.4:(S.pos==="orta"?H*0.7:H);
+      g=c.createLinearGradient(0,y0,0,y1);
+      if(S.pos==="alt"){ g.addColorStop(0,"rgba(0,0,0,0)"); g.addColorStop(1,"rgba(0,0,0,"+(S.col==="siyah"?0:0.55)+")"); }
+      else if(S.pos==="ust"){ g.addColorStop(0,"rgba(0,0,0,"+(S.col==="siyah"?0:0.55)+")"); g.addColorStop(1,"rgba(0,0,0,0)"); }
+      else { g.addColorStop(0,"rgba(0,0,0,0)"); g.addColorStop(0.5,"rgba(0,0,0,"+(S.col==="siyah"?0:0.4)+")"); g.addColorStop(1,"rgba(0,0,0,0)"); }
+      c.fillStyle=g; c.fillRect(0,y0,W,y1-y0);
+    }
+    var cx=W/2, yy=top;
+    if(!pol){ c.shadowColor="rgba(0,0,0,.6)"; c.shadowBlur=14*s; }
+    c.fillStyle=col; c.font=fontFor(tPx);
+    tLines.forEach(function(l){ c.fillText(l,cx,yy); yy+=lineT; });
+    if(sLines.length){
+      yy+=sPx*1.3-lineT; c.font=(S.tst==="daktilo"?"700 ":"600 ")+sPx+"px "+(S.tst==="zarif"?"Georgia,serif":(S.tst==="daktilo"?"'Courier New',monospace":"-apple-system,'Segoe UI',Arial,sans-serif"));
+      c.globalAlpha=0.92; sLines.forEach(function(l){ c.fillText(l,cx,yy); yy+=lineS; }); c.globalAlpha=1;
+    }
+    c.shadowBlur=0;
+  }
+  if(sig){
+    c.font="700 "+Math.round(W*0.03)+"px -apple-system,'Segoe UI',Arial,sans-serif"; c.textAlign="right"; c.textBaseline="bottom";
+    c.fillStyle=pol?"#555":"rgba(255,255,255,.85)"; if(!pol){ c.shadowColor="rgba(0,0,0,.7)"; c.shadowBlur=8*s; }
+    c.fillText(sig,W-(pol?m:W*0.04),H-(pol?m*0.6:H*0.022)); c.shadowBlur=0;
+  }
+  if(S.frm==="ince"){ c.strokeStyle="rgba(255,255,255,.95)"; c.lineWidth=Math.max(2,W*0.012); var i2=W*0.03; c.strokeRect(i2,i2,W-2*i2,H-2*i2); }
+}
+
+var cv=$("#cv");
+function redraw(){ var d=DIMS[S.fmt]; render(cv,540,Math.round(540*d[1]/d[0])); }
+
+/* ---------- Arayüz ---------- */
+function toast(msg){ var el=$("#toast"); el.textContent=msg; el.classList.add("on"); clearTimeout(toast.t); toast.t=setTimeout(function(){ el.classList.remove("on"); },3200); }
+function bindSeg(id,key){
+  var btns=document.querySelectorAll("#"+id+" button");
+  [].forEach.call(btns,function(b){ b.addEventListener("click",function(){
+    S[key]=b.getAttribute("data-v"); [].forEach.call(btns,function(x){ x.setAttribute("aria-pressed",String(x===b)); }); redraw(); }); });
+}
+["fmtSeg:fmt","fitSeg:fit","posSeg:pos","tstSeg:tst","colSeg:col","frmSeg:frm"].forEach(function(p){ var a=p.split(":"); bindSeg(a[0],a[1]); });
+function buildStyles(){
+  var box=$("#styles"); box.innerHTML="";
+  STYLES.forEach(function(st){
+    var b=document.createElement("button"); b.type="button"; b.setAttribute("aria-pressed",String(st.id===S.style));
+    b.innerHTML="<span>"+st.ic+"</span>"+st.ad;
+    b.addEventListener("click",function(){ S.style=st.id; [].forEach.call(box.children,function(x){ x.setAttribute("aria-pressed",String(x===b)); }); redraw(); });
+    box.appendChild(b);
+  });
+}
+$("#kRange").addEventListener("input",function(){ S.k=this.value/100; $("#kv").textContent=this.value; redraw(); });
+["#tIn","#sIn","#imza"].forEach(function(q){ $(q).addEventListener("input",redraw); });
+var orjB=$("#btnOrj");
+["pointerdown","touchstart"].forEach(function(ev){ orjB.addEventListener(ev,function(e){ S.orig=true; redraw(); }); });
+["pointerup","pointerleave","touchend","touchcancel"].forEach(function(ev){ orjB.addEventListener(ev,function(){ if(S.orig){ S.orig=false; redraw(); } }); });
+
+$("#fIn").addEventListener("change",function(e){
+  var f=e.target.files[0]; if(!f) return;
+  var url=URL.createObjectURL(f), im=new Image();
+  im.onload=function(){
+    var mx=2400, sc=Math.min(1,mx/Math.max(im.naturalWidth,im.naturalHeight)), c=document.createElement("canvas");
+    c.width=Math.round(im.naturalWidth*sc); c.height=Math.round(im.naturalHeight*sc); c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+    S.img=c; URL.revokeObjectURL(url); $("#dropT").textContent="Fotoğraf yüklendi. Değiştirmek için dokun."; redraw();
+  };
+  im.onerror=function(){ toast("Bu fotoğraf açılamadı, başka bir fotoğraf dene."); };
+  im.src=url;
+});
+
+function exportBlob(cb){
+  if(!S.img){ toast("Önce bir fotoğraf seç."); return; }
+  var d=DIMS[S.fmt], c=document.createElement("canvas"); render(c,d[0],d[1]);
+  c.toBlob(function(b){ if(!b){ toast("Fotoğraf hazırlanamadı."); return; } window.__fotoSon={w:c.width,h:c.height,size:b.size,type:b.type}; cb(b); },"image/jpeg",0.92);
+}
+function show(b){
+  S.out=new File([b],"foto-imaj.jpg",{type:"image/jpeg"});
+  var u=URL.createObjectURL(b), o=$("#out"); o.src=u; o.style.display="block"; $("#outHint").style.display="block";
+  return u;
+}
+$("#btnInd").addEventListener("click",function(){
+  exportBlob(function(b){
+    var u=show(b), a=document.createElement("a"); a.href=u; a.download="foto-imaj.jpg"; document.body.appendChild(a); a.click(); a.remove();
+    toast("Fotoğraf hazır. İndirme başlamazsa aşağıdaki fotoğrafa basılı tut.");
+  });
+});
+$("#btnShare").addEventListener("click",function(){
+  exportBlob(function(b){
+    show(b);
+    if(navigator.canShare&&navigator.canShare({files:[S.out]})){ navigator.share({files:[S.out],title:"Foto İmaj"}).catch(function(){}); }
+    else toast("Paylaşma bu cihazda açılmadı. Aşağıdaki fotoğrafa basılı tutup kaydet.");
+  });
+});
+
+buildStyles(); redraw();
+window.__foto={set:function(k,v){ S[k]=v; redraw(); },S:S};
+})();
+</script>
+</body>
+</html>
