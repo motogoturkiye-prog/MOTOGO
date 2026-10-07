@@ -838,11 +838,11 @@ svg.leaflet-image-layer.leaflet-interactive path {
     </div>
 
     <div class="panel" id="p2" role="tabpanel" aria-labelledby="t2" hidden>
-      <label class="f" for="photoIn">Fotoğraf ekle</label>
-      <input type="file" id="photoIn" accept="image/*" multiple>
+      <label class="f" for="photoIn">Fotoğraf veya video ekle</label>
+      <input type="file" id="photoIn" accept="image/*,video/*" multiple>
       <p class="hint" id="photoHint" style="margin-top:8px"></p>
       <div class="thumbs" id="thumbs"></div>
-      <div class="row"><button type="button" class="btn" id="btnPhotoClear">Fotoğrafları temizle</button></div>
+      <div class="row"><button type="button" class="btn" id="btnPhotoClear">Fotoğraf ve videoları temizle</button></div>
       <label class="f">Müzik</label>
       <div class="music" id="music"></div>
       <label class="f" for="muzikIn">Kendi müziğim (isteğe bağlı)</label>
@@ -1232,7 +1232,7 @@ function renderMap(fit){
 }
 function updateInfo(){
   var n=wps.length, molas=Math.max(0,n-2), R=V.R, txt;
-  var photoTxt=userPhotos.length?(userPhotos.length+" fotoğraf"):"örnek fotoğraflar";
+  var photoTxt=userPhotos.length?(userPhotos.length+" fotoğraf/video"):"örnek fotoğraflar";
   if(n<2) txt="Rota için haritada en az iki nokta seç.";
   else if(!R) txt="Rota hazırlanıyor...";
   else txt="Mesafe "+totalKm(R)+" km, "+molas+" mola, "+photoTxt+".";
@@ -1279,15 +1279,36 @@ function prepare(){
   if(!R){ V.tl=[]; V.dur=1; return; }
   var tl=[], t=0, n=pts.length;
   tl.push({k:"intro",t0:0,t1:2.4}); t=2.4;
-  tl.push({k:"stop",i:0,t0:t,t1:t+1.4}); t+=1.4;
+  function stopDur(i,d){ var it=userPhotos[i]; if(!it) return d; return it.isVideo?it.dur:3.8; }
+  var sd0=stopDur(0,1.4);
+  tl.push({k:"stop",i:0,t0:t,t1:t+sd0}); t+=sd0;
   for(var i=0;i<n-1;i++){
     var segD=R.wd[i+1]-R.wd[i], dur=1.8+segD*9;
     tl.push({k:"move",i:i,t0:t,t1:t+dur,d0:R.wd[i],d1:R.wd[i+1]}); t+=dur;
-    tl.push({k:"stop",i:i+1,t0:t,t1:t+1.7}); t+=1.7;
+    var sd=stopDur(i+1,1.7);
+    tl.push({k:"stop",i:i+1,t0:t,t1:t+sd}); t+=sd;
   }
   tl.push({k:"outro",t0:t,t1:t+5.5});
   V.tl=tl; V.dur=t+5.5;
   if(V.t>V.dur) V.t=V.dur;
+  saveRoute(R);
+}
+/* Foto İmaj afişi için son rotayı (ad, km, çizgi) bu telefonda sakla */
+function saveRoute(R){
+  try{
+    if(!R||!pts.length) return;
+    // açılıştaki örnek turu kaydetme (kullanıcının kendi rotası değil)
+    if(!gpxGeom&&wps.length===SAMPLE.length&&wps.every(function(w,i){ return w.lat===SAMPLE[i].lat&&w.lon===SAMPLE[i].lon; })) return;
+    var src=geom.length?geom:wps.map(function(w){ return [w.lat,w.lon]; });
+    if(src.length<2) return;
+    var step=Math.max(1,Math.ceil(src.length/160)), geo=[];
+    for(var i=0;i<src.length;i+=step) geo.push([+src[i][0].toFixed(4),+src[i][1].toFixed(4)]);
+    var last=src[src.length-1]; geo.push([+last[0].toFixed(4),+last[1].toFixed(4)]);
+    localStorage.setItem("motogo_son_rota",JSON.stringify({
+      ad:($("#tourName").value||"").trim(), km:totalKm(R), geo:geo,
+      bas:wpName(0), bit:wpName(pts.length-1), t:Date.now()
+    }));
+  }catch(e){}
 }
 function segAt(t){
   for(var i=0;i<V.tl.length;i++){ if(t<V.tl[i].t1) return V.tl[i]; }
@@ -1304,6 +1325,7 @@ function drawVideo(t){
     x.fillText("Önce haritada iki nokta seç",w/2,h/2); return;
   }
   var seg=segAt(t), d=0, wp=0, u=0;
+  pauseVideos(seg);
   if(seg.k==="intro"){ d=0; wp=0; u=(t-seg.t0)/(seg.t1-seg.t0); }
   else if(seg.k==="stop"){ d=R.wd[seg.i]; wp=seg.i; u=(t-seg.t0)/(seg.t1-seg.t0); }
   else if(seg.k==="move"){ u=(t-seg.t0)/(seg.t1-seg.t0); d=seg.d0+(seg.d1-seg.d0)*ease(u); wp=seg.i; }
@@ -1377,9 +1399,47 @@ function drawVideo(t){
   if(seg.k==="intro") drawIntro(u,k,w,h);
   if(seg.k==="outro") drawOutro(u,k,w,h,R);
 }
+function syncVideo(it,tl){
+  var v=it.el, tt=Math.min(Math.max(0,tl),it.dur-0.05);
+  if(V.playing){
+    if(v.paused){ try{ v.currentTime=tt; }catch(e){} var pr=v.play(); if(pr&&pr.catch) pr.catch(function(){}); }
+    else if(Math.abs(v.currentTime-tt)>0.6){ try{ v.currentTime=tt; }catch(e){} }
+  } else {
+    if(!v.paused) v.pause();
+    if(Math.abs(v.currentTime-tt)>0.08){ try{ v.currentTime=tt; }catch(e){} }
+  }
+}
+function pauseVideos(seg){
+  userPhotos.forEach(function(it,i){
+    if(it&&it.isVideo&&!(seg&&seg.k==="stop"&&seg.i===i)&&!it.el.paused) it.el.pause();
+  });
+}
+function drawFull(seg,u,k,w,h,img){
+  var vid=!!img.isVideo, pic=img;
+  if(vid){ syncVideo(img,u*(seg.t1-seg.t0)); pic=(img.el.readyState>=2&&img.el.videoWidth)?img.el:img.poster; }
+  var a=ease(u/0.12)*(1-ease((u-0.9)/0.1));
+  if(a<=0.01) return;
+  var iw=pic.videoWidth||pic.naturalWidth||pic.width, ih=pic.videoHeight||pic.naturalHeight||pic.height; if(!iw||!ih) return;
+  var x=vx; x.save(); x.globalAlpha=a;
+  // arka plan: aynı görüntünün bulanık hali
+  if(!img.__bg){ var bs=vid?img.poster:img, bw=bs.naturalWidth||bs.width, bh=bs.naturalHeight||bs.height, sm=document.createElement("canvas"); sm.width=24; sm.height=24; var sx=sm.getContext("2d"), s2=Math.max(24/bw,24/bh); sx.drawImage(bs,(24-bw*s2)/2,(24-bh*s2)/2,bw*s2,bh*s2); img.__bg=sm; }
+  x.imageSmoothingEnabled=true; x.drawImage(img.__bg,0,0,w,h); x.fillStyle="rgba(0,0,0,.38)"; x.fillRect(0,0,w,h);
+  // görüntü: oranı ekrana yakınsa doldur, değilse sığdır; fotoğrafta yavaş yakınlaşma
+  var ar=iw/ih, car=w/h, sc=(Math.abs(ar/car-1)<0.3)?Math.max(w/iw,h/ih):Math.min(w/iw,h/ih);
+  if(!vid) sc*=1+0.07*u; var dw=iw*sc, dh=ih*sc;
+  x.save(); x.beginPath(); x.rect(0,0,w,h); x.clip();
+  x.drawImage(pic,(w-dw)/2,(h-dh)/2,dw,dh); x.restore();
+  // alt karartma ve mola adı
+  var g=x.createLinearGradient(0,h*0.7,0,h); g.addColorStop(0,"rgba(0,0,0,0)"); g.addColorStop(1,"rgba(0,0,0,.72)");
+  x.fillStyle=g; x.fillRect(0,h*0.7,w,h*0.3);
+  x.textAlign="center"; x.textBaseline="bottom"; x.fillStyle="#fff"; x.font="800 "+(20*k)+"px "+FONT;
+  x.shadowColor="rgba(0,0,0,.85)"; x.shadowBlur=8; x.fillText(wpName(seg.i),w/2,h-22*k); x.shadowBlur=0;
+  x.restore();
+}
 function drawCard(seg,u,k,w,h,cs){
   var img=photoFor(seg.i);
   if(!img) return;
+  if(userPhotos.length){ drawFull(seg,u,k,w,h,img); return; }
   var appear=ease(u*3), leave=ease((u-0.8)/0.2), a=appear*(1-leave);
   if(a<=0.01) return;
   var vert=fmt==="9:16", cw=vert?w*0.7:w*0.36, ch=cw*0.84;
@@ -1449,7 +1509,7 @@ function setPlaying(p){
     V.playing=true; lastTs=performance.now(); playBig.hidden=true; btnPlay.textContent="Duraklat";
     Music.play(music); raf=requestAnimationFrame(loop);
   } else {
-    V.playing=false; btnPlay.textContent="Oynat"; Music.stop(); if(raf){ cancelAnimationFrame(raf); raf=0; }
+    V.playing=false; btnPlay.textContent="Oynat"; Music.stop(); pauseVideos(null); if(raf){ cancelAnimationFrame(raf); raf=0; }
   }
 }
 function loop(ts){
@@ -1536,6 +1596,7 @@ function tab(n){
 [1,2,3].forEach(function(i){ $("#t"+i).addEventListener("click",function(){ tab(i); }); });
 
 $("#btnUndo").addEventListener("click",function(){ if(gpxGeom){ toast("GPX rotası yüklü, Temizle'ye bas."); return; } wps.pop(); kmOverride=null; changed(false); });
+$("#tourName").addEventListener("input",function(){ if(V.R) saveRoute(V.R); });
 $("#btnClear").addEventListener("click",function(){ wps=[]; gpxGeom=null; geom=[]; routeNote=""; pts=[]; V.R=null; kmOverride=null; V.t=0; seek.value=0; setPlaying(false); changed(false); });
 function loadSample(){
   gpxGeom=null; wps=SAMPLE.map(function(p){ return {lat:p.lat,lon:p.lon,custom:p.custom}; });
@@ -1561,28 +1622,51 @@ $("#btnSample").addEventListener("click",function(){ loadSample(); toast("Örnek
 
 function renderThumbs(){
   var box=$("#thumbs"); box.innerHTML="";
-  userPhotos.forEach(function(im){ var c=document.createElement("img"); c.src=im.src; c.alt="Eklenen fotoğraf"; box.appendChild(c); });
+  userPhotos.forEach(function(im){ var c=document.createElement("img"); c.src=im.src; c.alt=im.isVideo?"Eklenen video":"Eklenen fotoğraf"; box.appendChild(c); });
   $("#photoHint").textContent=userPhotos.length
-    ? "Fotoğraflar sırayla başlangıç, molalar ve bitişe yerleşir."
-    : "Fotoğraf eklemezsen videoda örnek fotoğraflar görünür.";
+    ? "Fotoğraf ve videolar sırayla başlangıç, molalar ve bitişe yerleşir. Videonun sesi kullanılmaz, ilk 5 saniyesi gösterilir."
+    : "Hiçbir şey eklemezsen videoda örnek fotoğraflar görünür. Fotoğrafın yerine kısa video da koyabilirsin (en fazla 3 video).";
+}
+function loadVideoFile(f,done){
+  var url=URL.createObjectURL(f), v=document.createElement("video"), fin=false;
+  v.muted=true; v.defaultMuted=true; v.playsInline=true; v.setAttribute("playsinline",""); v.setAttribute("muted",""); v.preload="auto"; v.loop=false;
+  function ok(){
+    if(fin) return; fin=true; var vw=v.videoWidth, vh=v.videoHeight; if(!vw||!vh){ done(null); return; }
+    var pc=document.createElement("canvas"), sc=Math.min(1,640/Math.max(vw,vh)); pc.width=Math.round(vw*sc); pc.height=Math.round(vh*sc);
+    var px=pc.getContext("2d"); px.drawImage(v,0,0,pc.width,pc.height);
+    var tc=document.createElement("canvas"); tc.width=pc.width; tc.height=pc.height; var tx=tc.getContext("2d"); tx.drawImage(pc,0,0);
+    tx.fillStyle="rgba(0,0,0,.45)"; tx.beginPath(); tx.arc(tc.width/2,tc.height/2,Math.min(tc.width,tc.height)*0.2,0,Math.PI*2); tx.fill();
+    tx.fillStyle="#fff"; var r=Math.min(tc.width,tc.height)*0.1; tx.beginPath(); tx.moveTo(tc.width/2-r*0.6,tc.height/2-r); tx.lineTo(tc.width/2+r,tc.height/2); tx.lineTo(tc.width/2-r*0.6,tc.height/2+r); tx.closePath(); tx.fill();
+    done({isVideo:true,el:v,poster:pc,dur:Math.min(5,Math.max(2,v.duration||3)),src:tc.toDataURL("image/jpeg",0.7),width:vw,height:vh});
+  }
+  v.onloadeddata=function(){ try{ v.currentTime=0.05; }catch(e){ ok(); } };
+  v.onseeked=function(){ ok(); };
+  v.onerror=function(){ if(!fin){ fin=true; done(null); } };
+  setTimeout(function(){ if(!fin){ if(v.videoWidth) ok(); else { fin=true; done(null); } } },9000);
+  v.src=url; v.load();
 }
 $("#photoIn").addEventListener("change",function(e){
-  var files=[].slice.call(e.target.files||[],0,8), loaded=0, imgs=[];
+  var files=[].slice.call(e.target.files||[],0,8), loaded=0, imgs=[], nVid=0, skipped=0;
   if(!files.length) return;
+  function one(){ loaded++; if(loaded===files.length){ userPhotos=imgs.filter(Boolean); renderThumbs(); changed(); if(skipped) toast("En fazla 3 video eklenir, fazlası alınmadı."); } }
   files.forEach(function(f,i){
+    if(/^video\//.test(f.type)||/\.(mp4|mov|m4v|webm)$/i.test(f.name||"")){
+      if(nVid>=3){ skipped++; one(); return; } nVid++;
+      loadVideoFile(f,function(it){ imgs[i]=it; if(!it) toast("Bir video açılamadı, atlandı."); one(); });
+      return;
+    }
     var fr=new FileReader();
     fr.onload=function(){
       var im=new Image();
-      im.onload=function(){
-        imgs[i]=im; loaded++;
-        if(loaded===files.length){ userPhotos=imgs.filter(Boolean); renderThumbs(); changed(); }
-      };
+      im.onload=function(){ imgs[i]=im; one(); };
+      im.onerror=function(){ imgs[i]=null; one(); };
       im.src=fr.result;
     };
+    fr.onerror=function(){ one(); };
     fr.readAsDataURL(f);
   });
 });
-$("#btnPhotoClear").addEventListener("click",function(){ userPhotos=[]; $("#photoIn").value=""; renderThumbs(); changed(); });
+$("#btnPhotoClear").addEventListener("click",function(){ pauseVideos(null); userPhotos=[]; $("#photoIn").value=""; renderThumbs(); changed(); });
 
 var mbox=$("#music");
 Object.keys(Music.TRACKS).forEach(function(key){
@@ -1628,7 +1712,7 @@ function boot(){
   heights(7); paintTerrain(7);
   initMap(); renderThumbs(); renderChips();
   posterNext=true; loadSample(); setFmt("16:9");
-  window.__rota={R:function(){ return V.R; },mapReal:function(){ return MAPREAL; },frame:function(){ return FR; },wps:function(){ return wps.length; },note:function(){ return routeNote; },TW:function(){ return TW; },TH:function(){ return TH; }};
+  window.__rota={R:function(){ return V.R; },mapReal:function(){ return MAPREAL; },frame:function(){ return FR; },wps:function(){ return wps.length; },note:function(){ return routeNote; },TW:function(){ return TW; },TH:function(){ return TH; },tl:function(){ return V.tl; },dur:function(){ return V.dur; },seekTo:function(t){ V.t=t; drawVideo(t); },vidTimes:function(){ return userPhotos.filter(function(i){ return i.isVideo; }).map(function(i){ return +i.el.currentTime.toFixed(2); }); },vidPlaying:function(){ return userPhotos.some(function(i){ return i.isVideo&&!i.el.paused; }); }};
 }
 boot();
 })();
