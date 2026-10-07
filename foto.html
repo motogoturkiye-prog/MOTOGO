@@ -75,6 +75,26 @@ textarea.ta{resize:vertical;min-height:70px;font-family:inherit;}
 .styles.tpls button span{display:inline;font-size:20px;margin:0;}
 .fields .inp{margin-bottom:0;}
 [hidden]{display:none !important;}
+
+.picker{display:flex;gap:10px;overflow-x:auto;padding:4px 2px 10px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;}
+.picker .tpl{flex:0 0 112px;scroll-snap-align:start;background:var(--panel2);border:2px solid var(--line);border-radius:12px;padding:6px;cursor:pointer;color:var(--text);font-size:12px;font-weight:700;line-height:1.2;display:flex;flex-direction:column;gap:6px;align-items:center;}
+.picker .tpl img{width:100%;height:auto;border-radius:8px;display:block;background:#000;}
+.picker .tpl[aria-pressed="true"]{border-color:var(--red);background:#2a1614;}
+body.fsOpen{overflow:hidden;}
+#fs{position:fixed;inset:0;height:100%;z-index:100;background:#050506;display:flex;flex-direction:column;}
+#fs[hidden]{display:none !important;}
+.fsTop{display:flex;gap:6px;padding:calc(8px + env(safe-area-inset-top,0px)) 8px 8px;background:#14161b;border-bottom:1px solid var(--line);}
+.fsB{flex:1;min-height:46px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-weight:800;font-size:13.5px;cursor:pointer;padding:0 6px;}
+.fsB.pri{background:var(--red);border-color:var(--red);color:#fff;flex:1.2;}
+.fsB:disabled{opacity:.4;}
+#fsStage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#000;}
+canvas.fsCv{max-width:none !important;max-height:none !important;}
+.fsTools{flex:0 0 auto;height:38vh;min-height:190px;overflow-y:auto;background:#14161b;border-top:1px solid var(--line);padding:10px 12px calc(12px + env(safe-area-inset-bottom,0px));}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-height:64%;overflow-y:auto;background:#14161b;border-top:3px solid var(--red);padding:12px 12px calc(14px + env(safe-area-inset-bottom,0px));z-index:5;box-shadow:0 -10px 30px rgba(0,0,0,.6);}
+.sheet[hidden]{display:none !important;}
+.sheetHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:15px;}
+.addgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.addgrid button{min-height:52px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-weight:800;font-size:14px;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -87,6 +107,7 @@ textarea.ta{resize:vertical;min-height:70px;font-family:inherit;}
     <div class="edbar on" id="edbar">
       <button type="button" id="btnUndo" disabled>↶ Geri al</button>
       <button type="button" id="btnRedo" disabled>↷ İleri al</button>
+      <button type="button" id="btnFs">⛶ Tam ekran</button>
       <button type="button" id="btnDesel">Seçimi bırak</button>
     </div>
   </div>
@@ -108,13 +129,13 @@ textarea.ta{resize:vertical;min-height:70px;font-family:inherit;}
   <div id="modeEdit">
     <div class="card">
       <h2>Şablon</h2>
-      <div class="styles tpls" id="tpls"></div>
+      <div class="picker" id="tpls"></div>
       <label class="lab">Biçim</label>
       <div class="seg" id="efmtSeg" role="group" aria-label="Biçim">
         <button type="button" data-v="4:5" aria-pressed="true">Dikey 4:5</button>
         <button type="button" data-v="9:16" aria-pressed="false">Hikâye 9:16</button>
       </div>
-      <p class="hint">Yazıya, fotoğrafa ya da şekle dokunup seç. Sürükleyerek taşı, köşedeki kareyle büyüt, üstteki daireyle döndür. İki parmakla da büyütüp döndürebilirsin.</p>
+      <p class="hint">20 şablondan birini seç (yana kaydır). Tuvale dokununca <b>tam ekran düzenleme</b> açılır: yazıya dokunup seç, sürükleyerek taşı, köşedeki kareyle büyüt, üstteki daireyle döndür. Yazıya iki kez dokunursan yazı kutusu açılır.</p>
     </div>
 
     <div class="card">
@@ -212,6 +233,30 @@ textarea.ta{resize:vertical;min-height:70px;font-family:inherit;}
     <img id="out" alt="Hazır fotoğraf">
     <p class="hint" id="outHint" style="display:none">İndirme açılmazsa fotoğrafa basılı tutup "Fotoğraflara ekle" de.</p>
     <p class="hint">Bu uygulama fotoğrafın atmosferini değiştirir: renk, ışık, sis ve karartma. Motoru başka bir yere taşımaz.</p>
+  </div>
+</div>
+<div id="fs" hidden>
+  <div class="fsTop">
+    <button type="button" id="fsDone" class="fsB pri">✓ Bitti</button>
+    <button type="button" id="fsUndo" class="fsB" disabled aria-label="Geri al">↶</button>
+    <button type="button" id="fsRedo" class="fsB" disabled aria-label="İleri al">↷</button>
+    <button type="button" id="fsAddBtn" class="fsB">＋ Ekle</button>
+    <button type="button" id="fsLayBtn" class="fsB">☰ Katmanlar</button>
+  </div>
+  <div id="fsStage"></div>
+  <div id="fsTools" class="fsTools"></div>
+  <div id="fsAdd" class="sheet" hidden>
+    <div class="sheetHead"><b>Ne eklemek istersin?</b></div>
+    <div class="addgrid">
+      <button type="button" data-add="text">🅰️ Yazı</button><button type="button" data-add="rect">▭ Dikdörtgen</button>
+      <button type="button" data-add="ellipse">⬤ Daire</button><button type="button" data-add="para">▱ Şerit</button>
+      <button type="button" data-add="line">─ Çizgi</button><button type="button" data-add="route">🗺️ Rota</button>
+    </div>
+  </div>
+  <div id="fsLayers" class="sheet" hidden>
+    <div class="sheetHead"><b>Katmanlar</b><button type="button" id="fsLayClose" class="lbtn" aria-label="Kapat">✕</button></div>
+    <p class="hint" style="margin:0 0 8px">Üstteki katman en önde görünür. Göz düğmesiyle gizle, oklarla sırasını değiştir.</p>
+    <div id="fsLayersList"></div>
   </div>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -647,19 +692,23 @@ function pinApply(o){
   else if(p.m==="lb"){ o.x=p.left+o.w/2; o.y=p.bottom-o.h/2; }
   else if(p.m==="rb"){ o.x=p.right-o.w/2; o.y=p.bottom-o.h/2; }
   else if(p.m==="rt"){ o.x=p.right-o.w/2; o.y=p.top+o.h/2; }
-  else if(p.m==="below"){ r=byId(p.ref); if(r){ txLayout(SC,r); o.y=r.y+r.h/2+p.gap+o.h/2; o.x=p.right!=null?p.right-o.w/2:(p.left!=null?p.left+o.w/2:r.x); } }
-  else if(p.m==="above"){ r=byId(p.ref); if(r){ txLayout(SC,r); o.y=r.y-r.h/2-p.gap-o.h/2; o.x=p.right!=null?p.right-o.w/2:(p.left!=null?p.left+o.w/2:r.x); } }
+  else if(p.m==="below"){ r=byId(p.ref); if(r&&r.t==="text"){ txLayout(SC,r); o.y=r.y+r.h/2+p.gap+o.h/2; o.x=p.right!=null?p.right-o.w/2:(p.left!=null?p.left+o.w/2:r.x); } }
+  else if(p.m==="above"){ r=byId(p.ref); if(r&&r.t==="text"){ txLayout(SC,r); o.y=r.y-r.h/2-p.gap-o.h/2; o.x=p.right!=null?p.right-o.w/2:(p.left!=null?p.left+o.w/2:r.x); } }
 }
 function pinsAll(){ E.objs.forEach(pinApply); E.objs.forEach(pinApply); }
 function bindVal(n){
-  var d=D();
+  var d=E.thumb?{title:"",sub:"",km:"",tarih:"",motor:"",bas:"",bit:""}:D(), im=E.thumb?"":$("#imza").value.trim();
   if(n==="title") return d.title||PHD.title;
   if(n==="sub") return d.sub||PHD.sub;
   if(n==="km") return kmTxt(d)||PHD.km;
   if(n==="tarih") return d.tarih||PHD.tarih;
   if(n==="motor") return d.motor||PHD.motor;
   if(n==="rota") return (d.bas||PHD.bas)+"  \u2013  "+(d.bit||PHD.bit);
-  if(n==="imza") return $("#imza").value.trim()||PHD.imza;
+  if(n==="imza") return im||PHD.imza;
+  if(n==="lbas") return "BAŞLANGIÇ   "+(d.bas||PHD.bas);
+  if(n==="lbit") return "VARIŞ   "+(d.bit||PHD.bit);
+  if(n==="lkm") return "MESAFE   "+(kmTxt(d)||PHD.km);
+  if(n==="ltarih") return "TARİH   "+(d.tarih||PHD.tarih);
   return "";
 }
 function refreshBinds(){
@@ -684,6 +733,7 @@ function shDraw(c,o){
     for(i=0;i<=w;i+=o.gap){ c.moveTo(-w/2+i,-h/2); c.lineTo(-w/2+i,h/2); }
     for(i=0;i<=h;i+=o.gap){ c.moveTo(-w/2,-h/2+i); c.lineTo(w/2,-h/2+i); } c.stroke();
   }
+  else if(k==="frame"){ c.strokeStyle=o.stroke; c.lineWidth=o.lw; c.strokeRect(-w/2+o.lw/2,-h/2+o.lw/2,w-o.lw,h-o.lw); }
   else if(k==="grad"){ var g=c.createLinearGradient(0,-h/2,0,h/2); g.addColorStop(0,o.c0); g.addColorStop(1,o.c1); c.fillStyle=g; c.fillRect(-w/2,-h/2,w,h); }
 }
 function phPath(c,o){
@@ -711,7 +761,11 @@ function phLayer(o){
 }
 function phDraw(c,o,exp){
   c.save(); phPath(c,o); c.clip();
-  if(S.img) c.drawImage(phLayer(o),-o.w/2,-o.h/2,o.w,o.h);
+  if(S.img&&!E.thumb) c.drawImage(phLayer(o),-o.w/2,-o.h/2,o.w,o.h);
+  else if(E.thumb){
+    var gg=c.createLinearGradient(0,-o.h/2,0,o.h/2); gg.addColorStop(0,"#6f9bc8"); gg.addColorStop(1,"#27364d"); c.fillStyle=gg; c.fillRect(-o.w/2,-o.h/2,o.w,o.h);
+    c.fillStyle="rgba(20,30,48,.6)"; c.beginPath(); c.moveTo(-o.w/2,o.h/2); c.lineTo(-o.w*0.25,o.h*0.05); c.lineTo(0,o.h*0.3); c.lineTo(o.w*0.22,-o.h*0.05); c.lineTo(o.w/2,o.h*0.28); c.lineTo(o.w/2,o.h/2); c.closePath(); c.fill();
+  }
   else{
     var g=c.createLinearGradient(-o.w/2,-o.h/2,o.w/2,o.h/2); g.addColorStop(0,"#23262e"); g.addColorStop(1,"#3b4050"); c.fillStyle=g; c.fillRect(-o.w/2,-o.h/2,o.w,o.h);
     if(!exp){
@@ -722,7 +776,8 @@ function phDraw(c,o,exp){
   c.restore();
 }
 function rtDraw(c,o,exp){
-  if(S.geo&&S.geo.length>1){ drawRoute(c,S.geo,-o.w/2,-o.h/2,o.w,o.h,o.color,o.lw,o.glow||0); }
+  var gz=E.thumb?SAMPLE_GEO:S.geo;
+  if(gz&&gz.length>1){ drawRoute(c,gz,-o.w/2,-o.h/2,o.w,o.h,o.color,o.lw,o.glow||0); }
   else if(!exp){
     c.save(); c.setLineDash([14,10]); c.strokeStyle="rgba(255,255,255,.55)"; c.lineWidth=3; c.strokeRect(-o.w/2,-o.h/2,o.w,o.h); c.setLineDash([]);
     c.fillStyle="rgba(255,255,255,.75)"; c.textAlign="center"; c.textBaseline="middle"; var u=Math.max(20,Math.min(o.w,o.h)*0.1);
@@ -762,7 +817,9 @@ function edRender(cv0,q,exp){
 function mk(t,name,p){ var o={id:++E.uid,t:t,name:name,x:0,y:0,w:100,h:100,rot:0}; for(var k in p) o[k]=p[k]; return o; }
 function TX(name,text,size,p){
   var o=mk("text",name,{text:text,size:size,base:size,font:"mont",color:"#ffffff",align:"center",maxW:0,upper:false,ls:0,bg:null,skew:false,shadow:false,bindOn:true});
-  for(var k in p) o[k]=p[k]; if(o.bind) o.text=bindVal(o.bind); autoFit(o); pinApply(o); return o;
+  for(var k in p) o[k]=p[k]; if(o.bind) o.text=bindVal(o.bind); autoFit(o);
+  if(!(o.pin&&(o.pin.m==="below"||o.pin.m==="above"))) pinApply(o);
+  return o;
 }
 function SH(name,kind,x,y,w,h,p){ var o=mk("shape",name,{kind:kind,x:x,y:y,w:w,h:h,fill:"#ffffff"}); for(var k in p) o[k]=p[k]; return o; }
 function PH(name,x,y,w,h,p){ var o=mk("photo",name,{x:x,y:y,w:w,h:h,shape:"rect",ox:0,oy:0,zoom:1}); for(var k in p) o[k]=p[k]; return o; }
@@ -843,11 +900,274 @@ function tplSeviye(W,H){
   L.push(SH("Alt çizgi","rect",W/2,H-48,W-120,4,{fill:A,ac:"fill"}));
   return L;
 }
+/* ---------- Ortak yardımcılar (yeni şablonlar) ---------- */
+var NAVY="#101a2a", CREAM="#ecdfc9", INK="#16130f", REDC="#e5483b";
+function BG(W,H,c){ return SH("Arka plan","rect",W/2,H/2,W,H,{fill:c,locked:true}); }
+function GR(name,W,H,y0,y1,a0,a1,rgb){ rgb=rgb||"0,0,0"; return SH(name,"grad",W/2,(y0+y1)/2*H,W,(y1-y0)*H,{c0:"rgba("+rgb+","+a0+")",c1:"rgba("+rgb+","+a1+")"}); }
+function SIGN(W,H,color,top){ return TX("İmza","",24,{color:color||"#ffffff",shadow:!color,bind:"imza",fitW:420,pin:{m:"rt",right:W-56,top:top==null?H*0.04:top}}); }
+function BRANDL(W,H,top){ return TX("Marka","MOTOGO TÜRKİYE",26,{color:"#ffffff",ls:0.22,shadow:true,pin:{m:"lt",left:56,top:top==null?H*0.04:top}}); }
+
+/* 5. Şerit Slogan */
+function tplSerit(W,H){
+  var A=S.acc,L=[],t;
+  L.push(BG(W,H,"#0a0a0b")); L.push(PH("Fotoğraf",W/2,H/2,W,H));
+  L.push(GR("Üst geçiş",W,H,0,0.32,0.85,0)); L.push(GR("Alt geçiş",W,H,0.42,1,0,0.92));
+  L.push(SH("Sarı köşe","para",W*0.2,H*0.055,W*0.36,H*0.1,{fill:A,ac:"fill",sk:0.22}));
+  L.push(TX("Marka","MOTOGO",42,{color:"#111111",ls:0.12,x:W*0.2,y:H*0.055}));
+  L.push(SIGN(W,H));
+  t=TX("Başlık","",205,{font:"bebas",upper:true,lh:0.92,maxW:W-140,fitW:W-140,shadow:true,bind:"title",x:W/2,y:H*0.5}); L.push(t);
+  L.push(TX("Alt başlık","",104,{font:"paci",color:A,ac:"color",shadow:true,bind:"sub",fitW:W-160,pin:{m:"below",ref:t.id,gap:-34}}));
+  L.push(TX("Etiket","",40,{color:"#111111",bg:A,ac:"bg",acText:true,skew:true,ls:0.12,pad:18,upper:true,bind:"rota",fitW:W-120,x:W/2,y:H*0.745}));
+  L.push(SH("Alt şerit","rect",W/2,H-44,W,88,{fill:A,ac:"fill"}));
+  L.push(TX("Mesafe","",46,{font:"bebas",color:"#111111",ls:0.04,bind:"km",fitW:W*0.3,pin:{m:"l",left:56,y:H-44}}));
+  L.push(TX("Tarih","",30,{color:"#111111",bind:"tarih",fitW:W*0.3,pin:{m:"c",cx:W/2,y:H-44}}));
+  L.push(TX("Motor","",28,{color:"#111111",ls:0.1,upper:true,bind:"motor",fitW:W*0.33,pin:{m:"r",right:W-56,y:H-44}}));
+  return L;
+}
+/* 6. Orta Başlık */
+function tplOrta(W,H){
+  var A=S.acc,L=[],t;
+  L.push(BG(W,H,"#0a0a0b"));
+  L.push(TX("Marka","MOTOGO TÜRKİYE",26,{color:A,ac:"color",ls:0.3,x:W/2,y:H*0.05}));
+  t=TX("Başlık","",150,{font:"bebas",upper:true,lh:0.95,fitW:W-160,bind:"title",x:W/2,y:H*0.17}); L.push(t);
+  L.push(SH("Çizgi sol","rect",W*0.1,H*0.285,150,6,{fill:A,ac:"fill"})); L.push(SH("Çizgi sağ","rect",W*0.9,H*0.285,150,6,{fill:A,ac:"fill"}));
+  L.push(TX("Alt başlık","",80,{font:"paci",color:A,ac:"color",bind:"sub",fitW:W*0.52,x:W/2,y:H*0.285}));
+  L.push(PH("Fotoğraf",W/2,H*0.6,W-120,H*0.5,{shape:"round"}));
+  L.push(RT("Rota",W-120-150,H*0.74,300,210,{color:"#ffffff"}));
+  L.push(SIGN(W,H,"#bdbdbd",H*0.012));
+  L.push(TX("Mesafe","",70,{font:"bebas",color:A,ac:"color",align:"left",bind:"km",fitW:W*0.3,pin:{m:"lb",left:60,bottom:H*0.965}}));
+  L.push(TX("Tarih","",30,{color:"#ffffff",bind:"tarih",fitW:W*0.3,pin:{m:"c",cx:W/2,y:H*0.945}}));
+  L.push(TX("Motor","",30,{color:"#ffffff",align:"right",bind:"motor",fitW:W*0.32,pin:{m:"rb",right:W-60,bottom:H*0.96}}));
+  return L;
+}
+/* 7. Sağda Liste */
+function tplListe(W,H){
+  var A=S.acc,L=[],t,p;
+  L.push(BG(W,H,"#0a0a0b")); L.push(PH("Fotoğraf",W/2,H/2,W,H));
+  L.push(SH("Karartma","rect",W/2,H/2,W,H,{fill:"rgba(0,0,0,.52)"}));
+  L.push(BRANDL(W,H)); L.push(SIGN(W,H));
+  t=TX("Başlık","",190,{font:"bebas",upper:true,align:"right",lh:0.92,maxW:W*0.75,fitW:W*0.75,shadow:true,bind:"title",pin:{m:"rt",right:W-60,top:H*0.12}}); L.push(t);
+  p=TX("Alt başlık","",96,{font:"paci",color:A,ac:"color",align:"right",shadow:true,bind:"sub",fitW:W*0.75,pin:{m:"below",ref:t.id,gap:-14,right:W-60}}); L.push(p);
+  ["lbas","lbit","lkm","ltarih"].forEach(function(b){
+    p=TX("Liste: "+b.slice(1),"",38,{align:"right",shadow:true,bind:b,fitW:W*0.7,pin:{m:"below",ref:p.id,gap:b==="lbas"?44:14,right:W-60}}); L.push(p);
+  });
+  L.push(SH("Liste çizgisi","rect",W-60-90,H*0.5,180,6,{fill:A,ac:"fill"}));
+  L.push(RT("Rota",190+40,H*0.8,330,240,{color:"#ffffff"}));
+  L.push(TX("Motor","",36,{color:"#111111",bg:A,ac:"bg",acText:true,skew:true,pad:16,upper:true,ls:0.08,bind:"motor",fitW:W*0.5,pin:{m:"rb",right:W-60,bottom:H*0.93}}));
+  return L;
+}
+/* 8. Büyük Slogan */
+function tplSlogan(W,H){
+  var A=S.acc,L=[],t;
+  L.push(BG(W,H,"#0a0a0b"));
+  t=TX("Başlık","",200,{font:"bebas",upper:true,align:"left",lh:0.9,maxW:W-120,fitW:W-120,bind:"title",pin:{m:"lt",left:60,top:H*0.045}}); L.push(t);
+  L.push(TX("Alt başlık","",200,{font:"bebas",upper:true,color:A,ac:"color",align:"left",lh:0.9,fitW:W-120,bind:"sub",pin:{m:"below",ref:t.id,gap:0,left:60}}));
+  L.push(PH("Fotoğraf",W/2,H*0.715,W-120,H*0.33,{shape:"round"}));
+  L.push(SH("Köşe","tri",100,H*0.55+50,120,120,{fill:A,ac:"fill"}));
+  L.push(RT("Rota",W-60-150-40,H*0.79,300,200,{color:"#ffffff"}));
+  L.push(SIGN(W,H,"#bdbdbd",H*0.012));
+  L.push(TX("Mesafe","",64,{font:"bebas",color:A,ac:"color",align:"left",bind:"km",fitW:W*0.3,pin:{m:"lb",left:60,bottom:H*0.965}}));
+  L.push(TX("Tarih","",30,{color:"#ffffff",bind:"tarih",fitW:W*0.3,pin:{m:"c",cx:W/2,y:H*0.943}}));
+  L.push(TX("Motor","",30,{color:"#ffffff",align:"right",bind:"motor",fitW:W*0.32,pin:{m:"rb",right:W-60,bottom:H*0.96}}));
+  return L;
+}
+/* 9. Bilgi Kutulu */
+function tplBilgi(W,H){
+  var A=S.acc,L=[],t;
+  L.push(BG(W,H,"#0a0a0b")); L.push(PH("Fotoğraf",W/2,H/2,W,H));
+  L.push(SH("Karartma","rect",W/2,H/2,W,H,{fill:"rgba(0,0,0,.55)"}));
+  L.push(BRANDL(W,H)); L.push(SIGN(W,H));
+  t=TX("Başlık","",190,{font:"bebas",upper:true,lh:0.92,maxW:W-140,fitW:W-140,shadow:true,bind:"title",x:W/2,y:H*0.29}); L.push(t);
+  L.push(SH("Çizgi","rect",W/2-150,H*0.43,70,5,{fill:A,ac:"fill"})); L.push(SH("Çizgi 2","rect",W/2+150,H*0.43,70,5,{fill:A,ac:"fill"}));
+  L.push(TX("Etiket","",36,{color:"#111111",bg:A,ac:"bg",acText:true,skew:true,upper:true,ls:0.14,pad:16,bind:"sub",fitW:W-140,x:W/2,y:H*0.43}));
+  L.push(TX("Paragraf","Rotanı, fotoğraflarını ve anılarını paylaş. Bu yazıyı istediğin gibi değiştirebilirsin.",32,{color:"#e6e6e6",maxW:W*0.74,fitW:W*0.74,bindOn:false,lh:1.4,x:W/2,y:H*0.54}));
+  L.push(SH("Kutu","frame",W/2,H*0.77,W*0.62,H*0.17,{stroke:A,ac:"stroke",lw:6,fill:"rgba(0,0,0,0)"}));
+  L.push(TX("Mesafe etiketi","TOPLAM MESAFE",24,{color:A,ac:"color",ls:0.3,x:W/2,y:H*0.725}));
+  L.push(TX("Mesafe","",120,{font:"bebas",color:"#ffffff",bind:"km",fitW:W*0.54,x:W/2,y:H*0.78}));
+  L.push(TX("Tarih","",30,{color:"#ffffff",bind:"tarih",fitW:W*0.4,pin:{m:"c",cx:W/2,y:H*0.935}}));
+  return L;
+}
+/* 10. Turnuva */
+function tplTurnuva(W,H){
+  var A=S.acc,L=[],t;
+  L.push(BG(W,H,"#0b0b0b")); L.push(PH("Fotoğraf",W/2,H*0.62,W,H*0.76));
+  L.push(GR("Üst geçiş",W,H,0.2,0.5,1,0,"11,11,11")); L.push(GR("Alt geçiş",W,H,0.62,1,0,0.85));
+  L.push(BRANDL(W,H,H*0.035));
+  t=TX("Başlık","",118,{font:"mont",upper:true,align:"left",lh:1.0,maxW:W-120,fitW:W-120,bind:"title",pin:{m:"lt",left:60,top:H*0.085}}); L.push(t);
+  L.push(TX("Etiket","",46,{color:"#111111",bg:A,ac:"bg",acText:true,skew:true,pad:16,upper:true,bind:"sub",fitW:W-120,pin:{m:"below",ref:t.id,gap:18,left:60}}));
+  L.push(SIGN(W,H));
+  L.push(SH("Tarih bloğu","para",W-240,H*0.86,420,150,{fill:A,ac:"fill",sk:0.14}));
+  L.push(TX("Tarih","",84,{font:"bebas",color:"#111111",bind:"tarih",fitW:340,x:W-240,y:H*0.86}));
+  L.push(TX("Mesafe","",110,{font:"bebas",color:"#ffffff",shadow:true,align:"left",bind:"km",fitW:W*0.4,pin:{m:"lb",left:60,bottom:H*0.915}}));
+  L.push(TX("Motor","",28,{color:"#ffffff",ls:0.12,upper:true,shadow:true,align:"left",bind:"motor",fitW:W*0.5,pin:{m:"above",ref:L[L.length-1].id,gap:6,left:60}}));
+  return L;
+}
+/* 11. Sahil Şampiyonası */
+function tplSahil(W,H){
+  var A=S.acc,L=[],t;
+  L.push(BG(W,H,"#0b0b0b")); L.push(PH("Fotoğraf",W/2,H*0.3,W,H*0.6));
+  L.push(GR("Geçiş",W,H,0.42,0.62,0,1,"11,11,11"));
+  L.push(BRANDL(W,H)); L.push(SIGN(W,H));
+  L.push(TX("Küçük başlık","",44,{color:A,ac:"color",ls:0.18,upper:true,align:"left",bind:"sub",fitW:W-120,pin:{m:"lt",left:60,top:H*0.615}}));
+  t=TX("Başlık","",104,{font:"mont",upper:true,align:"left",lh:1.0,maxW:W-120,fitW:W-120,bind:"title",pin:{m:"lt",left:60,top:H*0.665}}); L.push(t);
+  L.push(TX("Etiket","",54,{color:"#111111",bg:A,ac:"bg",acText:true,skew:true,pad:18,upper:true,bind:"rota",fitW:W-120,pin:{m:"below",ref:t.id,gap:22,left:60}}));
+  L.push(TX("Tarih","",40,{color:"#111111",bg:A,ac:"bg",acText:true,skew:true,pad:14,bind:"tarih",fitW:W*0.5,pin:{m:"lb",left:60,bottom:H*0.965}}));
+  L.push(TX("Mesafe","",92,{font:"bebas",color:A,ac:"color",align:"right",bind:"km",fitW:W*0.4,pin:{m:"rb",right:W-60,bottom:H*0.955}}));
+  L.push(RT("Rota",W-60-140,H*0.4,300,200,{color:"#ffffff"}));
+  return L;
+}
+/* 12. Etkinlik Kartı */
+function tplEtkinlik(W,H){
+  var A=S.acc,L=[],t;
+  L.push(BG(W,H,"#0f0f11")); L.push(PH("Fotoğraf",W*0.71,H/2,W*0.58,H));
+  L.push(SH("Dikey şerit","rect",W*0.42,H/2,12,H,{fill:A,ac:"fill"}));
+  L.push(TX("Marka","MOTOGO TÜRKİYE",22,{color:A,ac:"color",ls:0.2,align:"left",pin:{m:"lt",left:50,top:H*0.045}}));
+  t=TX("Başlık","",150,{font:"bebas",upper:true,align:"left",lh:0.92,maxW:W*0.34,fitW:W*0.34,bind:"title",pin:{m:"lt",left:50,top:H*0.1}}); L.push(t);
+  t=TX("Alt başlık","",70,{font:"paci",color:A,ac:"color",align:"left",maxW:W*0.34,fitW:W*0.34,bind:"sub",pin:{m:"below",ref:t.id,gap:0,left:50}}); L.push(t);
+  L.push(TX("Tarih","",36,{color:"#111111",bg:A,ac:"bg",acText:true,skew:true,pad:12,bind:"tarih",fitW:W*0.34,pin:{m:"lb",left:50,bottom:H*0.62}}));
+  L.push(TX("Mesafe","",96,{font:"bebas",align:"left",bind:"km",fitW:W*0.34,pin:{m:"lb",left:50,bottom:H*0.72}}));
+  L.push(TX("Motor","",26,{color:"#cfcfcf",ls:0.1,upper:true,align:"left",maxW:W*0.34,fitW:W*0.34,bind:"motor",pin:{m:"lb",left:50,bottom:H*0.77}}));
+  L.push(RT("Rota",50+170,H*0.8,340,260,{color:"#ffffff"}));
+  L.push(SIGN(W,H,"#ffffff",H*0.9));
+  return L;
+}
+/* 13. Krem Kutu */
+function tplKremKutu(W,H){
+  var A=S.acc,L=[],t;
+  L.push(BG(W,H,CREAM));
+  L.push(SH("Koyu kutu","rect",W/2,H*0.2,W-120,H*0.26,{fill:INK}));
+  L.push(TX("Marka","MOTOGO TÜRKİYE",22,{color:CREAM,ls:0.3,x:W/2,y:H*0.098}));
+  t=TX("Başlık","",130,{font:"bebas",upper:true,color:CREAM,lh:0.92,fitW:W-220,bind:"title",x:W/2,y:H*0.195}); L.push(t);
+  L.push(TX("Alt başlık","",64,{font:"paci",color:A,ac:"color",bind:"sub",fitW:W-240,x:W/2,y:H*0.285}));
+  L.push(PH("Fotoğraf",W/2,H*0.57,W-120,H*0.4,{shape:"rect"}));
+  L.push(SH("Bant","para",W*0.18,H*0.372,220,56,{fill:A,ac:"fill",sk:0.2,rot:-0.12}));
+  L.push(RT("Rota",W-120-120,H*0.69,260,180,{color:"#ffffff"}));
+  L.push(SIGN(W,H,INK,H*0.02));
+  L.push(TX("Mesafe","",78,{font:"bebas",color:INK,align:"left",bind:"km",fitW:W*0.3,pin:{m:"lb",left:60,bottom:H*0.945}}));
+  L.push(TX("Tarih","",32,{color:INK,bind:"tarih",fitW:W*0.3,pin:{m:"c",cx:W/2,y:H*0.918}}));
+  L.push(TX("Motor","",30,{color:INK,align:"right",upper:true,ls:0.08,bind:"motor",fitW:W*0.34,pin:{m:"rb",right:W-60,bottom:H*0.935}}));
+  return L;
+}
+/* 14. Krem Dikey */
+function tplKremDikey(W,H){
+  var A=S.acc,L=[];
+  L.push(BG(W,H,CREAM));
+  L.push(SH("Koyu blok","rect",W*0.385+26,H*0.45+26,W*0.66,H*0.68,{fill:INK}));
+  L.push(PH("Fotoğraf",W*0.385,H*0.45,W*0.66,H*0.68,{shape:"rect"}));
+  L.push(SH("Şerit","rect",W-80,H/2,150,H,{fill:A,ac:"fill"}));
+  L.push(TX("Başlık (dikey)","",150,{font:"bebas",upper:true,color:INK,lh:0.9,fitW:H*0.82,bind:"title",rot:-Math.PI/2,x:W-80,y:H/2}));
+  L.push(TX("Alt başlık","",76,{font:"paci",color:INK,align:"left",maxW:W*0.6,fitW:W*0.6,bind:"sub",pin:{m:"lt",left:50,top:H*0.82}}));
+  L.push(TX("Marka","MOTOGO TÜRKİYE",22,{color:INK,ls:0.25,pin:{m:"lt",left:50,top:H*0.035}}));
+  L.push(TX("Mesafe","",74,{font:"bebas",color:INK,align:"left",bind:"km",fitW:W*0.3,pin:{m:"lb",left:50,bottom:H*0.965}}));
+  L.push(TX("Tarih","",28,{color:INK,bind:"tarih",fitW:W*0.32,pin:{m:"c",cx:W*0.46,y:H*0.945}}));
+  L.push(SIGN(W,H,INK,H*0.012));
+  L.push(RT("Rota",W*0.385+W*0.33-140,H*0.45+H*0.34-110,250,180,{color:"#ffffff"}));
+  return L;
+}
+/* 15. Krem Çerçeve */
+function tplKremCerceve(W,H){
+  var A=S.acc,L=[],t;
+  L.push(BG(W,H,CREAM));
+  L.push(SH("Çerçeve","frame",W/2,H/2,W-56,H-56,{stroke:INK,lw:30,fill:"rgba(0,0,0,0)"}));
+  L.push(PH("Fotoğraf",W/2,H*0.4,W-170,H*0.5,{shape:"rect"}));
+  L.push(TX("Marka","MOTOGO TÜRKİYE",22,{color:INK,ls:0.3,x:W/2,y:H*0.085}));
+  t=TX("Başlık","",118,{font:"play",color:INK,lh:1.05,maxW:W-200,fitW:W-200,bind:"title",x:W/2,y:H*0.74}); L.push(t);
+  L.push(SH("Çizgi","rect",W/2,H*0.815,90,5,{fill:A,ac:"fill"}));
+  L.push(TX("Alt başlık","",34,{color:"#5d554a",ls:0.06,bind:"sub",fitW:W-220,x:W/2,y:H*0.85}));
+  L.push(TX("Bilgi","",28,{color:INK,ls:0.1,upper:true,bind:"rota",fitW:W-220,x:W/2,y:H*0.9}));
+  L.push(TX("Mesafe","",54,{font:"bebas",color:INK,bind:"km",fitW:W*0.3,pin:{m:"c",cx:W*0.22,y:H*0.925}}));
+  L.push(TX("Tarih","",26,{color:INK,bind:"tarih",fitW:W*0.3,pin:{m:"c",cx:W*0.78,y:H*0.925}}));
+  L.push(SIGN(W,H,INK,H*0.02));
+  L.push(RT("Rota",W-85-110,H*0.4+H*0.25-100,230,170,{color:"#ffffff"}));
+  return L;
+}
+/* 16. Lacivert Rozet */
+function tplRozet(W,H){
+  var A=S.acc,L=[],t;
+  L.push(BG(W,H,NAVY));
+  L.push(SH("Çerçeve","rect",W/2,H*0.4,W-100,H*0.5+30,{fill:A,ac:"fill"}));
+  L.push(PH("Fotoğraf",W/2,H*0.4,W-140,H*0.5,{shape:"rect"}));
+  L.push(SH("Rozet","ellipse",W-190,H*0.665,250,250,{fill:A,ac:"fill"}));
+  L.push(TX("Mesafe","",92,{font:"bebas",color:"#111111",bind:"km",fitW:200,x:W-190,y:H*0.655}));
+  L.push(TX("Mesafe etiketi","TOPLAM",22,{color:"#111111",ls:0.25,x:W-190,y:H*0.7}));
+  L.push(TX("Marka","MOTOGO TÜRKİYE",24,{color:A,ac:"color",ls:0.25,pin:{m:"lt",left:56,top:H*0.03}}));
+  L.push(SIGN(W,H,"#ffffff",H*0.032));
+  t=TX("Başlık","",120,{font:"bebas",upper:true,color:"#111111",bg:A,ac:"bg",acText:true,skew:true,pad:20,maxW:W*0.7,fitW:W*0.7,bind:"title",pin:{m:"lt",left:56,top:H*0.7}}); L.push(t);
+  L.push(TX("Alt başlık","",36,{color:"#ffffff",align:"left",maxW:W*0.62,fitW:W*0.62,bind:"sub",pin:{m:"below",ref:t.id,gap:20,left:56}}));
+  L.push(TX("Tarih","",30,{color:A,ac:"color",bind:"tarih",fitW:W*0.4,pin:{m:"lb",left:56,bottom:H*0.95}}));
+  L.push(TX("Motor","",30,{color:"#ffffff",align:"right",upper:true,ls:0.08,bind:"motor",fitW:W*0.4,pin:{m:"rb",right:W-56,bottom:H*0.95}}));
+  L.push(RT("Rota",190,H*0.4+H*0.25-110,260,190,{color:"#ffffff"}));
+  return L;
+}
+/* 17. Yarım Yarım */
+function tplYarim(W,H){
+  var A=S.acc,L=[],t;
+  L.push(BG(W,H,"#111111")); L.push(SH("Sarı blok","rect",W/2,H*0.75,W,H*0.5,{fill:A,ac:"fill"}));
+  L.push(PH("Fotoğraf",W/2,H*0.25,W,H*0.5));
+  L.push(BRANDL(W,H)); L.push(SIGN(W,H));
+  t=TX("Başlık","",200,{font:"bebas",upper:true,color:"#111111",align:"left",lh:0.9,maxW:W-120,fitW:W-120,bind:"title",pin:{m:"lt",left:60,top:H*0.535}}); L.push(t);
+  L.push(TX("Alt başlık","",76,{font:"paci",color:"#111111",align:"left",maxW:W-120,fitW:W-120,bind:"sub",pin:{m:"below",ref:t.id,gap:-6,left:60}}));
+  L.push(SH("Çizgi","rect",W/2,H*0.905,W-120,5,{fill:"#111111"}));
+  L.push(TX("Mesafe","",70,{font:"bebas",color:"#111111",align:"left",bind:"km",fitW:W*0.3,pin:{m:"lb",left:60,bottom:H*0.965}}));
+  L.push(TX("Tarih","",30,{color:"#111111",bind:"tarih",fitW:W*0.3,pin:{m:"c",cx:W*0.5,y:H*0.935}}));
+  L.push(TX("Motor","",28,{color:"#111111",align:"right",upper:true,ls:0.08,bind:"motor",fitW:W*0.34,pin:{m:"rb",right:W-60,bottom:H*0.95}}));
+  L.push(RT("Rota",W-60-120,H*0.4,260,170,{color:"#ffffff"}));
+  return L;
+}
+/* 18. Sarı Çerçeve */
+function tplSariCerceve(W,H){
+  var A=S.acc,L=[],t;
+  L.push(BG(W,H,NAVY));
+  L.push(SH("Çerçeve","frame",W/2,H/2,W-64,H-64,{stroke:A,ac:"stroke",lw:20,fill:"rgba(0,0,0,0)"}));
+  L.push(TX("Marka","MOTOGO TÜRKİYE",24,{color:A,ac:"color",ls:0.3,x:W/2,y:H*0.085}));
+  t=TX("Başlık","",150,{font:"bebas",upper:true,lh:0.92,maxW:W-200,fitW:W-200,bind:"title",x:W/2,y:H*0.2}); L.push(t);
+  L.push(PH("Fotoğraf",W/2,H*0.53,W-200,H*0.4,{shape:"rect"}));
+  L.push(TX("Alt başlık","",44,{color:"#111111",bg:A,ac:"bg",acText:true,skew:true,pad:16,upper:true,ls:0.1,bind:"sub",fitW:W-240,x:W/2,y:H*0.78}));
+  L.push(TX("Mesafe","",78,{font:"bebas",color:A,ac:"color",bind:"km",fitW:W*0.3,pin:{m:"c",cx:W*0.25,y:H*0.875}}));
+  L.push(TX("Tarih","",30,{color:"#ffffff",bind:"tarih",fitW:W*0.32,pin:{m:"c",cx:W*0.75,y:H*0.86}}));
+  L.push(TX("Motor","",26,{color:"#cfd6e2",upper:true,ls:0.12,bind:"motor",fitW:W*0.5,pin:{m:"c",cx:W/2,y:H*0.925}}));
+  L.push(SIGN(W,H,"#ffffff",H*0.012));
+  L.push(RT("Rota",W-100-130,H*0.53+H*0.2-100,240,170,{color:"#ffffff"}));
+  return L;
+}
+/* 19. Siyah-Beyaz Sinema */
+function tplSinema(W,H){
+  var A=S.acc,L=[];
+  L.push(BG(W,H,"#000000")); L.push(PH("Fotoğraf",W/2,H/2,W,H));
+  L.push(SH("Üst bant","rect",W/2,H*0.055,W,H*0.11,{fill:"#000000"})); L.push(SH("Alt bant","rect",W/2,H*0.945,W,H*0.11,{fill:"#000000"}));
+  L.push(TX("Marka","MOTOGO TÜRKİYE",22,{color:"#bdbdbd",ls:0.4,x:W/2,y:H*0.04}));
+  L.push(SIGN(W,H,"#bdbdbd",H*0.07));
+  L.push(TX("Başlık","",46,{font:"mont",upper:true,ls:0.32,maxW:W-160,fitW:W-160,bind:"title",x:W/2,y:H*0.925}));
+  L.push(SH("Çizgi","rect",W/2,H*0.955,120,3,{fill:A,ac:"fill"}));
+  L.push(TX("Alt başlık","",26,{color:"#cfcfcf",ls:0.18,upper:true,bind:"sub",fitW:W-200,x:W/2,y:H*0.975}));
+  L.push(RT("Rota",W-60-100,H*0.8,220,150,{color:"#ffffff"}));
+  L.push(TX("Mesafe","",54,{font:"bebas",color:"#ffffff",shadow:true,align:"left",bind:"km",fitW:W*0.3,pin:{m:"lb",left:60,bottom:H*0.86}}));
+  return L;
+}
+/* 20. Dikey Kırmızı */
+function tplKirmizi(W,H){
+  var L=[],t;
+  L.push(BG(W,H,"#121214"));
+  L.push(SH("Kırmızı çubuk","rect",36,H/2,24,H,{fill:REDC,ac:"fill"}));
+  L.push(SH("Renkli blok","rect",W*0.56+24,H*0.31+24,W*0.78,H*0.42,{fill:REDC,ac:"fill"}));
+  L.push(PH("Fotoğraf",W*0.56,H*0.31,W*0.78,H*0.42));
+  L.push(TX("Marka","MOTOGO TÜRKİYE",22,{color:"#ffffff",ls:0.25,pin:{m:"lt",left:90,top:H*0.03}}));
+  L.push(SIGN(W,H,"#bdbdbd",H*0.032));
+  t=TX("Başlık","",190,{font:"bebas",upper:true,align:"left",lh:0.92,maxW:W-170,fitW:W-170,bind:"title",pin:{m:"lt",left:90,top:H*0.56}}); L.push(t);
+  L.push(TX("Alt başlık","",150,{font:"bebas",upper:true,color:REDC,align:"left",lh:0.92,maxW:W-170,fitW:W-170,bind:"sub",pin:{m:"below",ref:t.id,gap:0,left:90}}));
+  L.push(TX("Mesafe","",60,{font:"bebas",color:"#ffffff",align:"left",bind:"km",fitW:W*0.25,pin:{m:"lb",left:90,bottom:H*0.955}}));
+  L.push(TX("Tarih","",28,{color:"#ffffff",bind:"tarih",fitW:W*0.3,pin:{m:"c",cx:W*0.52,y:H*0.935}}));
+  L.push(TX("Motor","",26,{color:"#ffffff",align:"right",upper:true,ls:0.08,bind:"motor",fitW:W*0.32,pin:{m:"rb",right:W-50,bottom:H*0.95}}));
+  L.push(RT("Rota",W-70-130,H*0.31+H*0.2-100,230,170,{color:"#ffffff"}));
+  return L;
+}
+
 var TPLS=[
-  {id:"tur",ad:"Tur Duyurusu",ic:"📣",fn:tplTur},
-  {id:"dikey",ad:"Dikey Başlık",ic:"🧭",fn:tplDikey},
-  {id:"tam",ad:"Tam Ekran",ic:"🖼️",fn:tplTam},
-  {id:"seviye",ad:"Yolculuk Seviyesi",ic:"🏁",fn:tplSeviye}
+  {id:"tur",ad:"Tur Duyurusu",fn:tplTur},{id:"dikey",ad:"Dikey Başlık",fn:tplDikey},{id:"tam",ad:"Tam Ekran",fn:tplTam},{id:"seviye",ad:"Yolculuk Seviyesi",fn:tplSeviye},
+  {id:"serit",ad:"Şerit Slogan",fn:tplSerit},{id:"orta",ad:"Orta Başlık",fn:tplOrta},{id:"liste",ad:"Sağda Liste",fn:tplListe},{id:"slogan",ad:"Büyük Slogan",fn:tplSlogan},
+  {id:"bilgi",ad:"Bilgi Kutulu",fn:tplBilgi},{id:"turnuva",ad:"Turnuva",fn:tplTurnuva},{id:"sahil",ad:"Sahil Şampiyonası",fn:tplSahil},{id:"etkinlik",ad:"Etkinlik Kartı",fn:tplEtkinlik},
+  {id:"kremkutu",ad:"Krem Kutu",fn:tplKremKutu},{id:"kremdikey",ad:"Krem Dikey",fn:tplKremDikey},{id:"kremcerceve",ad:"Krem Çerçeve",fn:tplKremCerceve},{id:"rozet",ad:"Lacivert Rozet",fn:tplRozet},
+  {id:"yarim",ad:"Yarım Yarım",fn:tplYarim},{id:"saricerceve",ad:"Sarı Çerçeve",fn:tplSariCerceve},{id:"sinema",ad:"Siyah-Beyaz Sinema",fn:tplSinema},{id:"kirmizi",ad:"Dikey Kırmızı",fn:tplKirmizi}
 ];
 
 /* ---------- Geçmiş (geri al / ileri al) ---------- */
@@ -863,7 +1183,7 @@ function loadSnap(s){
 }
 function undo(){ if(E.hi>0){ E.hi--; loadSnap(E.hist[E.hi]); } }
 function redo(){ if(E.hi<E.hist.length-1){ E.hi++; loadSnap(E.hist[E.hi]); } }
-function updUndo(){ var u=$("#btnUndo"), r=$("#btnRedo"); if(u) u.disabled=!(E.hi>0); if(r) r.disabled=!(E.hi<E.hist.length-1); }
+function updUndo(){ var a=!(E.hi>0), b=!(E.hi<E.hist.length-1); ["#btnUndo","#fsUndo"].forEach(function(q){ var u=$(q); if(u) u.disabled=a; }); ["#btnRedo","#fsRedo"].forEach(function(q){ var r=$(q); if(r) r.disabled=b; }); }
 function edited(){ return !!E.dirty; }
 
 function edLoad(id){
@@ -881,14 +1201,21 @@ function edAccent(c){
 }
 
 /* ---------- Dokunma ve sürükleme ---------- */
-var G={ptr:{},mode:null,o:null,moved:false,s0:null,d0:0,pi:null};
-function cpos(e){ var r=cv.getBoundingClientRect(); return {x:(e.clientX-r.left)*EW/r.width,y:(e.clientY-r.top)*eH()/r.height,f:EW/r.width}; }
+var G={ptr:{},mode:null,o:null,moved:false,s0:null,d0:0,pi:null,p0:null,o0:null,dragging:false,lastTap:{id:null,t:0}};
+function cpos(e){ var r=cv.getBoundingClientRect(); return {x:(e.clientX-r.left)*EW/r.width,y:(e.clientY-r.top)*eH()/r.height,f:EW/r.width,cx:e.clientX,cy:e.clientY}; }
+function inBox(o,p,m){
+  var dx=p.x-o.x, dy=p.y-o.y, co=Math.cos(o.rot||0), si=Math.sin(o.rot||0), lx=dx*co+dy*si, ly=-dx*si+dy*co;
+  return Math.abs(lx)<=o.w/2+m&&Math.abs(ly)<=o.h/2+m;
+}
+function isBgLike(o){ return o.t==="photo"||(o.t==="shape"&&(o.kind==="grad"||(o.w>EW*0.6&&o.h>eH()*0.25))); }
 function pick(p){
-  for(var i=E.objs.length-1;i>=0;i--){
-    var o=E.objs[i]; if(o.hidden||o.locked) continue;
-    var dx=p.x-o.x, dy=p.y-o.y, co=Math.cos(o.rot||0), si=Math.sin(o.rot||0), lx=dx*co+dy*si, ly=-dx*si+dy*co, m=10*p.f;
-    if(Math.abs(lx)<=o.w/2+m&&Math.abs(ly)<=o.h/2+m) return o;
-  }
+  var i,o;
+  // 1) parmağın tam altındaki yazı, rota ve küçük şekiller
+  for(i=E.objs.length-1;i>=0;i--){ o=E.objs[i]; if(o.hidden||o.locked||isBgLike(o)) continue; if(inBox(o,p,0)) return o; }
+  // 2) parmağa yakın olanlar
+  for(i=E.objs.length-1;i>=0;i--){ o=E.objs[i]; if(o.hidden||o.locked||isBgLike(o)) continue; if(inBox(o,p,16*p.f)) return o; }
+  // 3) fotoğraf ve büyük zemin şekilleri
+  for(i=E.objs.length-1;i>=0;i--){ o=E.objs[i]; if(o.hidden||o.locked||!isBgLike(o)) continue; if(inBox(o,p,0)) return o; }
   return null;
 }
 function worldPt(o,lx,ly){ var co=Math.cos(o.rot||0), si=Math.sin(o.rot||0); return {x:o.x+lx*co-ly*si,y:o.y+lx*si+ly*co}; }
@@ -900,14 +1227,14 @@ function applyScale(o,s0,k){
 }
 function setSel(o){ var id=o?o.id:null; if(E.sel!==id){ E.sel=id; buildTools(); buildLayers(); } }
 function gStart(p){
-  var o=selObj(); G.mode=null; G.o=null; G.moved=false;
+  var o=selObj(); G.mode=null; G.o=null; G.moved=false; G.dragging=false; G.p0=p;
   if(o&&!o.hidden){
     var rh=worldPt(o,0,-o.h/2-44*p.f), sh=worldPt(o,o.w/2,o.h/2), R=26*p.f;
     if(dist(p,rh)<R){ G.mode="rot"; G.o=o; return; }
     if(dist(p,sh)<R){ G.mode="scale"; G.o=o; G.s0=snapS(o); G.d0=Math.max(10,dist({x:o.x,y:o.y},p)); return; }
   }
   var hit=pick(p);
-  if(hit){ setSel(hit); G.o=hit; G.mode=(hit.t==="photo"&&E.photoMode==="pan"&&S.img)?"pan":"move"; }
+  if(hit){ setSel(hit); G.o=hit; G.mode=(hit.t==="photo"&&E.photoMode==="pan"&&S.img)?"pan":"move"; G.o0={x:hit.x,y:hit.y,ox:hit.ox,oy:hit.oy}; }
   else{ setSel(null); }
   redraw();
 }
@@ -915,31 +1242,37 @@ function gPinchStart(){
   var o=selObj(); if(!o){ G.pi=null; return; }
   var ids=Object.keys(G.ptr), a=G.ptr[ids[0]], b=G.ptr[ids[1]];
   G.pi={d0:Math.max(10,dist(a,b)),a0:Math.atan2(b.y-a.y,b.x-a.x),s0:snapS(o),pan:(o.t==="photo"&&E.photoMode==="pan"&&!!S.img)};
-  G.mode="pinch"; G.o=o;
+  G.mode="pinch"; G.o=o; G.dragging=true;
 }
 function gPinchMove(){
   if(!G.pi||!G.o) return; var o=G.o, ids=Object.keys(G.ptr), a=G.ptr[ids[0]], b=G.ptr[ids[1]];
   var k=dist(a,b)/G.pi.d0, ang=Math.atan2(b.y-a.y,b.x-a.x)-G.pi.a0;
-  if(G.pi.pan){ o.zoom=clamp(G.pi.s0.zoom*k,1,5); var fr=phFree(o); o.ox=clamp(o.ox,-1,1); o.oy=clamp(o.oy,-1,1); }
+  if(G.pi.pan){ o.zoom=clamp(G.pi.s0.zoom*k,1,5); }
   else{ applyScale(o,G.pi.s0,k); o.rot=G.pi.s0.rot+ang; delete o.pin; }
   G.moved=true; redraw();
 }
 function gMove(e){
   var id=e.pointerId; if(!G.ptr[id]) return;
-  var p=cpos(e), prev=G.ptr[id]; G.ptr[id]=p; var n=Object.keys(G.ptr).length;
+  var p=cpos(e); G.ptr[id]=p; var n=Object.keys(G.ptr).length;
   if(n>=2){ gPinchMove(); return; }
   var o=G.o; if(!G.mode||!o) return;
-  var dx=p.x-prev.x, dy=p.y-prev.y;
-  if(G.mode==="move"){
-    o.x+=dx; o.y+=dy; delete o.pin; E.guide=null;
-    if(Math.abs(o.x-EW/2)<9*p.f){ o.x=EW/2; E.guide={x:true}; }
-    if(Math.abs(o.y-eH()/2)<9*p.f){ o.y=eH()/2; E.guide=E.guide||{}; E.guide.y=true; }
+  if(G.mode==="move"||G.mode==="pan"){
+    // küçük kaymalar dokunma sayılır, sürükleme sayılmaz
+    if(!G.dragging){ if(Math.hypot(p.cx-G.p0.cx,p.cy-G.p0.cy)<6) return; G.dragging=true; }
+    var dx=p.x-G.p0.x, dy=p.y-G.p0.y;
+    if(G.mode==="move"){
+      // konum her zaman parmağın gerçek yolundan hesaplanır; kılavuz sadece yaklaşınca çeker
+      var nx=G.o0.x+dx, ny=G.o0.y+dy, th=8*p.f; E.guide=null;
+      if(Math.abs(nx-EW/2)<th){ nx=EW/2; E.guide={x:true}; }
+      if(Math.abs(ny-eH()/2)<th){ ny=eH()/2; E.guide=E.guide||{}; E.guide.y=true; }
+      o.x=nx; o.y=ny; delete o.pin;
+    } else {
+      var fr=phFree(o), co=Math.cos(o.rot||0), si=Math.sin(o.rot||0), lx=dx*co+dy*si, ly=-dx*si+dy*co;
+      if(fr.x>0) o.ox=clamp(G.o0.ox+lx/fr.x,-1,1); if(fr.y>0) o.oy=clamp(G.o0.oy+ly/fr.y,-1,1);
+    }
+    G.moved=true; redraw(); return;
   }
-  else if(G.mode==="pan"){
-    var fr=phFree(o), co=Math.cos(o.rot||0), si=Math.sin(o.rot||0), lx=dx*co+dy*si, ly=-dx*si+dy*co;
-    if(fr.x>0) o.ox=clamp(o.ox+lx/fr.x,-1,1); if(fr.y>0) o.oy=clamp(o.oy+ly/fr.y,-1,1);
-  }
-  else if(G.mode==="scale"){ applyScale(o,G.s0,dist({x:o.x,y:o.y},p)/G.d0); }
+  if(G.mode==="scale"){ applyScale(o,G.s0,dist({x:o.x,y:o.y},p)/G.d0); }
   else if(G.mode==="rot"){
     var r=Math.atan2(p.y-o.y,p.x-o.x)+Math.PI/2, q=Math.PI/2, near=Math.round(r/q)*q; if(Math.abs(r-near)<0.07) r=near; o.rot=r; delete o.pin;
   }
@@ -952,12 +1285,21 @@ function gEnd(e){
     var o=G.o;
     if(G.moved){ pushH(); buildTools(); }
     else if(o&&o.t==="photo"&&!S.img){ $("#fIn").click(); }
+    else if(o&&o.t==="text"&&(G.mode==="move")){
+      var now=Date.now();
+      if(G.lastTap.id===o.id&&now-G.lastTap.t<450){ G.lastTap.t=0; focusText(); } else G.lastTap={id:o.id,t:now};
+    }
     G.mode=null; G.pi=null; G.o=null; E.guide=null; redraw();
   }
 }
+function focusText(){
+  var ta=document.querySelector((FS.on?"#fsTools":"#tools")+" textarea"); if(ta){ ta.focus(); try{ ta.select(); }catch(_){} }
+}
 function bindCanvas(){
   cv.addEventListener("pointerdown",function(e){
-    if(S.mode!=="edit") return; e.preventDefault(); try{ cv.setPointerCapture(e.pointerId); }catch(_){}
+    if(S.mode!=="edit") return; e.preventDefault();
+    if(!FS.on){ openFs(); return; }
+    try{ cv.setPointerCapture(e.pointerId); }catch(_){}
     var p=cpos(e); G.ptr[e.pointerId]=p; var n=Object.keys(G.ptr).length;
     if(n===1) gStart(p); else if(n===2) gPinchStart();
   });
@@ -1011,7 +1353,7 @@ function dupSel(){
   c.id=++E.uid; c.x+=40; c.y+=40; delete c.pin; delete c.bind; c.name=o.name+" (kopya)"; E.objs.splice(E.objs.indexOf(o)+1,0,c); E.sel=c.id; pushH(); buildTools(); buildLayers(); redraw();
 }
 function buildTools(){
-  var box=$("#tools"); if(!box) return; box.innerHTML=""; var o=selObj();
+  ["#tools","#fsTools"].forEach(function(q){ var x=$(q); if(x) x.innerHTML=""; }); var box=FS.on?$("#fsTools"):$("#tools"); if(!box) return; var o=selObj();
   if(!o){ box.appendChild(ce("p","hint","Düzenlemek için tuvaldeki bir yazıya, fotoğrafa ya da şekle dokun. Parmakla sürükleyerek taşı, köşedeki kareyle büyüt, üstteki daireyle döndür. İki parmakla da büyütüp döndürebilirsin.")); return; }
   var head=ce("div","toolhead"); head.appendChild(ce("b",null,o.name)); box.appendChild(head);
   var act=ce("div","acts");
@@ -1057,8 +1399,9 @@ function buildTools(){
     box.appendChild(mkRange("Döndür",-180,180,1,Math.round((o.rot||0)*180/Math.PI),function(v){ o.rot=v*Math.PI/180; delete o.pin; },function(v){ return Math.round(v)+"°"; }));
   }
 }
-function buildLayers(){
-  var box=$("#layers"); if(!box) return; box.innerHTML="";
+function buildLayers(){ buildLayersInto($("#layers")); buildLayersInto($("#fsLayersList")); }
+function buildLayersInto(box){
+  if(!box) return; box.innerHTML="";
   var icon={text:"🅰️",photo:"📷",shape:"▭",route:"🗺️"};
   for(var i=E.objs.length-1;i>=0;i--){
     (function(o){
@@ -1074,8 +1417,11 @@ function buildLayers(){
 }
 function buildTpls(){
   var box=$("#tpls"); if(!box) return; box.innerHTML="";
+  var key=E.fmt+"|"+S.acc+"|"+(E.fontsOk?1:0); if(E.thumbKey!==key){ E.thumbKey=key; E.thumbs={}; }
   TPLS.forEach(function(t){
-    var b=ce("button",null); b.type="button"; b.setAttribute("aria-pressed",String(t.id===E.tpl)); b.innerHTML="<span>"+t.ic+"</span>"+t.ad;
+    if(!E.thumbs[t.id]) E.thumbs[t.id]=thumbFor(t);
+    var b=ce("button","tpl"); b.type="button"; b.setAttribute("aria-pressed",String(t.id===E.tpl)); b.setAttribute("aria-label",t.ad);
+    var im=document.createElement("img"); im.src=E.thumbs[t.id]; im.alt=""; b.appendChild(im); b.appendChild(ce("span",null,t.ad));
     b.addEventListener("click",function(){
       if(t.id===E.tpl&&!edited()) return;
       if(edited()&&!window.confirm("Şablon baştan yüklenecek, yaptığın değişiklikler silinecek. Devam edilsin mi?")) return;
@@ -1083,6 +1429,7 @@ function buildTpls(){
     });
     box.appendChild(b);
   });
+  var cur=box.querySelector('[aria-pressed="true"]'); if(cur) box.scrollLeft=Math.max(0,cur.offsetLeft-box.clientWidth/2+cur.clientWidth/2);
 }
 function syncFmtSeg(){ [].forEach.call(document.querySelectorAll("#efmtSeg button"),function(b){ b.setAttribute("aria-pressed",String(b.getAttribute("data-v")===E.fmt)); }); }
 function bindEdUi(){
@@ -1094,8 +1441,64 @@ function bindEdUi(){
     });
   });
   $("#btnUndo").addEventListener("click",undo); $("#btnRedo").addEventListener("click",redo);
+  $("#fsUndo").addEventListener("click",undo); $("#fsRedo").addEventListener("click",redo);
+  $("#btnFs").addEventListener("click",openFs); $("#fsDone").addEventListener("click",closeFs);
+  $("#fsAddBtn").addEventListener("click",function(){ $("#fsLayers").hidden=true; $("#fsAdd").hidden=!$("#fsAdd").hidden; });
+  $("#fsLayBtn").addEventListener("click",function(){ $("#fsAdd").hidden=true; $("#fsLayers").hidden=!$("#fsLayers").hidden; });
+  $("#fsLayClose").addEventListener("click",function(){ $("#fsLayers").hidden=true; });
+  [].forEach.call(document.querySelectorAll("#fsAdd [data-add]"),function(b){ b.addEventListener("click",function(){ addObj(b.getAttribute("data-add")); }); });
+  if(window.ResizeObserver){ new ResizeObserver(function(){ fsResize(); }).observe($("#fsStage")); }
+  window.addEventListener("resize",fsResize);
   $("#btnDesel").addEventListener("click",function(){ setSel(null); redraw(); });
 }
+/* ---------- Tam ekran düzenleme ---------- */
+var FS={on:false};
+function openFs(){
+  if(FS.on) return; FS.on=true;
+  $("#fs").hidden=false; document.body.classList.add("fsOpen");
+  $("#fsStage").appendChild(cv); cv.classList.add("fsCv");
+  if(!selObj()){ var tx=E.objs.filter(function(o){ return o.t==="text"&&!o.locked&&!o.hidden; }), tt=tx.filter(function(o){ return o.bind==="title"; })[0]||tx[0]; if(tt) E.sel=tt.id; }
+  buildTools(); buildLayers(); updUndo(); fsResize(); redraw(); setTimeout(fsResize,80);
+}
+function closeFs(){
+  if(!FS.on) return; FS.on=false;
+  $("#fs").hidden=true; $("#fsLayers").hidden=true; $("#fsAdd").hidden=true; document.body.classList.remove("fsOpen");
+  cv.classList.remove("fsCv"); cv.style.width=""; cv.style.height="";
+  document.querySelector(".stageIn").appendChild(cv);
+  buildTools(); buildLayers(); redraw();
+}
+function fsResize(){
+  if(!FS.on) return;
+  var st=$("#fsStage"), aw=st.clientWidth-12, ah=st.clientHeight-12; if(aw<50||ah<50) return;
+  var r=EW/eH(), w=Math.min(aw,ah*r), h=w/r; cv.style.width=Math.floor(w)+"px"; cv.style.height=Math.floor(h)+"px"; redraw();
+}
+function addObj(kind){
+  var W=EW, H=eH(), A=S.acc, o;
+  if(kind==="text") o=TX("Yazı","YAZINI YAZ",110,{font:"bebas",upper:true,color:"#ffffff",shadow:true,bindOn:false,x:W/2,y:H/2});
+  else if(kind==="rect") o=SH("Dikdörtgen","rect",W/2,H/2,420,160,{fill:A,ac:"fill"});
+  else if(kind==="ellipse") o=SH("Daire","ellipse",W/2,H/2,280,280,{fill:A,ac:"fill"});
+  else if(kind==="para") o=SH("Şerit","para",W/2,H/2,620,96,{fill:A,ac:"fill",sk:0.12});
+  else if(kind==="line") o=SH("Çizgi","rect",W/2,H/2,440,8,{fill:"#ffffff"});
+  else o=RT("Rota",W/2,H/2,420,300,{color:"#ffffff"});
+  E.objs.push(o); E.sel=o.id; pushH(); buildTools(); buildLayers(); redraw();
+  $("#fsAdd").hidden=true;
+  if(kind==="text") setTimeout(focusText,60);
+}
+
+/* ---------- Şablon önizleme küçük resimleri ---------- */
+var SAMPLE_GEO=(function(){ var g=[]; for(var i=0;i<26;i++) g.push([i*0.02,Math.sin(i/3.2)*0.35+i*0.01]); return g; })();
+function thumbFor(t){
+  var sv={objs:E.objs,uid:E.uid,q:E.q,sel:E.sel,thumb:E.thumb,guide:E.guide}, url="";
+  E.thumb=true; E.uid=0; E.sel=null; E.guide=null;
+  try{
+    var L=t.fn(EW,eH()); E.objs=L; pinsAll();
+    var q=0.17, c2=document.createElement("canvas"); c2.width=Math.round(EW*q); c2.height=Math.round(eH()*q);
+    var c=c2.getContext("2d"); c.setTransform(q,0,0,q,0,0); E.q=q; c.fillStyle="#000"; c.fillRect(0,0,EW,eH());
+    L.forEach(function(o){ edDrawObj(c,o,true); }); url=c2.toDataURL("image/jpeg",0.72);
+  }catch(err){}
+  E.objs=sv.objs; E.uid=sv.uid; E.q=sv.q; E.sel=sv.sel; E.thumb=sv.thumb; E.guide=sv.guide; return url;
+}
+
 function loadFonts(cb){
   var done=false; function fin(){ if(done) return; done=true; E.fontsOk=true; cb(); }
   var fs=document.fonts; if(!fs||!fs.load){ fin(); return; }
@@ -1191,6 +1594,7 @@ $("#btnRota").addEventListener("click",function(){
   $("#rotaHint").textContent="Rota geldi: "+(r.ad||"adsız rota")+(r.km?", "+r.km+" km":"")+". Rota çizgisi şablona geldi."; toast("Rota getirildi."); onField(); if(S.mode==="edit") pushH(true);
 });
 function setMode(m){
+  if(m!=="edit") closeFs();
   S.mode=m; var ed=m==="edit";
   $("#modeEdit").hidden=!ed; $("#modeQuick").hidden=ed; $("#edbar").classList.toggle("on",ed); cv.classList.toggle("edit",ed);
   [].forEach.call(document.querySelectorAll("#modeSeg button"),function(b){ b.setAttribute("aria-pressed",String(b.getAttribute("data-v")===m)); });
