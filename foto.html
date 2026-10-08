@@ -89,16 +89,23 @@ body.fsOpen{overflow:hidden;}
 .tplGrid .tpl{background:var(--panel2);border:2px solid var(--line);border-radius:12px;padding:6px;cursor:pointer;color:var(--text);font-size:12px;font-weight:700;line-height:1.2;display:flex;flex-direction:column;gap:6px;align-items:center;}
 .tplGrid .tpl img{width:100%;height:auto;border-radius:8px;display:block;background:#000;}
 .tplGrid .tpl[aria-pressed="true"]{border-color:var(--red);background:#2a1614;}
-#fs{position:fixed;inset:0;height:100%;z-index:100;background:#050506;display:flex;flex-direction:column;}
+#fs{position:fixed;inset:0;height:100%;z-index:100;background:#000;--tool-h:38vh;}
 #fs[hidden]{display:none !important;}
-.fsTop{display:flex;gap:6px;padding:calc(8px + env(safe-area-inset-top,0px)) 8px 8px;background:#14161b;border-bottom:1px solid var(--line);}
-.fsB{flex:1;min-height:46px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-weight:800;font-size:13.5px;cursor:pointer;padding:0 6px;}
-.fsMin{position:absolute;right:10px;top:calc(62px + env(safe-area-inset-top,0px));z-index:6;min-height:40px;padding:0 14px;border-radius:20px;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.65);color:#fff;font-weight:800;font-size:13px;cursor:pointer;}
+.fsTop{position:absolute;left:0;right:0;top:0;z-index:6;display:flex;gap:6px;padding:calc(6px + env(safe-area-inset-top,0px)) 8px 14px;background:linear-gradient(rgba(0,0,0,.7),rgba(0,0,0,0));pointer-events:none;}
+.fsB{flex:1;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-weight:800;font-size:13.5px;cursor:pointer;padding:0 6px;}
+.fsTop .fsB{pointer-events:auto;background:rgba(20,22,27,.82);}
+.fsTop .fsB[aria-pressed="true"]{background:var(--red);border-color:var(--red);color:#fff;}
+.fsMin{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:6;min-height:48px;padding:0 26px;border-radius:26px;border:1px solid rgba(255,255,255,.45);background:rgba(0,0,0,.72);color:#fff;font-weight:800;font-size:15px;cursor:pointer;white-space:nowrap;}
+#fs.tools .fsMin{bottom:calc(var(--tool-h) + 6px);min-height:44px;}
 .fsB.pri{background:var(--red);border-color:var(--red);color:#fff;flex:1.2;}
 .fsB:disabled{opacity:.4;}
-#fsStage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#000;}
+#fsStage{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#000;}
+#fs.tools #fsStage{top:calc(60px + env(safe-area-inset-top,0px));bottom:calc(var(--tool-h) + 56px);}
 canvas.fsCv{max-width:none !important;max-height:none !important;}
-.fsTools{flex:0 0 auto;height:38vh;min-height:190px;overflow-y:auto;background:#14161b;border-top:1px solid var(--line);padding:10px 12px calc(12px + env(safe-area-inset-bottom,0px));}
+.fsTools{position:absolute;left:0;right:0;bottom:0;z-index:7;height:var(--tool-h);overflow-y:auto;background:#14161b;border-top:1px solid var(--line);padding:10px 12px calc(12px + env(safe-area-inset-bottom,0px));transform:translateY(105%);visibility:hidden;transition:transform .18s ease;}
+#fs.tools .fsTools{transform:none;visibility:visible;}
+.nudge{display:flex;gap:6px;margin:8px 0 4px;}
+.nudge button{flex:1;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-weight:800;font-size:17px;cursor:pointer;}
 .sheet{position:absolute;left:0;right:0;bottom:0;max-height:64%;overflow-y:auto;background:#14161b;border-top:3px solid var(--red);padding:12px 12px calc(14px + env(safe-area-inset-bottom,0px));z-index:5;box-shadow:0 -10px 30px rgba(0,0,0,.6);}
 .sheet[hidden]{display:none !important;}
 .sheetHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:15px;}
@@ -173,8 +180,6 @@ canvas.fsCv{max-width:none !important;max-height:none !important;}
     <input type="text" id="fMotor" class="inp" maxlength="30" placeholder="Örnek: BMW R 1250 GS">
     <div class="row"><input type="text" id="fKm" class="inp" maxlength="12" placeholder="Km: örn. 5000"><input type="text" id="fTarih" class="inp" maxlength="22" placeholder="Tarih: örn. 12 Temmuz 2026"></div>
     <div class="row"><input type="text" id="fBas" class="inp" maxlength="20" placeholder="Başlangıç: örn. Ankara"><input type="text" id="fBit" class="inp" maxlength="20" placeholder="Varış: örn. Atina"></div>
-    <div class="row"><button type="button" class="btn g" id="btnRota">🗺️ Rota İmaj'daki son rotamı getir</button></div>
-    <p class="hint" id="rotaHint">Rota İmaj'da bir rota hazırladıysan, harita çizgisi ve mesafe şablona otomatik gelir.</p>
     <label class="lab">Vurgu rengi</label>
     <div class="accs" id="accs"></div>
   </div>
@@ -259,7 +264,7 @@ canvas.fsCv{max-width:none !important;max-height:none !important;}
 </div>
 <div id="fs" hidden>
   <div class="fsTop">
-    <button type="button" id="fsDone" class="fsB pri">⤡ Küçült</button>
+    <button type="button" id="fsSet" class="fsB" aria-pressed="false">⚙ Ayarlar</button>
     <button type="button" id="fsUndo" class="fsB" disabled aria-label="Geri al">↶</button>
     <button type="button" id="fsRedo" class="fsB" disabled aria-label="İleri al">↷</button>
     <button type="button" id="fsAddBtn" class="fsB">＋ Ekle</button>
@@ -273,7 +278,7 @@ canvas.fsCv{max-width:none !important;max-height:none !important;}
     <div class="addgrid">
       <button type="button" data-add="text">🅰️ Yazı</button><button type="button" data-add="rect">▭ Dikdörtgen</button>
       <button type="button" data-add="ellipse">⬤ Daire</button><button type="button" data-add="para">▱ Şerit</button>
-      <button type="button" data-add="line">─ Çizgi</button><button type="button" data-add="route">🗺️ Rota</button>
+      <button type="button" data-add="line">─ Çizgi</button>
     </div>
   </div>
   <div id="fsLayers" class="sheet" hidden>
@@ -1286,6 +1291,9 @@ var TPLS=[
   {id:"yarim",ad:"Yarım Yarım",fn:tplYarim},{id:"saricerceve",ad:"Sarı Çerçeve",fn:tplSariCerceve},{id:"sinema",ad:"Siyah-Beyaz Sinema",fn:tplSinema},{id:"kirmizi",ad:"Dikey Kırmızı",fn:tplKirmizi}
 ];
 
+/* Foto İmaj Rota İmaj'dan bağımsız: şablonlardaki rota kutuları kaldırılır */
+TPLS.forEach(function(t){ var f=t.fn; t.fn=function(W,H){ return f(W,H).filter(function(o){ return o.t!=="route"; }); }; });
+
 /* ---------- Geçmiş (geri al / ileri al) ---------- */
 function snap(){ return JSON.stringify({fmt:E.fmt,objs:E.objs.map(function(o){ var c={}; for(var k in o) if(k.charAt(0)!=="_") c[k]=o[k]; return c; })}); }
 function pushH(sys){
@@ -1347,7 +1355,7 @@ function gStart(p){
   if(o&&!o.hidden){
     var rh=worldPt(o,0,-o.h/2-44*p.f), sh=worldPt(o,o.w/2,o.h/2), R=26*p.f;
     if(dist(p,rh)<R){ G.mode="rot"; G.o=o; return; }
-    if(dist(p,sh)<R){ G.mode="scale"; G.o=o; G.s0=snapS(o); G.d0=Math.max(10,dist({x:o.x,y:o.y},p)); return; }
+    if(dist(p,sh)<R){ G.mode="scale"; G.o=o; G.s0=snapS(o); G.d0=Math.max(70*p.f,dist({x:o.x,y:o.y},p)); return; }
   }
   var hit=pick(p);
   if(hit){ setSel(hit); G.o=hit; G.mode=(hit.t==="photo"&&E.photoMode==="pan"&&S.img)?"pan":"move"; G.o0={x:hit.x,y:hit.y,ox:hit.ox,oy:hit.oy}; }
@@ -1388,7 +1396,7 @@ function gMove(e){
     }
     G.moved=true; redraw(); return;
   }
-  if(G.mode==="scale"){ applyScale(o,G.s0,dist({x:o.x,y:o.y},p)/G.d0); }
+  if(G.mode==="scale"){ var kk=dist({x:o.x,y:o.y},p)/G.d0; kk=1+(kk-1)*0.6; applyScale(o,G.s0,Math.max(0.05,kk)); }
   else if(G.mode==="rot"){
     var r=Math.atan2(p.y-o.y,p.x-o.x)+Math.PI/2, q=Math.PI/2, near=Math.round(r/q)*q; if(Math.abs(r-near)<0.07) r=near; o.rot=r; delete o.pin;
   }
@@ -1409,6 +1417,7 @@ function gEnd(e){
   }
 }
 function focusText(){
+  if(FS.on&&!$("#fs").classList.contains("tools")) fsTools(true);
   var ta=document.querySelector((FS.on?"#fsTools":"#tools")+" textarea"); if(ta){ ta.focus(); try{ ta.select(); }catch(_){} }
 }
 function bindCanvas(){
@@ -1472,6 +1481,13 @@ function buildTools(){
   ["#tools","#fsTools"].forEach(function(q){ var x=$(q); if(x) x.innerHTML=""; }); var box=FS.on?$("#fsTools"):$("#tools"); if(!box) return; var o=selObj();
   if(!o){ box.appendChild(ce("p","hint","Düzenlemek için tuvaldeki bir yazıya, fotoğrafa ya da şekle dokun. Parmakla sürükleyerek taşı, köşedeki kareyle büyüt, üstteki daireyle döndür. İki parmakla da büyütüp döndürebilirsin.")); return; }
   var head=ce("div","toolhead"); head.appendChild(ce("b",null,o.name)); box.appendChild(head);
+  if(FS.on&&!o.locked){
+    var ng=ce("div","nudge");
+    function nb(t,fn){ var b=ce("button",null,t); b.type="button"; b.addEventListener("click",function(){ fn(); delete o.pin; pushH(); redraw(); }); ng.appendChild(b); }
+    nb("◀",function(){ o.x-=3; }); nb("▲",function(){ o.y-=3; }); nb("▼",function(){ o.y+=3; }); nb("▶",function(){ o.x+=3; });
+    nb("A−",function(){ applyScale(o,snapS(o),0.96); }); nb("A+",function(){ applyScale(o,snapS(o),1.04); });
+    box.appendChild(ng);
+  }
   var act=ce("div","acts");
   function ab(t,fn,dis){ var b=ce("button","btn g sm",t); b.type="button"; if(dis) b.disabled=true; b.addEventListener("click",fn); act.appendChild(b); }
   ab("Öne",function(){ moveZ(o,1); }); ab("Arkaya",function(){ moveZ(o,-1); }); ab("Çoğalt",dupSel,o.locked); ab("Sil",delSel,o.locked);
@@ -1562,7 +1578,7 @@ function bindEdUi(){
   $("#fsUndo").addEventListener("click",undo); $("#fsRedo").addEventListener("click",redo);
   $("#btnTpl").addEventListener("click",function(){ $("#tplSheet").hidden=false; var g=$("#tplGrid"); var cur=g.querySelector('[aria-pressed="true"]'); if(cur&&cur.scrollIntoView) cur.scrollIntoView({block:"center"}); });
   $("#tplClose").addEventListener("click",function(){ $("#tplSheet").hidden=true; });
-  $("#btnFs").addEventListener("click",openFs); $("#fsDone").addEventListener("click",closeFs); $("#fsMin").addEventListener("click",closeFs);
+  $("#btnFs").addEventListener("click",openFs); $("#fsSet").addEventListener("click",function(){ fsTools(!$("#fs").classList.contains("tools")); }); $("#fsMin").addEventListener("click",closeFs);
   document.addEventListener("keydown",function(e){ if(e.key==="Escape"){ if(!$("#tplSheet").hidden) $("#tplSheet").hidden=true; else if(FS.on) closeFs(); } });
   $("#fsAddBtn").addEventListener("click",function(){ $("#fsLayers").hidden=true; $("#fsAdd").hidden=!$("#fsAdd").hidden; });
   $("#fsLayBtn").addEventListener("click",function(){ $("#fsAdd").hidden=true; $("#fsLayers").hidden=!$("#fsLayers").hidden; });
@@ -1576,13 +1592,18 @@ function bindEdUi(){
 var FS={on:false};
 function openFs(){
   if(FS.on) return; FS.on=true;
-  $("#fs").hidden=false; document.body.classList.add("fsOpen");
+  $("#fs").hidden=false; $("#fs").classList.remove("tools"); $("#fsSet").setAttribute("aria-pressed","false"); document.body.classList.add("fsOpen");
   $("#fsStage").appendChild(cv); cv.classList.add("fsCv");
   if(!selObj()){ var tx=E.objs.filter(function(o){ return o.t==="text"&&!o.locked&&!o.hidden; }), tt=tx.filter(function(o){ return o.bind==="title"; })[0]||tx[0]; if(tt) E.sel=tt.id; }
   buildTools(); buildLayers(); updUndo(); fsResize(); redraw(); setTimeout(fsResize,80);
 }
+function fsTools(on){
+  var f=$("#fs"); f.classList.toggle("tools",!!on); $("#fsSet").setAttribute("aria-pressed",String(!!on)); $("#fsSet").textContent=on?"▼ Gizle":"⚙ Ayarlar";
+  setTimeout(fsResize,30); setTimeout(fsResize,220);
+}
 function closeFs(){
   if(!FS.on) return; FS.on=false;
+  $("#fs").classList.remove("tools"); $("#fsSet").textContent="⚙ Ayarlar";
   $("#fs").hidden=true; $("#fsLayers").hidden=true; $("#fsAdd").hidden=true; document.body.classList.remove("fsOpen");
   cv.classList.remove("fsCv"); cv.style.width=""; cv.style.height="";
   document.querySelector(".stageIn").appendChild(cv);
@@ -1706,14 +1727,6 @@ $("#btnKaris").addEventListener("click",function(){
   S.lay=l.id; S.acc=a.c; S.tst=t; buildLays(); buildAccs();
   [].forEach.call(document.querySelectorAll("#tstSeg button"),function(x){ x.setAttribute("aria-pressed",String(x.getAttribute("data-v")===t)); });
   redraw();
-});
-$("#btnRota").addEventListener("click",function(){
-  var r=null; try{ r=JSON.parse(localStorage.getItem("motogo_son_rota")||"null"); }catch(e){}
-  if(!r||!r.geo||r.geo.length<2){ $("#rotaHint").textContent="Henüz kayıtlı rota yok. Önce Rota İmaj'da iki nokta seçip rotanı oluştur, sonra buraya dön."; toast("Kayıtlı rota bulunamadı."); return; }
-  S.geo=r.geo; if(r.km) $("#fKm").value=String(r.km); if(r.bas&&!/^(Başlangıç|Bitiş|Mola)/.test(r.bas)) $("#fBas").value=r.bas; if(r.bit&&!/^(Başlangıç|Bitiş|Mola)/.test(r.bit)) $("#fBit").value=r.bit;
-  if(r.ad&&!$("#tIn").value.trim()) $("#tIn").value=r.ad.slice(0,40);
-  if(!$("#fTarih").value&&r.t){ try{ $("#fTarih").value=new Date(r.t).toLocaleDateString("tr-TR",{day:"numeric",month:"long",year:"numeric"}); }catch(e){} }
-  $("#rotaHint").textContent="Rota geldi: "+(r.ad||"adsız rota")+(r.km?", "+r.km+" km":"")+". Rota çizgisi şablona geldi."; toast("Rota getirildi."); onField(); if(S.mode==="edit") pushH(true);
 });
 function setMode(m){
   if(m!=="edit"){ closeFs(); $("#tplSheet").hidden=true; }
