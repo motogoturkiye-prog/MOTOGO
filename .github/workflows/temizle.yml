@@ -1,1 +1,40 @@
+name: Temizle
+on:
+  workflow_dispatch:
+    inputs:
+      sil:
+        description: "Gercekten silinsin mi? (siler: evet yaz / sadece listeler: hayir birak)"
+        required: false
+        default: "hayir"
+permissions:
+  contents: write
+jobs:
+  temizle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Listele ve sil
+        env:
+          SIL: ${{ github.event.inputs.sil }}
+        run: |
+          if [ ! -d sozluk ]; then echo "sozluk klasoru yok, durduruldu"; exit 1; fi
+          n=0
+          for f in sozluk/*.html; do
+            b=$(basename "$f")
+            [ "$b" = "index.html" ] && continue
+            if [ -f "$b" ]; then
+              echo "Silinecek: $b"
+              n=$((n+1))
+              if [ "$SIL" = "evet" ]; then git rm -q "$b"; fi
+            fi
+          done
+          echo "Toplam: $n dosya"
+          if [ "$SIL" = "evet" ] && [ "$n" -gt 0 ]; then
+            git config user.name "github-actions"
+            git config user.email "actions@github.com"
+            git commit -m "Ana dizindeki fazla sozluk dosyalari temizlendi"
+            git push
+          else
+            echo "Silme yapilmadi (sadece liste)."
+          fi
 
