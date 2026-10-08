@@ -408,12 +408,23 @@ function frameGeo(o){
   }
   g.slot={x:-w/2,y:-h/2,w:w,h:h,path:P("rect",w,h,0)}; return g;
 }
+function adjustPx(cv,o){
+  var w=cv.width,h=cv.height,c=document.createElement("canvas"); c.width=w; c.height=h; var x=c.getContext("2d"); x.drawImage(cv,0,0);
+  var d=x.getImageData(0,0,w,h),a=d.data,n=a.length,br=(o.br||0)*2.55,ct=1+(o.ct||0)/100,sa=1+(o.sa||0)/100,wm=(o.wm||0)*0.6;
+  for(var i=0;i<n;i+=4){
+    var r=(a[i]-128)*ct+128+br+wm, g=(a[i+1]-128)*ct+128+br, b=(a[i+2]-128)*ct+128+br-wm, l=0.299*r+0.587*g+0.114*b;
+    r=l+(r-l)*sa; g=l+(g-l)*sa; b=l+(b-l)*sa;
+    a[i]=r<0?0:r>255?255:r; a[i+1]=g<0?0:g>255?255:g; a[i+2]=b<0?0:b>255?255:b;
+  }
+  x.putImageData(d,0,0); return c;
+}
 function photoCanvas(o){
   var base=IM[o.src]; if(!base) return null;
-  var key=o.src+"|"+(o.flt||"orj")+"|"+(o.fk==null?0.7:o.fk)+"|"+(o.bty||0);
+  var adj=!!(o.br||o.ct||o.sa||o.wm);
+  var key=o.src+"|"+(o.flt||"orj")+"|"+(o.fk==null?0.7:o.fk)+"|"+(o.bty||0)+"|"+(o.br||0)+"|"+(o.ct||0)+"|"+(o.sa||0)+"|"+(o.wm||0);
   if(o._pc&&o._pc.key===key) return o._pc.cv;
   var cv=base, mx=1500;
-  if(Math.max(base.width,base.height)>mx&&((o.bty||0)>0||(o.flt&&o.flt!=="orj"))){
+  if(Math.max(base.width,base.height)>mx&&((o.bty||0)>0||adj||(o.flt&&o.flt!=="orj"))){
     var sc=mx/Math.max(base.width,base.height), t=document.createElement("canvas"); t.width=Math.round(base.width*sc); t.height=Math.round(base.height*sc); t.getContext("2d").drawImage(base,0,0,t.width,t.height); cv=t;
   }
   if((o.bty||0)>0) cv=beautify(cv,o.bty/100);
@@ -421,7 +432,15 @@ function photoCanvas(o){
     var st=STYLES.filter(function(s){ return s.id===o.flt; })[0];
     if(st&&st.fn){ var c2=document.createElement("canvas"); c2.width=cv.width; c2.height=cv.height; var x2=c2.getContext("2d"); x2.drawImage(cv,0,0); st.fn(x2,c2.width,c2.height,o.fk==null?0.7:o.fk); cv=c2; }
   }
+  if(adj) cv=adjustPx(cv,o);
   o._pc={key:key,cv:cv}; return cv;
+}
+function drawShade(c,o){
+  var w=o.w,h=o.h,col=hx(o.fill),a=o.a==null?0.75:o.a;
+  if(o.dir==="tum"){ c.fillStyle=hexA(col,a); c.fillRect(-w/2,-h/2,w,h); return; }
+  var g=c.createLinearGradient(0,-h/2,0,h/2), up=o.dir==="ust";
+  [[0,0],[0.35,0.28],[0.7,0.72],[1,1]].forEach(function(p){ g.addColorStop(up?1-p[0]:p[0],hexA(col,a*p[1])); });
+  c.fillStyle=g; c.fillRect(-w/2,-h/2,w,h);
 }
 function demoScene(c,s){
   var g=c.createLinearGradient(0,s.y,0,s.y+s.h); g.addColorStop(0,"#ffb36b"); g.addColorStop(0.55,"#ff6f61"); g.addColorStop(1,"#3a2a52"); c.fillStyle=g; c.fillRect(s.x,s.y,s.w,s.h);
@@ -479,7 +498,7 @@ function drawObj(c,o,q,idx){
   if(an){ al*=an.a; c.translate(o.x+an.dx,o.y+an.dy); if(an.s!==1) c.scale(an.s,an.s); } else c.translate(o.x,o.y);
   if(o.rot) c.rotate(o.rot);
   c.globalAlpha=al;
-  if(o.t==="text") drawText(c,o,q); else if(o.t==="shape") drawShape(c,o,q); else if(o.t==="icon") drawIcon(c,o,q); else if(o.t==="photo") drawPhoto(c,o,q,E.exporting,false);
+  if(o.t==="shade") drawShade(c,o); else if(o.t==="text") drawText(c,o,q); else if(o.t==="shape") drawShape(c,o,q); else if(o.t==="icon") drawIcon(c,o,q); else if(o.t==="photo") drawPhoto(c,o,q,E.exporting,false);
   c.restore();
 }
 function drawWMf(c,W,H){
@@ -506,8 +525,8 @@ function dist(a,b){ return Math.hypot(a.x-b.x,a.y-b.y); }
 function inBox(o,p,m){ var dx=p.x-o.x, dy=p.y-o.y, co=Math.cos(o.rot||0), si=Math.sin(o.rot||0), lx=dx*co+dy*si, ly=-dx*si+dy*co; return Math.abs(lx)<=o.w/2+m&&Math.abs(ly)<=o.h/2+m; }
 function pick(p){
   var i,o,m=8*E.inv;
-  for(i=E.objs.length-1;i>=0;i--){ o=E.objs[i]; if(o.hid||o.lock) continue; if(inBox(o,p,0)) return o; }
-  for(i=E.objs.length-1;i>=0;i--){ o=E.objs[i]; if(o.hid||o.lock) continue; if(inBox(o,p,m)) return o; }
+  for(i=E.objs.length-1;i>=0;i--){ o=E.objs[i]; if(o.hid||o.lock||o.nopick) continue; if(inBox(o,p,0)) return o; }
+  for(i=E.objs.length-1;i>=0;i--){ o=E.objs[i]; if(o.hid||o.lock||o.nopick) continue; if(inBox(o,p,m)) return o; }
   return null;
 }
 function handles(o){ var inv=E.inv; return {del:worldPt(o,-o.w/2-6*inv,-o.h/2-6*inv),rot:worldPt(o,0,-o.h/2-46*inv),sca:worldPt(o,o.w/2+4*inv,o.h/2+4*inv)}; }
@@ -666,7 +685,7 @@ $("#fIn").addEventListener("change",function(){
     c.width=Math.max(1,Math.round(im.naturalWidth*sc)); c.height=Math.max(1,Math.round(im.naturalHeight*sc));
     c.getContext("2d").drawImage(im,0,0,c.width,c.height); URL.revokeObjectURL(url);
     var id=++E.imgSeq; IM[id]=c; var o=pendingPhoto; pendingPhoto=null;
-    if(o&&byId(o.id)){ o.src=id; o.ox=0; o.oy=0; o.zoom=1; o._pc=null; if(o.frame==="yok"){ fitPhotoBox(o,c); } pushH(); onSelChange(); }
+    if(o&&byId(o.id)){ o.src=id; o.ox=0; o.oy=0; o.zoom=1; o._pc=null; if(o.frame==="yok"&&!o.kl){ fitPhotoBox(o,c); } pushH(); onSelChange(); }
     else { var p=mkPhoto({src:id}); fitPhotoBox(p,c); add(p); }
   };
   im.onerror=function(){ toast("Bu fotoğraf açılamadı. JPG veya PNG dene."); URL.revokeObjectURL(url); };
@@ -694,12 +713,12 @@ var deb=null;
 function setPropDeb(k,v){ if(!selObj()) return; clearTimeout(deb); deb=setTimeout(function(){ setProp(k,v,false); },160); }
 
 /* ---------- Panel ---------- */
-var TOOLS=[["yazi","🔤","Yazı"],["sekil","⬟","Şekil"],["ikon","★","İkon"],["foto","📷","Foto"],["mockup","📱","Mockup"],["renk","🎨","Renk"],["golge","🌗","Gölge"],["duzen","⇔","Düzen"],["tuval","▭","Tuval"],["video","🎬","Video"],["katman","☰","Katman"]];
+var TOOLS=[["yazi","🔤","Yazı"],["sekil","⬟","Şekil"],["ikon","★","İkon"],["foto","📷","Foto"],["renk","🎨","Renk"],["golge","🌗","Gölge"],["duzen","⇔","Düzen"],["tuval","▭","Tuval"],["filtre","✨","Filtre"],["kolaj","▦","Kolaj"],["video","🎬","Video"],["muzik","🎵","Müzik"],["proje","💾","Projeler"],["katman","☰","Katman"]];
 var TNAME={}; TOOLS.forEach(function(t){ TNAME[t[0]]=t[2]; });
 (function(){ var h=""; TOOLS.forEach(function(t){ h+='<button class="rb" data-t="'+t[0]+'" aria-pressed="false" aria-label="'+t[2]+'"><i>'+t[1]+'</i>'+t[2]+'</button>'; }); $("#rail").innerHTML=h; })();
 $("#rail").addEventListener("click",function(e){ var b=e.target.closest(".rb"); if(!b) return; openTool(b.getAttribute("data-t")); });
 function markRail(){ var bs=document.querySelectorAll(".rb"); for(var i=0;i<bs.length;i++) bs[i].setAttribute("aria-pressed",bs[i].getAttribute("data-t")===E.tool?"true":"false"); }
-function closePanelFn(){ E.tool=null; $("#panel").classList.remove("open"); markRail(); }
+function closePanelFn(){ try{ stopPrev(); }catch(e){} E.tool=null; $("#panel").classList.remove("open"); markRail(); }
 function openTool(k){
   if(E.tool===k){ closeTopUI(); return; }
   hideIntro();
@@ -839,7 +858,7 @@ PAN.video=function(){
 PAN.katman=function(){
   if(!E.objs.length) return '<p class="hint">Henüz nesne yok.</p>';
   var h=""; for(var i=E.objs.length-1;i>=0;i--){ var o=E.objs[i], nm=o.t==="text"?(o.text||"").replace(/\n/g," ").slice(0,22):(o.name||o.t);
-    h+='<div class="lrow" data-s="'+(E.sel===o.id?1:0)+'"><button class="ln" data-a="lsel" data-v="'+o.id+'">'+(o.t==="text"?"🔤 ":o.t==="photo"?"📷 ":o.t==="icon"?"★ ":"⬟ ")+esc(nm||"—")+'</button><button class="sb" data-a="lvis" data-v="'+o.id+'">'+(o.hid?"🚫":"👁")+'</button><button class="sb" data-a="llock" data-v="'+o.id+'">'+(o.lock?"🔒":"🔓")+'</button><button class="sb" data-a="lup" data-v="'+o.id+'">↑</button><button class="sb" data-a="ldn" data-v="'+o.id+'">↓</button><button class="sb" data-a="ldel" data-v="'+o.id+'">🗑</button></div>'; }
+    h+='<div class="lrow" data-s="'+(E.sel===o.id?1:0)+'"><button class="ln" data-a="lsel" data-v="'+o.id+'">'+(o.t==="text"?"🔤 ":o.t==="photo"?"📷 ":o.t==="icon"?"★ ":o.t==="shade"?"▤ ":"⬟ ")+esc(nm||"—")+'</button><button class="sb" data-a="lvis" data-v="'+o.id+'">'+(o.hid?"🚫":"👁")+'</button><button class="sb" data-a="llock" data-v="'+o.id+'">'+(o.lock?"🔒":"🔓")+'</button><button class="sb" data-a="lup" data-v="'+o.id+'">↑</button><button class="sb" data-a="ldn" data-v="'+o.id+'">↓</button><button class="sb" data-a="ldel" data-v="'+o.id+'">🗑</button></div>'; }
   return h;
 };
 
@@ -974,7 +993,7 @@ async function makeVideo(){
     try{
       var AC=window.AudioContext||window.webkitAudioContext; ac=new AC(); if(ac.resume) ac.resume();
       var ab;
-      if(V.music==="btr"){ if(!V.buf.btr){ var r=await fetch("muzik/born-to-ride.mp3"); V.buf.btr=await r.arrayBuffer(); } ab=V.buf.btr.slice(0); }
+      if(V.music!=="own"){ var tk=LIB.filter(function(x){ return x.id===V.music; })[0]; if(!tk) throw new Error("yok"); if(!V.buf[tk.id]){ var r=await fetch(tk.src); V.buf[tk.id]=await r.arrayBuffer(); } ab=V.buf[tk.id].slice(0); }
       else { if(!V.own) throw new Error("dosya yok"); ab=V.own.slice(0); }
       var buf=await decodeAB(ac,ab), dest=ac.createMediaStreamDestination();
       srcN=ac.createBufferSource(); srcN.buffer=buf; srcN.loop=true; gain=ac.createGain(); gain.gain.value=V.vol; srcN.connect(gain); gain.connect(dest);
@@ -1004,7 +1023,7 @@ async function makeVideo(){
   var type=(rec.mimeType||mime||"video/webm").split(";")[0], ext=type.indexOf("mp4")>=0?"mp4":"webm", blob=new Blob(chunks,{type:type}), url=URL.createObjectURL(blob);
   E.vblob=blob; E.vext=ext; E.vtype=type; window.__videoSon={size:blob.size,type:type,audio:!!srcN};
   if(sheet.hidden) return;
-  sheet.querySelector(".in").innerHTML='<h3>Video hazır</h3><video id="outV" src="'+url+'" controls playsinline style="width:100%;max-height:52vh;border-radius:10px;background:#000"></video><button class="btn" data-sa="vsave">⤓ Kaydet / Paylaş</button><button class="btn g" data-sa="close">Kapat</button><p class="hint">'+(blob.size/1048576).toFixed(1)+' MB · '+ext.toUpperCase()+(srcN?" · müzikli":"")+note+'</p>';
+  sheet.querySelector(".in").innerHTML='<h3>Video hazır</h3><video id="outV" src="'+url+'" controls playsinline style="width:100%;max-height:52vh;border-radius:10px;background:#000"></video><button class="btn" data-sa="vdl">⤓ İndir</button>'+(canShareFiles()?'<button class="btn g" data-sa="vshare">↗ Paylaş</button>':'')+'<button class="btn g" data-sa="close">Kapat</button><p class="hint">'+(blob.size/1048576).toFixed(1)+' MB · '+ext.toUpperCase()+(srcN?" · müzikli":"")+note+'</p>';
 }
 
 /* ---------- Boyutlandırma ---------- */
@@ -1026,6 +1045,236 @@ document.addEventListener("keydown",function(e){
   else if((e.ctrlKey||e.metaKey)&&e.key==="y"){ e.preventDefault(); redo(); }
   else if(e.key==="Delete"||e.key==="Backspace"){ if(selObj()){ e.preventDefault(); delSel(); } }
 });
+
+
+/* =================== v131 EKLERİ =================== */
+var PCK={bty:1,fk:1,br:1,ct:1,sa:1,wm:1};
+
+/* ---- özellik yazma (zemin ve filtre eklendi) ---- */
+function setProp(k,v,commit){
+  var o=selObj();
+  if(k.indexOf("bg.")===0){ E.bg[k.slice(3)]=v; }
+  else {
+    if(!o) return;
+    if(k.indexOf("sh.")===0){ if(!o.sh) o.sh={x:0,y:10,b:24,c:"#000000",a:0.5}; o.sh[k.slice(3)]=v; }
+    else { o[k]=v; }
+    if(o.t==="text") txLayout(o);
+    if(o.t==="photo"&&(k==="flt"||PCK[k])) o._pc=null;
+    if(o.t==="shade"&&k==="h"&&o.dir!=="tum"){ o.y=o.dir==="ust"?o.h/2:E.H-o.h/2; }
+  }
+  redraw(); if(commit) pushH();
+}
+function rangeApply(el,commit){
+  var k=el.getAttribute("data-r"), sc=+el.getAttribute("data-s")||1, v=+el.value/sc, sp=el.parentNode.querySelector("span");
+  if(sp) sp.textContent=Math.round(+el.value)+(/%/.test(sp.textContent)?"%":/°/.test(sp.textContent)?"°":"");
+  if(k==="kgap"||k==="kr"){ if(k==="kgap") E.kgap=v; else E.kr=v; relayout(); if(commit) pushH(); return; }
+  if(k==="rot") v=v*Math.PI/180;
+  if(PCK[k]){ if(commit){ clearTimeout(deb); setProp(k,v,true); } else setPropDeb(k,v); return; }
+  if(k==="w"||k==="h"){ var o=selObj(); if(o&&o.t==="photo"&&o.frame!=="yok"&&k==="w"){ var r=o.h/o.w; o.w=v; o.h=v*r; redraw(); if(commit) pushH(); return; } }
+  setProp(k,v,commit);
+}
+
+/* ---- panel yenileme ---- */
+function refreshPanel(reset){
+  if(!E.tool) return; var b=$("#pbody"), sc=reset?0:b.scrollTop;
+  $("#ptitle").textContent=TNAME[E.tool]; b.innerHTML=PAN[E.tool](); b.scrollTop=sc;
+  var cs=b.querySelectorAll("canvas[data-sh]"), i;
+  for(i=0;i<cs.length;i++){ var c=cs[i].getContext("2d"), k=cs[i].getAttribute("data-sh"); c.translate(32,32); c.fillStyle="#e9ebef"; var w=k==="line"?52:48, h2=k==="line"?7:48; c.fill(P(k,w,h2,12),EO[k]?"evenodd":"nonzero"); }
+  cs=b.querySelectorAll("canvas[data-kl]");
+  for(i=0;i<cs.length;i++){ var c3=cs[i].getContext("2d"), L=KL[+cs[i].getAttribute("data-kl")][1]; c3.fillStyle="#2a2e37"; c3.fillRect(0,0,64,64);
+    L.forEach(function(fr){ c3.fillStyle="#e9ebef"; c3.fillRect(3+fr[0]*58+1.5,3+fr[1]*58+1.5,fr[2]*58-3,fr[3]*58-3); }); }
+  var tx=b.querySelector("#txIn"); if(tx&&E.focusTx){ E.focusTx=false; setTimeout(function(){ try{ tx.focus(); tx.select(); }catch(e){} },60); }
+  if(E.tool==="proje") loadProjects();
+}
+
+/* ---- Gölge: okunaklı zemin + renkli gölgeler ---- */
+SHP=[["yok","Yok",null],
+ ["alt","Alt",{x:0,y:16,b:30,c:"#000000",a:0.55}],["ust","Üst",{x:0,y:-16,b:30,c:"#000000",a:0.55}],
+ ["yum","Yumuşak",{x:0,y:6,b:44,c:"#000000",a:0.4}],["sert","Sert",{x:10,y:10,b:0,c:"#000000",a:0.85}],
+ ["gri","Gri gölge",{x:0,y:14,b:34,c:"#8a8f99",a:0.7}],["mavi","Mavi gölge",{x:0,y:12,b:30,c:"#3f6df2",a:0.8}],
+ ["yesil","Yeşil gölge",{x:0,y:12,b:30,c:"#2ecc71",a:0.8}],["kirm","Kırmızı gölge",{x:0,y:12,b:30,c:"#e5483b",a:0.85}],
+ ["mor","Mor gölge",{x:0,y:12,b:30,c:"#8e44ad",a:0.8}],["pembe","Pembe gölge",{x:0,y:12,b:30,c:"#ff4fa3",a:0.8}],
+ ["tur","Turuncu gölge",{x:0,y:12,b:30,c:"#ff9f1c",a:0.85}],
+ ["sari","Sarı parlama",{x:0,y:0,b:44,c:"#f9eb22",a:0.95}],["pmavi","Mavi parlama",{x:0,y:0,b:40,c:"#3fb7ff",a:1}],
+ ["byz","Beyaz parlama",{x:0,y:0,b:36,c:"#ffffff",a:0.9}]];
+function firstTextIdx(){ for(var i=0;i<E.objs.length;i++) if(E.objs[i].t==="text") return i; return -1; }
+function addShade(dir){
+  var o=mk("shade",{dir:dir,fill:"#000000",a:0.75,name:"Okunaklı zemin"}); o.w=E.W; o.x=E.W/2;
+  if(dir==="tum"){ o.h=E.H; o.y=E.H/2; o.nopick=true; } else { o.h=Math.round(E.H*0.38); o.y=dir==="ust"?o.h/2:E.H-o.h/2; }
+  var i=firstTextIdx(); E.objs.splice(i<0?E.objs.length:i,0,o); hideIntro(); E.sel=o.id; E.pan=false; pushH(); onSelChange();
+}
+ACT.shade=function(v){ if(v==="both"){ addShade("ust"); addShade("alt"); } else addShade(v); };
+PAN.golge=function(){
+  var o=selObj(), h='<label class="lab">Okunaklı zemin (yazı okunsun diye koyu geçiş)</label><div class="grid g2">'+
+   '<button class="gb" data-a="shade" data-v="alt" style="min-height:44px">⬇ Alt</button><button class="gb" data-a="shade" data-v="ust" style="min-height:44px">⬆ Üst</button>'+
+   '<button class="gb" data-a="shade" data-v="both" style="min-height:44px">⬍ Alt ve Üst</button><button class="gb" data-a="shade" data-v="tum" style="min-height:44px">⬛ Tüm tuval</button></div>';
+  if(o&&o.t==="shade"){
+    h+='<label class="lab">Zemin rengi</label>'+sws("fill",o.fill,false)+rgl("a","Koyuluk",0,100,5,o.a==null?0.75:o.a,100,"%");
+    if(o.dir!=="tum") h+=rgl("h","Ne kadar yukarı çıksın",80,E.H,10,o.h);
+    return h+'<p class="hint">Bu zemin ayrı bir katmandır. Silmek için 🗑 Sil, yerini değiştirmek için sürükle.</p>';
+  }
+  if(!o) return h+'<p class="hint">Nesne gölgesi için önce tuvalde bir nesneye dokun.</p>';
+  h+='<label class="lab">Nesne gölgesi</label><div class="grid g2">'; SHP.forEach(function(s,i){ h+='<button class="gb" data-a="shp" data-v="'+i+'" style="min-height:42px;font-size:12px">'+s[1]+'</button>'; }); h+='</div>';
+  if(o.sh) h+=rgl("sh.x","Yatay kayma",-60,60,1,o.sh.x)+rgl("sh.y","Dikey kayma",-60,60,1,o.sh.y)+rgl("sh.b","Bulanıklık",0,100,1,o.sh.b)+rgl("sh.a","Koyuluk",0,100,5,o.sh.a,100,"%");
+  else h+='<p class="hint">Gölge kapalı. Hazır bir gölge ya da renk seç.</p>';
+  h+='<label class="lab">Gölge rengi</label>'+sws("sh.c",o.sh?o.sh.c:"#000000",false);
+  return h;
+};
+(function(){ var r0=PAN.renk; PAN.renk=function(){ var o=selObj(); if(o&&o.t==="shade") return '<label class="lab">Zemin rengi</label>'+sws("fill",o.fill,false)+'<p class="hint">Koyuluk ve yükseklik için 🌗 Gölge menüsü.</p>'; return r0(); }; })();
+
+/* ---- Filtre ---- */
+PAN.filtre=function(){
+  var o=selObj(); if(!o||o.t!=="photo"||!o.src) return '<p class="hint">Önce tuvalde bir fotoğrafa dokun. Filtre ve ışık ayarları onun üzerinde çalışır.</p>';
+  var h='<label class="lab">Filtre</label><div class="chips">'; STYLES.forEach(function(s){ h+='<button class="chip" data-a="flt" data-v="'+s.id+'" aria-pressed="'+((o.flt||"orj")===s.id?"true":"false")+'">'+s.ic+' '+s.ad+'</button>'; }); h+='</div>';
+  if(o.flt&&o.flt!=="orj") h+=rgl("fk","Filtre gücü",0,100,5,o.fk==null?0.7:o.fk,100,"%");
+  h+=rgl("br","Parlaklık",-100,100,1,o.br||0)+rgl("ct","Kontrast",-100,100,1,o.ct||0)+rgl("sa","Canlılık",-100,100,1,o.sa||0)+rgl("wm","Sıcaklık (sıcak ↔ soğuk)",-100,100,1,o.wm||0)+rgl("bty","Güzelleştir (cilt ve ışık)",0,100,5,o.bty||0,1,"%");
+  return h+'<button class="btn g" data-a="freset">Hepsini sıfırla</button>';
+};
+ACT.freset=function(){ var o=selObj(); if(!o||o.t!=="photo") return; o.flt="orj"; o.br=o.ct=o.sa=o.wm=0; o.bty=0; o._pc=null; pushH(); redraw(); refreshPanel(); };
+
+/* ---- Kolaj ---- */
+E.kgap=14; E.kr=24;
+var KL=[
+ ["2 yan yana",[[0,0,.5,1],[.5,0,.5,1]]],
+ ["2 alt alta",[[0,0,1,.5],[0,.5,1,.5]]],
+ ["3 yan yana",[[0,0,1/3,1],[1/3,0,1/3,1],[2/3,0,1/3,1]]],
+ ["3 alt alta",[[0,0,1,1/3],[0,1/3,1,1/3],[0,2/3,1,1/3]]],
+ ["Büyük sol + 2",[[0,0,.62,1],[.62,0,.38,.5],[.62,.5,.38,.5]]],
+ ["Büyük sağ + 2",[[.38,0,.62,1],[0,0,.38,.5],[0,.5,.38,.5]]],
+ ["Büyük üst + 2",[[0,0,1,.62],[0,.62,.5,.38],[.5,.62,.5,.38]]],
+ ["Büyük alt + 2",[[0,.38,1,.62],[0,0,.5,.38],[.5,0,.5,.38]]],
+ ["Geniş + dar",[[0,0,.72,1],[.72,0,.28,1]]],
+ ["4 kare",[[0,0,.5,.5],[.5,0,.5,.5],[0,.5,.5,.5],[.5,.5,.5,.5]]],
+ ["1 büyük + 3",[[0,0,1,.64],[0,.64,1/3,.36],[1/3,.64,1/3,.36],[2/3,.64,1/3,.36]]],
+ ["Orta geniş",[[0,0,1/3,1],[1/3,0,.34,1],[.67,0,.33,1]]]
+];
+function cellGeo(fr){ var g=E.kgap,W=E.W,H=E.H,aw=W-g,ah=H-g, w=fr[2]*aw-g, h=fr[3]*ah-g; return {x:g/2+fr[0]*aw+g/2+w/2,y:g/2+fr[1]*ah+g/2+h/2,w:Math.max(20,w),h:Math.max(20,h)}; }
+function relayout(){ E.objs.forEach(function(o){ if(o.kl){ var q=cellGeo(o.kl); o.x=q.x; o.y=q.y; o.w=q.w; o.h=q.h; o.rot=0; o.r=E.kr; o.frame="yok"; o.mask="round"; } }); redraw(); }
+var KEEP=["src","ox","oy","zoom","flt","fk","bty","br","ct","sa","wm","flip"];
+function applyKolaj(i){
+  var old=E.objs.filter(function(o){ return o.kl; }); E.objs=E.objs.filter(function(o){ return !o.kl; });
+  var cells=KL[i][1].map(function(fr,j){ var o=mkPhoto({mask:"round",kl:fr,name:"Kolaj "+(j+1)}); if(old[j]) KEEP.forEach(function(k){ if(old[j][k]!==undefined) o[k]=old[j][k]; }); return o; });
+  E.objs=cells.concat(E.objs); E.sel=null; hideIntro(); relayout(); pushH(); onSelChange();
+}
+ACT.kl=function(v){ applyKolaj(+v); };
+PAN.kolaj=function(){
+  var h='<p class="hint" style="margin:0 0 8px">Bir yerleşim seç. Kutuya dokun, fotoğrafı seç. Kutunun içinde kaydırmak için kutuyu seçip ✋ Kaydır.</p><div class="grid g3">';
+  KL.forEach(function(k,i){ h+='<button class="gb" data-a="kl" data-v="'+i+'"><canvas data-kl="'+i+'" width="64" height="64"></canvas><span>'+k[0]+'</span></button>'; });
+  h+='</div>'+rgl("kgap","Kutular arası boşluk",0,80,2,E.kgap)+rgl("kr","Köşe yuvarlaklığı",0,200,2,E.kr);
+  return h+'<p class="hint">Kolajı bitirince ⤓ Kaydet ile fotoğraf, 🎬 Video ile müzikli video yapabilirsin.</p>';
+};
+ACT.fmt=function(v){
+  var d=DIMS[v], ow=E.W, oh=E.H; E.fmt=v; E.W=d[0]; E.H=d[1];
+  E.objs.forEach(function(o){
+    if(o.kl) return;
+    if(o.t==="shade"){ o.w=E.W; o.x=E.W/2; if(o.dir==="tum"){ o.h=E.H; o.y=E.H/2; } else { o.h=Math.min(o.h,Math.round(E.H*0.6)); o.y=o.dir==="ust"?o.h/2:E.H-o.h/2; } return; }
+    o.x=o.x*E.W/ow; o.y=o.y*E.H/oh;
+  });
+  relayout(); pushH(); fit(); refreshPanel();
+};
+
+/* ---- Müzik kütüphanesi ---- */
+var LIB=[{id:"btr",ad:"Born to Ride",src:"muzik/born-to-ride.mp3"}];
+var AUD=null, audId=null;
+function stopPrev(){ if(AUD){ try{ AUD.pause(); }catch(e){} AUD=null; audId=null; } }
+function musName(id){ if(id==="yok") return "Müziksiz"; if(id==="own") return V.ownName||"Kendi müziğim"; var t=LIB.filter(function(x){ return x.id===id; })[0]; return t?t.ad:"Müziksiz"; }
+PAN.muzik=function(){
+  var h='<input class="inp" id="msearch" data-ms="1" placeholder="Şarkı ara..." autocomplete="off"><div style="margin-top:10px" id="mlist">';
+  function row(id,ad,prev){ return '<div class="lrow" data-mn="'+esc(ad.toLocaleLowerCase("tr-TR"))+'" data-s="'+(V.music===id?1:0)+'"><button class="ln" data-a="mus" data-v="'+id+'">'+(V.music===id?"✓ ":"🎵 ")+esc(ad)+'</button>'+(prev?'<button class="sb" data-a="mprev" data-v="'+id+'" aria-label="Dinle">▶</button>':"")+'</div>'; }
+  h+=row("yok","Müziksiz",false);
+  LIB.forEach(function(t){ h+=row(t.id,t.ad,true); });
+  h+=row("own",V.ownName?("Kendi dosyam: "+V.ownName):"+ Kendi müzik dosyam",false);
+  return h+'</div><p class="hint">Seçtiğin şarkı 🎬 Video çıktısında çalar. Yeni şarkılar eklendikçe burada listelenir.</p>';
+};
+ACT.mus=function(v){ stopPrev(); if(v==="own"){ var f=$("#mIn"); f.value=""; f.click(); return; } V.music=v; toast("Müzik: "+musName(v)); refreshPanel(); };
+ACT.mprev=function(v,el){
+  if(AUD&&audId===v){ stopPrev(); var bs=document.querySelectorAll('[data-a=mprev]'); for(var i=0;i<bs.length;i++) bs[i].textContent="▶"; return; }
+  stopPrev(); var t=LIB.filter(function(x){ return x.id===v; })[0]; if(!t) return;
+  try{ AUD=new Audio(t.src); audId=v; AUD.volume=0.8; AUD.play().catch(function(){ toast("Çalınamadı"); }); AUD.onended=function(){ stopPrev(); var b2=document.querySelectorAll('[data-a=mprev]'); for(var j=0;j<b2.length;j++) b2[j].textContent="▶"; }; }catch(e){ return; }
+  var b=document.querySelectorAll('[data-a=mprev]'); for(var k=0;k<b.length;k++) b[k].textContent=(b[k]===el?"■":"▶");
+};
+$("#pbody").addEventListener("input",function(e){
+  var t=e.target; if(!t.hasAttribute||!t.hasAttribute("data-ms")) return;
+  var q=t.value.toLocaleLowerCase("tr-TR").trim(), rs=document.querySelectorAll("#mlist .lrow");
+  for(var i=0;i<rs.length;i++){ var n=rs[i].getAttribute("data-mn"); rs[i].style.display=(!q||n.indexOf(q)>=0)?"":"none"; }
+});
+PAN.video=function(){
+  var h='<p class="hint" style="margin:0 0 8px">Tasarımın hareketli video olur, müzik eklenir. Tuvaldeki nesneler sırayla belirir.</p><label class="lab">Müzik</label><div class="lrow"><button class="ln" data-a="tool" data-v="muzik">🎵 '+esc(musName(V.music))+' (değiştir)</button></div>';
+  h+=rgl("vol","Ses",0,100,5,V.vol,100,"%").replace('data-r="vol"','data-v="vol"');
+  h+='<label class="lab">Süre</label>'+segH("vdur",[["5","5 sn"],["8","8 sn"],["12","12 sn"],["15","15 sn"]],String(V.dur));
+  h+='<label class="lab">Giriş efekti</label><div class="chips">'; [["karisik","Karışık"],["belir","Belir"],["yukari","Aşağıdan"],["sol","Yandan"],["buyu","Büyü"],["zipla","Zıpla"],["yok","Hareketsiz"]].forEach(function(f){ h+='<button class="chip" data-a="vfx" data-v="'+f[0]+'" aria-pressed="'+(V.fx===f[0]?"true":"false")+'">'+f[1]+'</button>'; });
+  h+='</div><div class="chips" style="margin-top:8px"><button class="chip" data-a="vkb" aria-pressed="'+(V.kb?"true":"false")+'">Fotoğraflarda yavaş yakınlaşma</button></div>';
+  h+='<button class="btn" data-a="mkvideo">🎬 Videoyu oluştur</button><p class="hint">Not: ücretsiz sürümde logo videoda da görünür.</p>';
+  return h;
+};
+ACT.tool=function(v){ openTool(v); };
+
+/* ---- İndirme (bilgisayarda doğrudan) ---- */
+function canShareFiles(){
+  try{ return !!(navigator.canShare&&window.matchMedia&&matchMedia("(pointer:coarse)").matches&&navigator.canShare({files:[new File([new Blob(["x"])],"a.jpg",{type:"image/jpeg"})]})); }catch(e){ return false; }
+}
+function dlBlob(blob,name){ var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(function(){ a.remove(); },900); }
+function exportImage(){
+  var was=E.sel; E.sel=null; var c=document.createElement("canvas"); renderTo(c,1,true); E.sel=was;
+  var go=function(blob){
+    if(!blob){ toast("Görsel oluşturulamadı"); return; } lastBlob=blob; var url=URL.createObjectURL(blob);
+    openSheet('<h3>Hazır</h3><img id="outImgE" src="'+url+'" style="width:100%;max-height:46vh;object-fit:contain;border-radius:10px;background:#000" alt="Tasarım"><button class="btn" data-sa="dl">⤓ İndir (JPG)</button>'+(canShareFiles()?'<button class="btn g" data-sa="share">↗ Paylaş</button>':'')+'<button class="btn g" data-sa="vid">🎬 Video yap</button><button class="btn g" data-sa="close">Kapat</button><p class="hint">Bilgisayarda dosya doğrudan indirilenler klasörüne iner.</p>');
+  };
+  if(c.toBlob) c.toBlob(go,"image/jpeg",0.93); else go(null);
+}
+sheet.addEventListener("click",function(e){
+  var b=e.target.closest("[data-sa]"); if(!b) return; var a=b.getAttribute("data-sa");
+  if(a==="dl"&&lastBlob) dlBlob(lastBlob,"foto-imaj.jpg");
+  else if(a==="share"&&lastBlob) shareBlob(lastBlob,"foto-imaj.jpg","image/jpeg");
+  else if(a==="vdl"&&E.vblob) dlBlob(E.vblob,"foto-imaj."+E.vext);
+  else if(a==="vshare"&&E.vblob) shareBlob(E.vblob,"foto-imaj."+E.vext,E.vtype);
+});
+
+/* ---- Projelerim (tarayıcıda saklanır) ---- */
+function idb(){ return new Promise(function(res,rej){ if(!window.indexedDB){ rej(new Error("yok")); return; } var r=indexedDB.open("fotoimaj",1); r.onupgradeneeded=function(){ var d=r.result; if(!d.objectStoreNames.contains("p")) d.createObjectStore("p",{keyPath:"id"}); if(!d.objectStoreNames.contains("m")) d.createObjectStore("m",{keyPath:"id"}); }; r.onsuccess=function(){ res(r.result); }; r.onerror=function(){ rej(r.error); }; }); }
+function pjTx(stores,mode,fn){ return idb().then(function(db){ return new Promise(function(res,rej){ var t=db.transaction(stores,mode), out=fn(t); t.oncomplete=function(){ res(out&&out.result!==undefined?out.result:out); }; t.onerror=t.onabort=function(){ rej(t.error); }; }); }); }
+function blobOf(cv){ return new Promise(function(res){ cv.toBlob(res,"image/jpeg",0.9); }); }
+async function saveProject(asNew){
+  if(!E.objs.length){ toast("Önce bir şeyler ekle"); return; }
+  try{
+    var ids={}; E.objs.forEach(function(o){ if(o.t==="photo"&&o.src&&IM[o.src]) ids[o.src]=1; });
+    var imgs={}; for(var k in ids){ imgs[k]=await blobOf(IM[k]); }
+    var th=document.createElement("canvas"), was=E.sel; E.sel=null; renderTo(th,260/E.W,true); E.sel=was; var thumb=th.toDataURL("image/jpeg",0.7);
+    var d=new Date(), nm=(E.pname&&!asNew&&E.pid)?E.pname:("Tasarım "+d.toLocaleDateString("tr-TR")+" "+("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2));
+    var id=(asNew||!E.pid)?("p"+Date.now()):E.pid, sn=snap(), seq=E.imgSeq;
+    await pjTx(["p","m"],"readwrite",function(t){ t.objectStore("p").put({id:id,snap:sn,imgs:imgs,seq:seq}); t.objectStore("m").put({id:id,name:nm,thumb:thumb,t:Date.now()}); });
+    E.pid=id; E.pname=nm; toast("Kaydedildi: "+nm); if(E.tool==="proje") loadProjects();
+  }catch(e){ toast("Kaydedilemedi. Tarayıcı yer ya da izin vermiyor olabilir."); }
+}
+function blobToCanvas(bl){ return new Promise(function(res,rej){ var u=URL.createObjectURL(bl), im=new Image(); im.onload=function(){ var c=document.createElement("canvas"); c.width=im.naturalWidth; c.height=im.naturalHeight; c.getContext("2d").drawImage(im,0,0); URL.revokeObjectURL(u); res(c); }; im.onerror=function(){ rej(new Error("img")); }; im.src=u; }); }
+async function openProject(id){
+  try{
+    var rec=await pjTx(["p"],"readonly",function(t){ return t.objectStore("p").get(id); });
+    if(!rec){ toast("Proje bulunamadı"); return; }
+    for(var k in IM) delete IM[k];
+    for(var k2 in rec.imgs){ IM[k2]=await blobToCanvas(rec.imgs[k2]); }
+    E.imgSeq=Math.max(rec.seq||0,E.imgSeq); restore(rec.snap); E.hist=[]; E.hi=-1; E.sel=null; E.pid=id;
+    var m=await pjTx(["m"],"readonly",function(t){ return t.objectStore("m").get(id); }); E.pname=m?m.name:"";
+    pushH(); hideIntro(); fit(); onSelChange(); toast("Açıldı");
+  }catch(e){ toast("Proje açılamadı"); }
+}
+async function loadProjects(){
+  var box=$("#pjList"); if(!box) return;
+  try{
+    var list=await pjTx(["m"],"readonly",function(t){ return t.objectStore("m").getAll(); }); box=$("#pjList"); if(!box) return;
+    list=(list||[]).sort(function(a,b){ return b.t-a.t; });
+    if(!list.length){ box.innerHTML='<p class="hint">Henüz kayıtlı tasarım yok.</p>'; return; }
+    box.innerHTML=list.map(function(m){ return '<div class="lrow" data-s="'+(E.pid===m.id?1:0)+'"><img src="'+m.thumb+'" alt="" style="width:44px;height:55px;object-fit:cover;border-radius:6px;background:#000"><button class="ln" data-a="pjopen" data-v="'+m.id+'">'+esc(m.name)+'</button><button class="sb" data-a="pjdel" data-v="'+m.id+'" aria-label="Sil">🗑</button></div>'; }).join("");
+  }catch(e){ if(box) box.innerHTML='<p class="hint">Bu tarayıcıda kayıt kullanılamıyor (gizli sekme olabilir).</p>'; }
+}
+PAN.proje=function(){
+  return '<button class="btn" data-a="pjsave">💾 '+(E.pid?"Kaydet (güncelle)":"Bu tasarımı kaydet")+'</button>'+(E.pid?'<button class="btn g" data-a="pjsavenew">Yeni kopya olarak kaydet</button>':'')+'<button class="btn g" data-a="pjnew">＋ Yeni boş tasarım</button><label class="lab">Kayıtlı tasarımlarım</label><div id="pjList"><p class="hint">Yükleniyor...</p></div><p class="hint">Tasarımlar bu cihazda, bu tarayıcıda saklanır. Tarayıcı verilerini silersen onlar da gider.</p>';
+};
+ACT.pjsave=function(){ saveProject(false); };
+ACT.pjsavenew=function(){ saveProject(true); };
+ACT.pjopen=function(v){ if(E.objs.length&&!confirm("Açık tasarım kapanacak. Kaydetmediysen kaybolur. Devam edilsin mi?")) return; openProject(v); };
+ACT.pjdel=function(v){ if(!confirm("Bu tasarım silinsin mi?")) return; pjTx(["p","m"],"readwrite",function(t){ t.objectStore("p").delete(v); t.objectStore("m").delete(v); }).then(function(){ if(E.pid===v){ E.pid=null; E.pname=""; } loadProjects(); }).catch(function(){ toast("Silinemedi"); }); };
+ACT.pjnew=function(){ if(E.objs.length&&!confirm("Açık tasarım kapanacak. Kaydetmediysen kaybolur. Devam edilsin mi?")) return; E.objs=[]; E.sel=null; E.pid=null; E.pname=""; for(var k in IM) delete IM[k]; E.hist=[]; E.hi=-1; pushH(); onSelChange(); toast("Boş tuval"); };
 
 /* ---------- Başlangıç ---------- */
 window.__t={E:E,IM:IM,ACT:ACT,openTool:openTool,mkText:mkText,mkShape:mkShape,mkIcon:mkIcon,mkPhoto:mkPhoto,add:add,fit:fit,undo:undo,redo:redo,exportImage:exportImage,makeVideo:makeVideo,V:V,LY:LY,setSel:setSel,pushH:pushH,redraw:redraw};
