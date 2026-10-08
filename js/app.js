@@ -1629,6 +1629,7 @@ showResultsBtn.addEventListener('click', () => {
   const ICON_HEART = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>';
   const ICON_SAVE = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg>';
   const ICON_SHARE = '<svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>';
+  const ICON_UP = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>';
   const ICON_DOTS = '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>';
   const ICON_PLAY = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
   const ICON_MUTE_HINT = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M19 9a5 5 0 0 1 0 6M22 6a9 9 0 0 1 0 12" stroke-linecap="round"/></svg>';
@@ -1794,6 +1795,7 @@ showResultsBtn.addEventListener('click', () => {
           <button type="button" class="shorts-action-btn share-btn">${ICON_SHARE}<span>Paylaş</span></button>
           <button type="button" class="shorts-action-btn dots-btn">${ICON_DOTS}</button>
           <div class="shorts-dots-menu"><a href="https://motogo.com.tr/prime/" target="_blank">🏍️ MotoGo Prime'a Git</a></div>
+          <button type="button" class="shorts-action-btn up-btn" aria-label="Sayfanın başına dön">${ICON_UP}<span>Yukarı</span></button>
         </div>
         <div class="shorts-info"><span class="shorts-info-icon">${ICON_PLAY}</span><p>${v.baslik || 'MotoGo Shorts'}</p></div>
       </div>
@@ -1846,6 +1848,17 @@ showResultsBtn.addEventListener('click', () => {
     const d = document.createElement('div'); d.className = 'yt-target'; d.id = 'ytplayer-' + i; w.appendChild(d); item.insertBefore(w, item.firstChild);
     created[i] = false; ensurePlayer(i);
   }
+  function pruneFar(c) {
+    ALL_SHORTS.forEach((v, j) => {
+      if (!created[j] || Math.abs(j - c) <= 3) return;
+      const p = players[v.id]; try { if (p && p.destroy) p.destroy(); } catch (e) {}
+      delete players[v.id]; created[j] = false; retries[j] = 0; delete prerolled[v.id]; visible[v.id] = false;
+      const item = feed.querySelector('.shorts-item[data-i="' + j + '"]'); if (!item) return;
+      item.querySelectorAll('.yt-wrap').forEach(n => n.remove());
+      const w = document.createElement('div'); w.className = 'yt-wrap'; w.id = 'ytwrap-' + j;
+      const d = document.createElement('div'); d.className = 'yt-target'; d.id = 'ytplayer-' + j; w.appendChild(d); item.insertBefore(w, item.firstChild);
+    });
+  }
   function setupPlayers() {
     pendingPlayerSetup = false;
     if (ioVis) ioVis.disconnect();
@@ -1854,7 +1867,7 @@ showResultsBtn.addEventListener('click', () => {
         const id = entry.target.dataset.id, i = parseInt(entry.target.dataset.i, 10), p = players[id];
         const wrap = document.getElementById('ytwrap-' + i);
         if (entry.isIntersecting) {
-          visible[id] = true; ensurePlayer(i); ensurePlayer(i + 1); ensurePlayer(i + 2);
+          visible[id] = true; pruneFar(i); ensurePlayer(i); ensurePlayer(i + 1); ensurePlayer(i + 2); ensurePlayer(i - 1);
           if (p && typeof p.playVideo === 'function') {
             try { if (prerolled[id]) { p.seekTo(0, true); prerolled[id] = false; } p.playVideo(); if (wrap && p.getPlayerState && p.getPlayerState() === 1) wrap.classList.add('on'); } catch (e) {}
           }
@@ -1941,6 +1954,14 @@ showResultsBtn.addEventListener('click', () => {
       });
     });
 
+    feed.querySelectorAll('.up-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        window.__goTop = true; setTimeout(() => { window.__goTop = false; }, 1500);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    });
+
     feed.querySelectorAll('.dots-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1965,7 +1986,7 @@ showResultsBtn.addEventListener('click', () => {
   const vh = () => window.innerHeight || document.documentElement.clientHeight;
   function go(fn) { busy = true; fn(); setTimeout(() => { busy = false; lastY = window.scrollY; }, 800); }
   function settle() {
-    if (touching || busy) return;
+    if (touching || busy || window.__goTop) return;
     const r = feedBox.getBoundingClientRect(), t = r.top, h = vh();
     if (t <= 3 || t >= h * 0.98) return;               // tam oturmuş ya da hiç görünmüyor
     if (dir > 0) {                                      // aşağı kaydırıyor
@@ -1998,10 +2019,11 @@ showResultsBtn.addEventListener('click', () => {
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && drawer.classList.contains('open')) close(); });
   drawer.querySelectorAll('a').forEach(a => {
     a.addEventListener('click', (e) => {
-      const go = a.getAttribute('data-go'), clk = a.getAttribute('data-click');
-      if (!go && !clk) { return; }                     // normal bağlantı: sayfaya git
+      const go = a.getAttribute('data-go'), clk = a.getAttribute('data-click'), top = a.hasAttribute('data-top');
+      if (!go && !clk && !top) { return; }                     // normal bağlantı: sayfaya git
       e.preventDefault(); close();
       setTimeout(() => {
+        if (top) { window.__goTop = true; setTimeout(() => { window.__goTop = false; }, 1500); window.scrollTo({ top: 0, behavior: 'smooth' }); }
         if (go) { const el = document.getElementById(go); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
         if (clk) { const el = document.getElementById(clk); if (el) el.click(); }
       }, 280);
