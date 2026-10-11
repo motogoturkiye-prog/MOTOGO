@@ -1,5 +1,5 @@
 // Her site güncellemesinde bu numarayı artır — telefondaki uygulama eski hafızayı atıp yenisini alır.
-const CACHE_NAME = "motogo-v136";
+const CACHE_NAME = "motogo-v137";
 const ASSETS = [
   "./index.html",
   "./css/style.css",
