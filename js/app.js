@@ -2030,3 +2030,31 @@ showResultsBtn.addEventListener('click', () => {
     });
   });
 })();
+
+// ---------------------------------------------------------------------------
+// Ziyaret sayacı (v141): anonim, sadece sayfa adı + rastgele oturum no kaydeder
+// ---------------------------------------------------------------------------
+(function(){
+  try {
+    if (localStorage.getItem('mg_ben') === '1') return;
+    if (navigator.webdriver || /bot|crawl|spider|headless|lighthouse/i.test(navigator.userAgent)) return;
+    var url = window.MOTOGO_SUPABASE_URL, key = window.MOTOGO_SUPABASE_KEY;
+    if (!url || !key) return;
+    var oturum = localStorage.getItem('mg_oturum');
+    if (!oturum) { oturum = Math.random().toString(36).slice(2, 12) + Date.now().toString(36); localStorage.setItem('mg_oturum', oturum); }
+    function kaydet(sayfa){
+      try {
+        fetch(url + '/rest/v1/ziyaretler', {
+          method: 'POST', keepalive: true,
+          headers: { 'apikey': key, 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ sayfa: String(sayfa).slice(0, 120), oturum: oturum })
+        }).catch(function(){});
+      } catch(e){}
+    }
+    kaydet(location.pathname === '/' ? '/index.html' : location.pathname);
+    document.addEventListener('click', function(e){
+      var b = e.target && e.target.closest && e.target.closest('[data-panel]');
+      if (b) kaydet('uygulama:' + b.getAttribute('data-panel'));
+    });
+  } catch(e){}
+})();
