@@ -544,7 +544,7 @@ function renderFirmResults(firms, baseTitle, city, emptyText, waPurpose, coords,
 
       const card = buildFirmCard(firm, {
         nameLine: firm.name,
-        metaLine: `${distText}${subtitle ? `<b style="color:#fff;">${subtitle}</b> ` : ''}${firm.city || ""}`,
+        metaLine: `${distText}${subtitle ? `<b style="color:var(--text);">${subtitle}</b> ` : ''}${firm.city || ""}`,
         description: firm.description,
         socialLinks: socialLinks,
         waMsg: waMsg
@@ -896,7 +896,7 @@ showResultsBtn.addEventListener('click', () => {
             mesaj = '🌫️ Sis var, görüş mesafesi düşük olabilir.';
           }
           el.innerHTML = '<h3>☁️ Hava Durumu</h3>' +
-            '<p style="font-size:22px;color:#fff;font-weight:700;margin:0 0 8px;">' + temp + '°C</p>' +
+            '<p style="font-size:22px;color:var(--text);font-weight:700;margin:0 0 8px;">' + temp + '°C</p>' +
             '<p>' + mesaj + '</p>';
         })
         .catch(function(){
@@ -1013,7 +1013,7 @@ showResultsBtn.addEventListener('click', () => {
     var html = '<h3>🚨 Ceza Sorgulama</h3>' +
       '<p style="color:#e8c090;font-size:11.5px;">⚠️ Trafik cezaları 2026 başında yürürlüğe giren yeni düzenlemeyle değişti, tutarlar yaklaşıktır. Kesin tutar için aşağıdaki "Ceza Sorgulama"yı kullanın.</p>';
     cezalar.forEach(function(c){
-      html += '<div class="app-hub-tip"><b style="color:#fff;">' + c.ad + '</b><br><span style="font-size:12px;color:var(--text-dim);">' + c.tutar + '</span></div>';
+      html += '<div class="app-hub-tip"><b style="color:var(--text);">' + c.ad + '</b><br><span style="font-size:12px;color:var(--text-dim);">' + c.tutar + '</span></div>';
     });
     html += '<p style="margin-top:14px;">Kendi cezanızı sorgulamak için T.C. Cumhurbaşkanlığı e-Devlet Kapısı\'na girip "Araç Plakasına Yazılan Ceza Sorgulama" hizmetini seçin.</p>' +
       '<a href="https://www.turkiye.gov.tr/" target="_blank" style="color:var(--red);font-weight:700;font-size:13px;">e-Devlet Kapısı\'na Git →</a>';
@@ -1220,7 +1220,7 @@ showResultsBtn.addEventListener('click', () => {
       function ciz(){
         el.innerHTML = HABERLER.map(function(h, i){
           var im = h.kapak_url ? ' style="background-image:url(\'' + encodeURI(h.kapak_url) + '\')"' : '';
-          var ic = (i === acik && h.icerik) ? '<p style="margin-top:8px;color:#e8e8ea">' + esc(h.icerik).replace(/\n/g, '<br>') + '</p>' + (h.video_url ? '<p style="margin-top:8px"><a class="as-b p" target="_blank" rel="noopener" href="' + encodeURI(h.video_url) + '">Videoyu aç</a></p>' : '') : '';
+          var ic = (i === acik && h.icerik) ? '<p style="margin-top:8px;color:var(--text)">' + esc(h.icerik).replace(/\n/g, '<br>') + '</p>' + (h.video_url ? '<p style="margin-top:8px"><a class="as-b p" target="_blank" rel="noopener" href="' + encodeURI(h.video_url) + '">Videoyu aç</a></p>' : '') : '';
           return '<div class="as-news"><div class="im"' + im + '>' + (h.kapak_url ? '' : '📰') + '</div><div class="tx"><small>' + esc(h.kategori || 'Haber') + '</small><h4>' + esc(h.baslik) + '</h4><p>' + esc(h.ozet || '') + '</p>' + ic +
             (h.icerik ? '<div class="as-btns" style="margin-top:8px"><button type="button" class="as-b" data-h="' + i + '">' + (i === acik ? 'Kapat' : 'Oku') + '</button></div>' : '') + '</div></div>';
         }).join('');
