@@ -178,6 +178,7 @@ const TABLES = [
       { id:'whatsapp', label:'WhatsApp', type:'text' },
       { id:'telefon', label:'Telefon', type:'text' },
       { id:'instagram', label:'Instagram linki', type:'text' },
+      { id:'website', label:'Web sitesi', type:'text' },
       { id:'aciklama', label:'Açıklama', type:'textarea' },
       { id:'foto_url', label:'Fotoğraf', type:'photo' },
       { id:'sira_no', label:'Sıra No (öne almak için, isteğe bağlı)', type:'text' },
@@ -196,6 +197,8 @@ const TABLES = [
       { id:'adres', label:'Tam Adres (konum butonu için)', type:'text' },
       { id:'whatsapp', label:'WhatsApp', type:'text' },
       { id:'telefon', label:'Telefon', type:'text' },
+      { id:'instagram', label:'Instagram linki', type:'text' },
+      { id:'website', label:'Web sitesi', type:'text' },
       { id:'foto_url', label:'Fotoğraf', type:'photo' },
       { id:'sira_no', label:'Sıra No (öne almak için, isteğe bağlı)', type:'text' },
       { id:'kayit_tarihi', label:'Kayıt/Sözleşme Tarihi (sadece panelde görünür, isteğe bağlı)', type:'text' }
@@ -211,6 +214,7 @@ const TABLES = [
       { id:'whatsapp', label:'WhatsApp', type:'text' },
       { id:'telefon', label:'Telefon', type:'text' },
       { id:'instagram', label:'Instagram linki', type:'text' },
+      { id:'website', label:'Web sitesi', type:'text' },
       { id:'aciklama', label:'Açıklama', type:'textarea' },
       { id:'foto_url', label:'Fotoğraf', type:'photo' },
       { id:'sira_no', label:'Sıra No (öne almak için, isteğe bağlı)', type:'text' },
@@ -231,6 +235,8 @@ const TABLES = [
       { id:'odul', label:'Ödül / Hediye (isteğe bağlı)', type:'text' },
       { id:'whatsapp', label:'WhatsApp', type:'text' },
       { id:'telefon', label:'Telefon', type:'text' },
+      { id:'instagram', label:'Instagram linki', type:'text' },
+      { id:'website', label:'Web sitesi', type:'text' },
       { id:'foto_url', label:'Fotoğraf', type:'photo' },
       { id:'sira_no', label:'Sıra No (öne almak için, isteğe bağlı)', type:'text' },
       { id:'adres', label:'Tam Adres (konum butonu için, isteğe bağlı)', type:'text' },
@@ -357,7 +363,7 @@ const TABLES = [
   },
   {
     key: 'basvuru', label: '🏢 Firma Başvuruları (Kurumsal)', table: 'firma_basvurulari', order: 'firma_unvani',
-    listText: r => `<b>${r.firma_unvani || ''}</b>${r.marka_ismi ? ' (' + r.marka_ismi + ')' : ''} — ${r.yetkili_ad_soyad || ''} — ${r.yetkili_gsm || ''}<br>Paket: ${r.hizmet_paketleri || '-'} · Ödeme: ${r.odeme_plani || '-'} · Başvuru tarihi: ${fmtT(r.created_at || r.olusturma || r.tarih)}<br>Vergi dairesi: <b>${r.vergi_dairesi || '-'}</b> · Vergi no: <b>${r.vergi_no || '-'}</b> · TC: <b>${r.tc_kimlik || '-'}</b><br>Faaliyet: ${r.faaliyet_alani || '-'} · Web: ${r.web || '-'}${r.firma_ozellikleri ? '<br>Özellikler: ' + r.firma_ozellikleri : ''}${regMark(r)}`,
+    listText: r => `<b>${r.firma_unvani || ''}</b>${r.marka_ismi ? ' (' + r.marka_ismi + ')' : ''} — ${r.yetkili_ad_soyad || ''} — ${r.yetkili_gsm || ''}${r.firma_telefon ? ' · Firma tel: ' + r.firma_telefon : ''}<br>Paket: ${r.hizmet_paketleri || '-'} · Ödeme: ${r.odeme_plani || '-'} · Başvuru tarihi: ${fmtT(r.created_at || r.olusturma || r.tarih)}<br>Vergi dairesi: <b>${r.vergi_dairesi || '-'}</b> · Vergi no: <b>${r.vergi_no || '-'}</b> · TC: <b>${r.tc_kimlik || '-'}</b><br>Faaliyet: ${r.faaliyet_alani || '-'} · Web: ${r.web || '-'}${r.firma_ozellikleri ? '<br>Özellikler: ' + r.firma_ozellikleri : ''}${regMark(r)}`,
     fields: [
       { id:'firma_unvani', label:'Firma unvanı', type:'text', required:true },
       { id:'marka_ismi', label:'Marka ismi', type:'text' },
