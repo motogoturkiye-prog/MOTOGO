@@ -9,25 +9,16 @@
 <style>
 :root{
   box-sizing:border-box;
-  padding-top:env(safe-area-inset-top,0px);
-  padding-bottom:env(safe-area-inset-bottom,0px);
-  --bg:#0b0c0f; --panel:#14161b; --panel2:#1b1e25; --line:#2a2e37; --text:#f2f3f5; --dim:#9aa0ab;
-  --red:#c0392b; --red2:#e5483b;
+  color-scheme:light;
+  --bg:#f3f4f6; --panel:#ffffff; --panel2:#f0f2f5; --line:#e1e4e9; --text:#14161b; --dim:#6b7280;
+  --red:#c0392b; --red2:#e5483b; --yel:#f9eb22; --rail:54px;
 }
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){ --bg:#0b0c0f; --panel:#14161b; --panel2:#1b1e25; --line:#2a2e37; --text:#f2f3f5; --dim:#9aa0ab; --red:#c0392b; --red2:#e5483b; }
-}
-:root[data-theme="dark"]{ --bg:#0b0c0f; --panel:#14161b; --panel2:#1b1e25; --line:#2a2e37; --text:#f2f3f5; --dim:#9aa0ab; --red:#c0392b; --red2:#e5483b; }
 html{scroll-padding-top:env(safe-area-inset-top,0px);}
 *,*::before,*::after{box-sizing:inherit;}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%;}
 button,input,select{font-family:inherit;color:inherit;}
-.wrap{max-width:520px;margin:0 auto;padding:12px 14px 60px;}
 h1{margin:4px 0 4px;font-size:21px;line-height:1.2;}
 .sub{margin:0 0 12px;color:var(--dim);font-size:13.5px;}
-.stage{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--bg);padding:8px 0 10px;}
-.stageIn{display:flex;justify-content:center;background:#000;border-radius:12px;padding:6px;}
-canvas{display:block;max-width:100%;max-height:34vh;border-radius:8px;background:#000;}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px;}
 .card h2{margin:0 0 8px;font-size:15.5px;}
 .lab{display:block;font-size:12.5px;color:var(--dim);font-weight:600;margin:10px 0 5px;}
@@ -50,7 +41,7 @@ canvas{display:block;max-width:100%;max-height:34vh;border-radius:8px;background
 .bar{height:6px;background:var(--panel2);border-radius:6px;overflow:hidden;margin-top:10px;}
 .bar i{display:block;height:100%;width:0;background:var(--red2);}
 .status{margin:8px 0 0;font-size:13.5px;color:var(--dim);min-height:20px;}
-.err{color:#f09595;}
+.err{color:#c0392b;}
 video#out{width:100%;max-height:70vh;background:#000;border-radius:12px;}
 .row{display:flex;gap:8px;flex-wrap:wrap;}
 .sw{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
@@ -61,26 +52,69 @@ input[type=range]{width:100%;accent-color:var(--red);}
 .chk{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:14px;}
 .chk input{width:20px;height:20px;accent-color:var(--red);}
 @media (prefers-reduced-motion: reduce){*{scroll-behavior:auto !important;}}
+
+html,body{height:100%;overflow:hidden;}
+#app{height:100%;display:flex;flex-direction:column;}
+#top{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:calc(6px + env(safe-area-inset-top,0px)) 10px 6px;background:#fff;border-bottom:1px solid var(--line);}
+#top b{font-size:15.5px;}
+#top .sp{flex:1;}
+.tb{height:38px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);font-weight:800;font-size:13.5px;padding:0 14px;cursor:pointer;}
+.tb.pri{background:var(--red);border-color:var(--red);color:#fff;}
+.tb.busy{opacity:.55;}
+#work{flex:1;min-height:0;display:grid;grid-template-columns:var(--rail) minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;grid-template-areas:"rail stage" "rail panel";}
+#rail{grid-area:rail;overflow-y:auto;background:#fff;border-right:1px solid var(--line);display:flex;flex-direction:column;padding:4px 0 calc(6px + env(safe-area-inset-bottom,0px));scrollbar-width:none;}
+#rail::-webkit-scrollbar{display:none;}
+.rb{flex:0 0 auto;border:0;background:none;color:var(--dim);padding:7px 0 6px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9.5px;font-weight:700;position:relative;cursor:pointer;}
+.rb i{font-style:normal;font-size:20px;line-height:1;}
+.rb[aria-pressed="true"]{color:var(--text);background:#f3f4f6;}
+.rb[aria-pressed="true"]::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:3px;border-radius:0 3px 3px 0;background:var(--yel);}
+#stage{grid-area:stage;min-height:0;min-width:0;background:#e6e8ed;display:flex;flex-direction:column;overflow:hidden;}
+#cvBox{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:8px;}
+canvas#cv{display:block;background:#000;border-radius:6px;box-shadow:0 6px 24px rgba(20,22,27,.28);}
+#pbox{flex:0 0 auto;padding:6px 14px 10px;}
+#pbTxt{font-size:13px;font-weight:700;margin-bottom:5px;color:var(--text);}
+#pbTxt.err{color:#c0392b;}
+#pbBar{height:8px;border-radius:8px;background:#d5d9e0;overflow:hidden;}
+#pbBar i{display:block;height:100%;width:0;border-radius:8px;background:linear-gradient(90deg,#f9eb22,#e5483b);transition:width .25s linear;}
+#panel{grid-area:panel;background:var(--panel);border-top:2px solid var(--yel);overflow:hidden;height:0;display:flex;flex-direction:column;min-width:0;}
+#panel.open{height:min(46vh,400px);}
+.phead{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);}
+.phead b{flex:1;font-size:14.5px;}
+.phead button{height:34px;min-width:34px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);font-weight:800;cursor:pointer;}
+#pbody{flex:1;min-height:0;overflow-y:auto;padding:12px 14px calc(16px + env(safe-area-inset-bottom,0px));-webkit-overflow-scrolling:touch;}
+.pg{display:none;}.pg.on{display:block;}
+.pg .lab:first-child{margin-top:0;}
+@media (min-width:820px){
+  #work{grid-template-columns:var(--rail) auto minmax(0,1fr);grid-template-rows:minmax(0,1fr);grid-template-areas:"rail panel stage";}
+  #panel{height:auto;width:0;border-top:0;border-right:1px solid var(--line);}
+  #panel.open{height:auto;width:340px;}
+}
+.toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:#222;color:#fff;padding:10px 14px;border-radius:12px;font-size:13.5px;opacity:0;pointer-events:none;transition:.2s;z-index:80;max-width:88%;text-align:center;}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
 </style>
 <title>Otomatik Kurgu</title>
 <link rel="stylesheet" href="fonts/fonts.css">
 </head>
 <body>
-
-<div class="wrap">
-  <div class="stage"><div class="stageIn"><canvas id="cv" width="720" height="1280"></canvas></div></div>
-  <h1>Otomatik Kurgu</h1>
-  <p class="sub">Videolarını seç. Uygulama her videodan en hareketli anları kesip birleştirir. Yazıyı, renklendirmeyi ve imzanı yukarıdaki önizlemede canlı görürsün.</p>
-  <div class="card">
-    <h2>1. Videolar ve fotoğraflar</h2>
-    <label class="drop" for="files"><b>Dokun ve seç</b>En fazla 8 video ya da fotoğraf</label>
+<div id="app">
+  <header id="top"><b>Movie İmaj</b><span class="sp"></span><button class="tb pri" id="bKur" type="button">🎬 Kurgula</button></header>
+  <div id="work">
+    <nav id="rail" aria-label="Menü"></nav>
+    <div id="stage">
+      <div id="cvBox"><canvas id="cv" width="720" height="1280"></canvas></div>
+      <div id="pbox" hidden><div id="pbTxt"></div><div id="pbBar"><i id="pbFill"></i></div></div>
+    </div>
+    <section id="panel" aria-label="Ayarlar">
+      <div class="phead"><b id="ptitle"></b><button id="pclose" type="button" aria-label="Kapat">▼</button></div>
+      <div id="pbody">
+<div class="pg" id="pg-medya">
+<p class="note" style="margin-top:0">Videolarını ya da fotoğraflarını seç. Uygulama her videodan en hareketli anları kesip birleştirir. Yazıyı, renklendirmeyi ve imzanı soldaki önizlemede canlı görürsün.</p><label class="drop" for="files"><b>Dokun ve seç</b>En fazla 8 video ya da fotoğraf</label>
     <input id="files" type="file" accept="video/*,image/*" multiple hidden>
     <div class="thumbs" id="thumbs"></div>
     <p class="note" id="info">Henüz bir şey seçmedin.</p>
-  </div>
-  <div class="card">
-    <h2>2. Kurgu</h2>
-    <span class="lab">Video oranı</span>
+</div>
+<div class="pg" id="pg-kurgu">
+<span class="lab">Video oranı</span>
     <div class="seg" role="group" aria-label="Video oranı">
       <button type="button" id="f916" aria-pressed="true">Dikey 9:16</button>
       <button type="button" id="f169" aria-pressed="false">Yatay 16:9</button>
@@ -97,7 +131,8 @@ input[type=range]{width:100%;accent-color:var(--red);}
       <button type="button" data-o="mix" aria-pressed="true">Karışık (hareketli)</button>
       <button type="button" data-o="seq" aria-pressed="false">Sırayla</button>
     </div>
-    
+</div>
+<div class="pg" id="pg-muzik">
 <label class="lab" for="music">Müzik</label>
 <select class="sel" id="music">
   <option value="btr">MotoGo: Born to Ride (hazır)</option>
@@ -107,20 +142,16 @@ input[type=range]{width:100%;accent-color:var(--red);}
 <input id="musicFile" type="file" accept="audio/*" hidden>
 <label class="lab" for="musicVol">Müzik sesi</label>
 <select class="sel" id="musicVol"><option value="kisik">Kısık</option><option value="orta" selected>Orta</option><option value="yuksek">Yüksek</option></select>
-<p class="note" id="musicNote">Telif hakkı sende olan ya da serbest bir müzik kullan.</p>
-
-    <label class="lab" for="origLevel">Videoların kendi sesi (motor sesi)</label>
+<p class="note" id="musicNote">Telif hakkı sende olan ya da serbest bir müzik kullan.</p><label class="lab" for="origLevel">Videoların kendi sesi (motor sesi)</label>
     <select class="sel" id="origLevel">
       <option value="kapali">Kapalı (sadece müzik)</option>
       <option value="cok">Çok düşük</option>
       <option value="dusuk">Düşük</option>
     </select>
     <p class="note">Müzik her zaman baskın gelir, motor sesi arkada kalır.</p>
-  </div>
-  
-<div class="card">
-  <h2>3. Efekt</h2>
-  <label class="lab" for="filterSel">Renklendirme</label>
+</div>
+<div class="pg" id="pg-renk">
+<label class="lab" for="filterSel">Renklendirme</label>
   <select class="sel" id="filterSel">
     <option value="yok">Orijinal</option>
     <option value="sinema">Sinematik</option>
@@ -135,7 +166,9 @@ input[type=range]{width:100%;accent-color:var(--red);}
   </select>
   <label class="lab" for="filtRng">Şiddet <span id="filtVal">80</span>%</label>
   <input id="filtRng" type="range" min="0" max="100" value="80">
-  <label class="lab" for="trSel">Geçiş efekti</label>
+</div>
+<div class="pg" id="pg-gecis">
+<label class="lab" for="trSel">Geçiş efekti</label>
   <select class="sel" id="trSel">
     <option value="mix">Karışık</option>
     <option value="fade">Yumuşak geçiş</option>
@@ -155,11 +188,8 @@ input[type=range]{width:100%;accent-color:var(--red);}
     <option value="through">İçinden geçme</option>
   </select>
 </div>
-
-  
-<div class="card">
-  <h2>4. Yazı</h2>
-  <label class="lab" for="title">Başlık</label>
+<div class="pg" id="pg-yazi">
+<label class="lab" for="title">Başlık</label>
   <input class="inp" id="title" type="text" value="Hafta sonu sürüşü" maxlength="40">
   <label class="lab" for="subtitle">Alt başlık (isteğe bağlı)</label>
   <input class="inp" id="subtitle" type="text" placeholder="Örn: Ankara, Polatlı, 134 km" maxlength="48">
@@ -210,11 +240,8 @@ input[type=range]{width:100%;accent-color:var(--red);}
     <option value="tum">Tüm video boyunca</option>
   </select>
 </div>
-
-  
-<div class="card">
-  <h2>5. Kendi imzan</h2>
-  <p class="note" style="margin-top:0">Videoda hiçbir hazır logo çıkmaz. Kendi adını ya da logonu koyabilirsin.</p>
+<div class="pg" id="pg-imza">
+<p class="note" style="margin-top:0">Videoda hiçbir hazır logo çıkmaz. Kendi adını ya da logonu koyabilirsin.</p>
   <label class="lab" for="brandName">Adın ya da hesabın (köşede küçük görünür)</label>
   <input class="inp" id="brandName" type="text" placeholder="Örn: @motorcu_ahmet" maxlength="30">
   <label class="lab" for="logoBtn">Kendi logon (isteğe bağlı)</label>
@@ -226,40 +253,35 @@ input[type=range]{width:100%;accent-color:var(--red);}
   <label class="lab" for="outroText">Kapanış yazısı</label>
   <input class="inp" id="outroText" type="text" placeholder="Örn: İzlediğiniz için teşekkürler" maxlength="40">
 </div>
-
-  
-<div class="card">
-  <h2>Jenerik (ilk saniyeler)</h2>
-  <label class="chk"><input type="checkbox" id="introOn" checked> Videonun başına hızlı kesmeli jenerik koy</label>
+<div class="pg" id="pg-jenerik">
+<label class="chk"><input type="checkbox" id="introOn" checked> Videonun başına hızlı kesmeli jenerik koy</label>
   <p class="note">Sistem her videoda kendi kafasına göre yepyeni bir jenerik kurar: kesme ritmi, efektler, giriş hareketleri, başlık animasyonu ve renk tonu her seferinde farklıdır. Kesmeler müziğin vuruşuna oturur. Bir görüntünün jenerikte ilk görünmesini istersen küçük resmindeki <b>"Öne al"</b> düğmesine bas. Beğenmezsen video hazır olunca <b>"Başka bir jenerikle yeniden yap"</b> de.</p>
   <label class="lab" for="introFx">Efekt yoğunluğu</label>
   <select class="sel" id="introFx"><option value="yogun" selected>Yoğun</option><option value="orta">Orta</option><option value="sade">Sade</option></select>
-  <p class="note" id="wmMember" hidden>Üyesin, bu yüzden videona MotoGo logosu eklenmez. Ücretsiz kullanıcıların göreceği hâli denemek için: <a href="kurgu.html?uye=1&amp;filigran=1" style="color:#F9EB22">filigranlı önizle</a>.</p>
+  <p class="note" id="wmMember" hidden>Üyesin, bu yüzden videona MotoGo logosu eklenmez. Ücretsiz kullanıcıların göreceği hâli denemek için: <a href="kurgu.html?uye=1&amp;filigran=1" style="color:#c0392b;font-weight:700">filigranlı önizle</a>.</p>
   <p class="note" id="wmNote" hidden>Ücretsiz sürümde videonun altına saydam, soft bir MotoGo logosu eklenir. Videoyu paylaşabilirsin. Üyelikte logo kalkar.</p>
 </div>
-<div class="card">
-  <h2>6. Kurgula</h2>
-  <button class="btn" id="go" type="button" disabled>Kurgula</button>
+<div class="pg" id="pg-cikti">
+<button class="btn" id="go" type="button" disabled>Kurgula</button>
   <button class="btn g" id="stop" type="button" hidden style="margin-top:8px">Durdur</button>
   <div class="bar" id="barWrap" hidden><i id="bar"></i></div>
   <p class="status" id="status" role="status" aria-live="polite"></p>
   <p class="note" id="planNote"></p>
   <p class="note">Deneme sürümünde kurgu gerçek zamanlı yapılır: 30 saniyelik video yaklaşık 30 saniyede hazır olur. Bu sırada ekranı kapatma, başka uygulamaya geçme.</p>
-</div>
-<div class="card" id="result" hidden>
-  <h2>Hazır</h2>
-  <video id="out" controls playsinline></video>
+<div id="result" hidden><video id="out" controls playsinline></video>
   <p class="note" id="resInfo"></p>
   <div class="row" style="margin-top:10px">
     <button class="btn" id="share" type="button" hidden style="flex:1">Paylaş</button>
     <a class="btn g" id="dl" download="kurgu.mp4" style="flex:1;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center">İndir</a>
   </div>
   <div class="row" style="margin-top:8px"><button class="btn g" id="redoIntro" type="button" style="flex:1">🎲 Başka bir jenerikle yeniden yap</button></div>
-  <p class="note">İndir çalışmazsa videonun sağ altındaki üç noktaya dokunup "İndir"i seç ya da videoya basılı tut.</p>
+  <p class="note">İndir çalışmazsa videonun sağ altındaki üç noktaya dokunup "İndir"i seç ya da videoya basılı tut.</p></div>
 </div>
-
+      </div>
+    </section>
+  </div>
 </div>
-
+<div class="toast" id="toast"></div>
 <script>
 (function(){
 
@@ -1034,6 +1056,76 @@ window.__kurgu={ayar:function(d,f,o){ target=d; setFmt(f); if(o){ order=o; } },
     return res;
   }};
 
+})();
+</script>
+<script>
+(function(){
+"use strict";
+var $=function(s){return document.querySelector(s);};
+var PG=[["medya", "🎞", "Medya"], ["kurgu", "⏱", "Kurgu"], ["muzik", "🎵", "Müzik"], ["renk", "🎨", "Renk"], ["gecis", "✨", "Geçiş"], ["yazi", "🔤", "Yazı"], ["imza", "✍️", "İmza"], ["jenerik", "⚡", "Jenerik"], ["cikti", "🎬", "Çıktı"]];
+var cur=null, LY=[], lastBack=0, afterPop=null;
+var rail=$("#rail"), h="";
+PG.forEach(function(p){ h+='<button class="rb" type="button" data-t="'+p[0]+'" aria-pressed="false" aria-label="'+p[2]+'"><i>'+p[1]+'</i>'+p[2]+'</button>'; });
+rail.innerHTML=h;
+function toast(m){ var t=$("#toast"); t.textContent=m; t.classList.add("on"); clearTimeout(toast._t); toast._t=setTimeout(function(){ t.classList.remove("on"); },2400); }
+function show(k){
+  cur=k; var i;
+  var ps=document.querySelectorAll(".pg"); for(i=0;i<ps.length;i++) ps[i].classList.toggle("on",ps[i].id==="pg-"+k);
+  var bs=rail.querySelectorAll(".rb"); for(i=0;i<bs.length;i++) bs[i].setAttribute("aria-pressed",bs[i].getAttribute("data-t")===k?"true":"false");
+  PG.forEach(function(p){ if(p[0]===k) $("#ptitle").textContent=p[2]; });
+  $("#pbody").scrollTop=0;
+}
+function closePanel(){ cur=null; $("#panel").classList.remove("open"); var bs=rail.querySelectorAll(".rb"); for(var i=0;i<bs.length;i++) bs[i].setAttribute("aria-pressed","false"); }
+function pushLayer(fn){ LY.push(fn); try{ history.pushState({fi:LY.length},""); }catch(e){} }
+function closeTop(then){ if(!LY.length){ then&&then(); return; } afterPop=then||null; try{ history.back(); }catch(e){ var f=LY.pop(); f(); } }
+function openTool(k){
+  if(cur===k){ closeTop(); return; }
+  var was=!!cur; if(!was){ pushLayer(closePanel); $("#panel").classList.add("open"); }
+  show(k);
+}
+rail.addEventListener("click",function(e){ var b=e.target.closest(".rb"); if(b) openTool(b.getAttribute("data-t")); });
+$("#pclose").addEventListener("click",function(){ closeTop(); });
+window.addEventListener("popstate",function(){
+  if(LY.length){ var f=LY.pop(); f(); if(afterPop){ var a=afterPop; afterPop=null; a(); } return; }
+  var now=Date.now(); if(now-lastBack<2200) return;
+  lastBack=now; toast("Çıkmak için tekrar geri bas"); try{ history.pushState({fg:1},""); }catch(e){}
+});
+try{ history.replaceState({fb:1},""); history.pushState({fg:1},""); }catch(e){}
+/* önizleme boyutu */
+var cv=$("#cv"), box=$("#cvBox");
+function fit(){
+  var aw=box.clientWidth-16, ah=box.clientHeight-16; if(aw<40||ah<40) return;
+  var r=cv.width/cv.height, w=Math.min(aw,ah*r), hh=w/r; cv.style.width=Math.floor(w)+"px"; cv.style.height=Math.floor(hh)+"px";
+}
+if(window.ResizeObserver) new ResizeObserver(fit).observe(box); window.addEventListener("resize",fit);
+new MutationObserver(fit).observe(cv,{attributes:true,attributeFilter:["width","height"]});
+/* ilerleme çizgisi */
+var go=$("#go"), bar=$("#bar"), st=$("#status"), pb=$("#pbox"), pbT=$("#pbTxt"), pbF=$("#pbFill"), kb=$("#bKur"), hideT=null;
+function sync(){
+  var w=parseFloat(bar.style.width)||0, t=(st.textContent||"").trim(), err=st.classList.contains("err");
+  if(err){ pb.hidden=false; pbT.className="err"; pbT.textContent=t; return; }
+  pbT.className="";
+  if(/^Hazır/.test(t)){ pb.hidden=false; pbF.style.width="100%"; pbT.textContent="✓ İşlem tamamlandı"; clearTimeout(hideT); hideT=setTimeout(function(){ pb.hidden=true; },6000); return; }
+  if(/^Durduruldu/.test(t)){ pb.hidden=false; pbT.textContent="Durduruldu"; pbF.style.width="0%"; return; }
+  if(go.disabled&&$("#stop")&&!$("#stop").hidden){
+    clearTimeout(hideT); pb.hidden=false; pbF.style.width=Math.max(2,w)+"%";
+    var m=t.match(/(\d+) \/ (\d+) sn/);
+    pbT.textContent="⏳ İşleniyor… %"+Math.round(w)+(m?" · "+m[1]+" / "+m[2]+" sn":"");
+  }
+}
+new MutationObserver(sync).observe(bar,{attributes:true,attributeFilter:["style"]});
+new MutationObserver(sync).observe(st,{childList:true,characterData:true,subtree:true,attributes:true,attributeFilter:["class"]});
+new MutationObserver(function(){ kb.classList.toggle("busy",go.disabled); sync(); }).observe(go,{attributes:true,attributeFilter:["disabled"]});
+/* sonuç hazır olunca Çıktı sayfası */
+new MutationObserver(function(){ var r=$("#result"); if(!r.hidden){ if(!cur){ pushLayer(closePanel); $("#panel").classList.add("open"); } show("cikti"); } }).observe($("#result"),{attributes:true,attributeFilter:["hidden"]});
+/* üstteki Kurgula düğmesi */
+kb.addEventListener("click",function(){
+  if(!go.disabled){ if(!cur){ pushLayer(closePanel); $("#panel").classList.add("open"); } show("cikti"); go.click(); return; }
+  if($("#stop")&&!$("#stop").hidden){ toast("Kurgu işleniyor, bekle"); return; }
+  toast("Önce video ya da fotoğraf seç"); if(cur!=="medya") openTool("medya");
+});
+/* açılış: Medya paneli açık */
+pushLayer(closePanel); $("#panel").classList.add("open"); show("medya"); fit();
 })();
 </script>
 </body>
