@@ -53,14 +53,14 @@ let ETKINLIKLER = [];
     if (kiralik) {
       KIRALIK_FIRMS = kiralik.map(r => ({
         name: r.ad, city: r.sehir, district: r.ilce, whatsapp: r.whatsapp,
-        phone: r.telefon, instagram: r.instagram, description: r.aciklama, photo: r.foto_url, siraNo: r.sira_no, address: r.adres
+        phone: r.telefon, instagram: r.instagram, website: r.website, description: r.aciklama, photo: r.foto_url, siraNo: r.sira_no, address: r.adres
       }));
     }
 
     if (yakit) {
       YAKIT_FIRMS = yakit.map(r => ({
         name: r.ad, city: r.sehir, district: r.ilce, whatsapp: r.whatsapp,
-        phone: r.telefon, description: r.indirim_orani ? `${r.indirim_orani} indirim` : null,
+        phone: r.telefon, instagram: r.instagram, website: r.website, description: r.indirim_orani ? `${r.indirim_orani} indirim` : null,
         photo: r.foto_url, siraNo: r.sira_no, address: r.adres
       }));
     }
@@ -68,7 +68,7 @@ let ETKINLIKLER = [];
     if (ekspertiz) {
       EKSPERTIZ_FIRMS = ekspertiz.map(r => ({
         name: r.ad, city: r.sehir, district: r.ilce, whatsapp: r.whatsapp,
-        phone: r.telefon, instagram: r.instagram, description: r.aciklama, photo: r.foto_url, siraNo: r.sira_no, address: r.adres
+        phone: r.telefon, instagram: r.instagram, website: r.website, description: r.aciklama, photo: r.foto_url, siraNo: r.sira_no, address: r.adres
       }));
     }
 
@@ -76,7 +76,7 @@ let ETKINLIKLER = [];
       AVANTAJ_FIRMS = avantaj.map(r => ({
         name: r.firma_adi, category: r.kategori, city: r.sehir, badge: r.rozet,
         title: r.baslik, description: r.aciklama, bonus: r.odul,
-        whatsapp: r.whatsapp, phone: r.telefon, photo: r.foto_url, siraNo: r.sira_no, address: r.adres
+        whatsapp: r.whatsapp, phone: r.telefon, instagram: r.instagram, website: r.website, photo: r.foto_url, siraNo: r.sira_no, address: r.adres
       }));
     }
 
