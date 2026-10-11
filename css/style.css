@@ -580,3 +580,10 @@ a.app-hub-icon{text-decoration:none;}
 /* v136: Turkcell tarzı - gri zemin, beyaz kartlar */
 .form-card,.firm-card,.avantaj-card,.phone-frame,.as-card,.as-news{box-shadow:0 1px 3px rgba(20,30,60,.06),0 4px 14px rgba(20,30,60,.05);}
 .bottom-nav{box-shadow:0 -2px 10px rgba(20,30,60,.06);}
+
+/* v138: marka rengi - siyah ust bar + sari ana dugme */
+.topbar{isolation:isolate;padding:16px 20px 18px;}
+.topbar::before{content:"";position:absolute;top:0;bottom:0;left:50%;width:100vw;margin-left:-50vw;background:#14161b;z-index:-1;}
+body{overflow-x:clip;}
+.cta-btn{background:#F9EB22;color:#14161b;}
+.cta-btn:active{background:#e6d81a;}
