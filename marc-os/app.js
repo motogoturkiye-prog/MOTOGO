@@ -1,33 +1,25 @@
 (function(){
-var C=window.MARC_CONFIG, FREE=3, FN='super-responder';
+var C=window.MARC_CONFIG, FREE=3, FN='super-responder', MAXB=4*1024*1024;
 var sb=supabase.createClient(C.SUPABASE_URL,C.SUPABASE_ANON_KEY);
 var col=document.getElementById('col'),chat=document.getElementById('chat'),ttl=document.getElementById('ttl'),
-    inp=document.getElementById('inp'),nav=document.getElementById('nav'),drawer=document.getElementById('drawer');
-var mode='genel', history=[], busy=false, session=null, chatId=null, chats=[];
+    inp=document.getElementById('inp'),nav=document.getElementById('nav'),drawer=document.getElementById('drawer'),
+    foot=document.querySelector('.foot'),FOOT=foot.textContent;
+var history=[], busy=false, session=null, chatId=null, chats=[], att=null, curNav='genel';
 
 var SV=[
- {k:'genel',n:'Yeni sohbet',t:'Mark',s:'Mark’a her şeyi sor',ai:1,ph:'Motorunla ilgili bir şey sor…',
-  hi:'Ben Mark. Rota, hava, arıza, bakım, sürüş… Motosikletle ilgili ne varsa yaz.',
-  sg:['Yarın Ankara’dan İstanbul’a çıkıyorum','Rölantide tık tık sesi geliyor','Yağmurda nasıl sürmeliyim?'],
+ {k:'genel',n:'Yeni sohbet',s:'Marc’a her şeyi sor',
   ic:'<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>'},
- {k:'yol',n:'Yol ve hava',s:'Rota boyunca durum',ai:1,ph:'Örn: Yarın Ankara’dan İstanbul’a çıkıyorum',
-  hi:'Nereden nereye gideceksin? Rotandaki hava durumunu bakarım.',
-  ic:'<path d="M4 20 9 4M20 20 15 4M12 6v3M12 12v3M12 18v2"/>'},
- {k:'servis',n:'Yakınımdaki servis',s:'Çok yakında',soon:1,
-  ic:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/>'},
- {k:'kontrol',n:'Çıkış kontrolü',s:'Lastik, zincir, fren',
-  ic:'<path d="M9 6h11M9 12h11M9 18h11M3.5 6l1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5L7.5 17"/>'},
- {k:'motorum',n:'Motorum',s:'Bakım, sigorta',
-  ic:'<circle cx="6" cy="16" r="3.5"/><circle cx="18" cy="16" r="3.5"/><path d="M6 16l4-7h5l3 7M10 9 8 6H6"/>'},
- {k:'ses',n:'Arıza ve motor sesi',s:'Anlat (ses yakında)',ai:1,ph:'Örn: Rölantide tık tık sesi geliyor',
-  hi:'Arızayı ya da sesi yazıyla anlat. Ne zaman, hangi devirde oluyor?',
-  ic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>'},
- {k:'ogren',n:'Öğren',s:'Viraj, yağmur, kış',ai:1,ph:'Örn: Yağmurda nasıl sürmeliyim?',
-  hi:'Merak ettiğin sürüş konusunu yaz.',
-  sg:['Yağmurda nasıl sürmeliyim?','Virajda nasıl eğilmeliyim?','Kışın lastik basıncı'],
-  ic:'<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 19V5M9 8h6"/>'}
+ {k:'guven',n:'Sürüş güvenliği',s:'Yağmur, viraj, kış, kontrol',
+  ic:'<path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6z"/>'}
 ];
-function svc(k){return SV.filter(function(x){return x.k===k})[0]}
+var TOPICS=['Yağmurda nasıl sürmeliyim?','Virajda nasıl eğilmeliyim?','Kışın lastik basıncı nasıl olmalı?','Gece sürüşünde nelere dikkat etmeliyim?','Grup sürüşünde nelere dikkat etmeliyim?'];
+var CHECK=[
+ ['Lastik ve fren',['Lastik havası yeterli mi?','Lastiklerde çivi, cam ya da başka bir cisim, yırtık veya çatlak var mı?','Frenler tutuyor mu?','Fren ve debriyaj manetinde bir anormallik var mı?']],
+ ['Motor ve zincir',['Zincir gergin ve yağlı mı?','Yağ ve soğutma suyu seviyesi normal mi?','Motorun altında yağ ya da yakıt damlaması var mı?','Gaz kolu bıraktığında yerine tam dönüyor mu?','Yakıt yeterli mi?']],
+ ['Işık ve görüş',['Far, stop, sinyal ve korna çalışıyor mu?','Aynalar ayarlı mı?']],
+ ['Sen ve evrak',['Kask, eldiven, mont ve bot tamam mı?','Ehliyet, ruhsat ve sigorta yanında mı?']]
+];
+
 SV.forEach(function(v){
   var b=document.createElement('button');b.className='item';b.dataset.k=v.k;
   b.innerHTML='<svg viewBox="0 0 24 24">'+v.ic+'</svg><span>'+v.n+'<small>'+v.s+'</small></span>';
@@ -47,6 +39,7 @@ function add(who,html){
   d.innerHTML=who==='me'?'<div class="bubble">'+html+'</div>':'<div class="av">MG</div><div class="bot">'+html+'</div>';
   col.appendChild(d);chat.scrollTop=chat.scrollHeight;return d;
 }
+function note(t){foot.textContent=t;setTimeout(function(){foot.textContent=FOOT},5000)}
 function setQuota(left,paid){
   var t=document.getElementById('qtext'),bar=document.getElementById('qbar'),chip=document.getElementById('qchip');
   if(paid){t.innerHTML='<b>Üyelik aktif</b>';bar.style.width='100%';chip.textContent='Üye';return}
@@ -57,11 +50,11 @@ function setQuota(left,paid){
 function paywall(){
   add('bot','<div class="card paywall"><p><b>3 ücretsiz sorunu kullandın.</b></p><p class="small">Devam etmek için üyelik gerekir. Ödeme sistemi bağlanınca burada açılacak.</p></div>');
 }
+function setNav(k){curNav=k;document.querySelectorAll('.item').forEach(function(b){b.setAttribute('aria-current',b.dataset.k===k?'true':'false')})}
 
 /* Sohbet listesi */
 function renderHist(){
-  var targets=[histList,document.getElementById('histDrawer')];
-  targets.forEach(function(t){
+  [histList,document.getElementById('histDrawer')].forEach(function(t){
     t.innerHTML='';
     if(!chats.length){t.innerHTML='<div class="empty">Henüz yazışma yok.</div>';return}
     chats.forEach(function(c){
@@ -93,13 +86,10 @@ async function delChat(id){
   loadChats();
 }
 async function openChat(id){
-  var c=chats.filter(function(x){return x.id===id})[0];if(!c)return;
   var r=await sb.from('messages').select('role,content').eq('chat_id',id).order('id',{ascending:true});
   if(r.error)return;
-  var m=svc(c.mode)&&svc(c.mode).ai?c.mode:'genel';
-  mode=m;chatId=id;ttl.textContent=svc(m).t||svc(m).n;col.innerHTML='';history=[];
-  document.querySelectorAll('.item').forEach(function(b){b.setAttribute('aria-current','false')});
-  document.getElementById('f').style.display='';inp.placeholder=svc(m).ph;
+  chatId=id;ttl.textContent='Marc';col.innerHTML='';history=[];setNav('');
+  document.getElementById('f').style.display='';
   (r.data||[]).forEach(function(x){
     if(x.role==='user')add('me',esc(x.content));else add('bot',fmt(x.content));
     history.push({role:x.role,text:x.content});
@@ -107,71 +97,94 @@ async function openChat(id){
   renderHist();chat.scrollTop=chat.scrollHeight;
 }
 
+function chips(parent,list){
+  var s=document.createElement('div');s.className='sug';
+  list.forEach(function(q){var b=document.createElement('button');b.textContent=q;
+    b.onclick=function(){if(q==='Çıkış kontrolü')kontrol();else{inp.value=q;send()}};s.appendChild(b)});
+  parent.appendChild(s);
+}
+
 function open(k){
-  mode=k;chatId=null;history=[];var v=svc(k);
-  ttl.textContent=v.t||v.n;col.innerHTML='';
-  document.querySelectorAll('.item').forEach(function(b){b.setAttribute('aria-current',b.dataset.k===k?'true':'false')});
-  document.getElementById('f').style.display=v.ai?'':'none';
-  renderHist();
-  if(v.ai){inp.placeholder=v.ph;
-    var h=add('bot','<p>'+esc(v.hi)+'</p>');
-    if(v.sg){var s=document.createElement('div');s.className='sug';
-      v.sg.forEach(function(q){var b=document.createElement('button');b.textContent=q;b.onclick=function(){inp.value=q;send()};s.appendChild(b)});
-      h.querySelector('.bot').appendChild(s)}
-    inp.focus();
-  } else if(k==='kontrol') kontrol();
-  else if(k==='motorum') motorum();
-  else add('bot','<p>Bu hizmet çok yakında. Bölgendeki MotoGo onaylı ve diğer servisleri burada göstereceğim.</p>');
+  chatId=null;history=[];clearAtt();col.innerHTML='';setNav(k);renderHist();
+  document.getElementById('f').style.display='';
+  if(k==='guven'){ttl.textContent='Sürüş güvenliği';guven();return}
+  ttl.textContent='Marc';
+  var h=add('bot','<p>Ben Marc. Rota, hava, arıza, bakım, sürüş… Motosikletle ilgili ne varsa yaz. Fotoğraf ya da motor sesi kaydı da ekleyebilirsin.</p>');
+  chips(h.querySelector('.bot'),['Yarın Ankara’dan İstanbul’a çıkıyorum','Rölantide tık tık sesi geliyor','Yağmurda nasıl sürmeliyim?','Çıkış kontrolü']);
+  inp.focus();
+}
+
+function guven(){
+  var h='<p>Bir konu seç, Marc anlatsın:</p><div class="topics">';
+  TOPICS.forEach(function(t,i){h+='<button data-t="'+i+'">'+esc(t)+'</button>'});
+  h+='<button data-t="kontrol">Çıkış kontrolü</button></div>';
+  var d=add('bot',h);
+  d.querySelector('.topics').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    if(b.dataset.t==='kontrol'){kontrol();return}
+    var q=TOPICS[+b.dataset.t];open('genel');inp.value=q;send();
+  });
 }
 
 function kontrol(){
-  var L=['Lastik havası (soğukta kontrol et)','Zincir gerginliği ve yağı','Ön ve arka fren','Stop, sinyal, far','Yağ ve soğutma seviyesi','Kask, eldiven, mont'];
-  var h='<p>Çıkmadan önce 60 saniyede bak:</p><div class="cards"><div class="card">';
-  L.forEach(function(x){h+='<div class="chk"><i></i>'+x+'</div>'});
-  h+='</div></div><p class="small">Hava soğuksa lastik basıncının düşebileceğini unutma.</p>';
+  col.innerHTML='';chatId=null;history=[];ttl.textContent='Çıkış kontrolü';setNav('guven');
+  var h='<p>Çıkmadan önce 60 saniyede bak. Baktığın maddeye dokun, işaretlensin:</p><div class="cards"><div class="card">';
+  CHECK.forEach(function(g){
+    h+='<div class="chk-h">'+g[0]+'</div>';
+    g[1].forEach(function(x){h+='<div class="chk"><i></i>'+esc(x)+'</div>'});
+  });
+  h+='</div></div><p class="small">Bu liste telefonuna bir şey kaydetmez ve soru hakkından düşmez.</p>';
   add('bot',h);
   col.querySelectorAll('.chk').forEach(function(c){c.onclick=function(){c.classList.toggle('on')}});
 }
 
-async function motorum(){
-  var d=add('bot','<p class="typing">Motorun yükleniyor…</p>');
-  var r=await sb.from('bikes').select('*').limit(1).maybeSingle();
-  var b=r.data||{};
-  var h='<p>Motorunun bilgilerini gir. Zamanı gelince burada uyarırım.</p><form class="form" id="bf">'+
-   '<label>Model<input name="model" value="'+esc(b.model||'')+'" placeholder="Örn: KTM 1390"></label>'+
-   '<label>Yıl<input name="year" type="number" value="'+(b.year||'')+'"></label>'+
-   '<label>Şu anki km<input name="km" type="number" value="'+(b.km||'')+'"></label>'+
-   '<label>Sonraki bakım kaçıncı km’de<input name="next_service_km" type="number" value="'+(b.next_service_km||'')+'"></label>'+
-   '<label>Sigorta bitiş tarihi<input name="insurance_end" type="date" value="'+(b.insurance_end||'')+'"></label>'+
-   '<label>Muayene bitiş tarihi<input name="inspection_end" type="date" value="'+(b.inspection_end||'')+'"></label>'+
-   '<button class="buy" type="submit">Kaydet</button></form><div id="bst"></div>';
-  d.querySelector('.bot').innerHTML=h;
-  var st=d.querySelector('#bst');
-  function status(x){
-    var o=[],t=new Date();
-    if(x.next_service_km&&x.km){var k=x.next_service_km-x.km;o.push('<div class="row"><span>Bakım</span><span class="'+(k<1000?'warn':'ok')+'">'+(k>0?k+' km kaldı':'Zamanı geldi')+'</span></div>')}
-    [['insurance_end','Sigorta'],['inspection_end','Muayene']].forEach(function(p){
-      if(!x[p[0]])return;var g=Math.ceil((new Date(x[p[0]])-t)/864e5);
-      o.push('<div class="row"><span>'+p[1]+'</span><span class="'+(g<30?'warn':'ok')+'">'+(g>=0?g+' gün kaldı':'Süresi geçmiş')+'</span></div>')});
-    st.innerHTML=o.length?'<div class="card"><h4>Durum</h4>'+o.join('')+'</div>':'';
-  }
-  status(b);
-  d.querySelector('#bf').onsubmit=async function(e){
-    e.preventDefault();var f=new FormData(e.target),x={user_id:session.user.id,updated_at:new Date().toISOString()};
-    ['model','year','km','next_service_km','insurance_end','inspection_end'].forEach(function(n){
-      var v=f.get(n);x[n]=v===''?null:(['model','insurance_end','inspection_end'].indexOf(n)>-1?v:Number(v))});
-    if(x.model==null)x.model='';
-    var res=b.id?await sb.from('bikes').update(x).eq('id',b.id).select().single():await sb.from('bikes').insert(x).select().single();
-    if(res.error){st.innerHTML='<p class="small warn">Kaydedilemedi, tekrar dene.</p>';return}
-    b=res.data;status(b);
+/* Ek (fotoğraf / ses) */
+function clearAtt(){att=null;document.getElementById('att').hidden=true;document.getElementById('file').value=''}
+function showAtt(a){att=a;document.getElementById('attn').textContent=a.name;document.getElementById('att').hidden=false}
+function readB64(blob){return new Promise(function(ok,no){var r=new FileReader();r.onload=function(){ok(String(r.result).split(',')[1])};r.onerror=no;r.readAsDataURL(blob)})}
+function shrink(file){return new Promise(function(ok){
+  var img=new Image(),u=URL.createObjectURL(file);
+  img.onload=function(){
+    var m=1280,s=Math.min(1,m/Math.max(img.width,img.height)),c=document.createElement('canvas');
+    c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);
+    ok(c.toDataURL('image/jpeg',0.8).split(',')[1]);
   };
-}
+  img.onerror=function(){URL.revokeObjectURL(u);ok(null)};
+  img.src=u;
+})}
+document.getElementById('plus').addEventListener('click',function(){document.getElementById('file').click()});
+document.getElementById('attx').addEventListener('click',clearAtt);
+document.getElementById('file').addEventListener('change',async function(e){
+  var f=e.target.files[0];if(!f)return;
+  var isImg=f.type.indexOf('image/')===0,isAud=f.type.indexOf('audio/')===0;
+  if(!isImg&&!isAud){note('Yalnızca fotoğraf ya da ses kaydı eklenebilir.');clearAtt();return}
+  if(isImg){
+    var d=await shrink(f);
+    if(d){showAtt({name:f.name||'fotoğraf',mime:'image/jpeg',data:d});return}
+  }
+  if(f.size>MAXB){note('Dosya çok büyük. En fazla 4 MB olabilir, kaydı kısalt.');clearAtt();return}
+  showAtt({name:f.name||'ses kaydı',mime:f.type,data:await readB64(f)});
+});
+
+/* Mikrofon (sesi yazıya çevirir) */
+var SR=window.SpeechRecognition||window.webkitSpeechRecognition,rec=null,micBtn=document.getElementById('mic');
+micBtn.addEventListener('click',function(){
+  if(!SR){note('Bu tarayıcı sesi yazıya çevirmiyor. Yazarak devam edebilirsin.');return}
+  if(rec){rec.stop();return}
+  rec=new SR();rec.lang='tr-TR';rec.interimResults=true;rec.continuous=false;
+  var base=inp.value?inp.value+' ':'';
+  rec.onresult=function(e){var t='';for(var i=0;i<e.results.length;i++)t+=e.results[i][0].transcript;inp.value=(base+t).slice(0,800)};
+  rec.onend=function(){rec=null;micBtn.classList.remove('on');inp.focus()};
+  rec.onerror=function(){note('Ses alınamadı. Mikrofon iznini kontrol et.')};
+  micBtn.classList.add('on');rec.start();
+});
 
 async function persist(text,answer){
   try{
     var uid=session.user.id;
     if(!chatId){
-      var c=await sb.from('chats').insert({user_id:uid,title:text.slice(0,48),mode:mode}).select('id').single();
+      var c=await sb.from('chats').insert({user_id:uid,title:text.slice(0,48),mode:'genel'}).select('id').single();
       if(c.error)return;chatId=c.data.id;
     }else{
       await sb.from('chats').update({updated_at:new Date().toISOString()}).eq('id',chatId);
@@ -184,23 +197,27 @@ async function persist(text,answer){
 }
 
 async function send(){
-  var v=svc(mode);
-  var text=inp.value.trim();if(!text||busy||!v.ai)return;
-  busy=true;inp.value='';add('me',esc(text));
+  var text=inp.value.trim();
+  if((!text&&!att)||busy)return;
+  if(rec)rec.stop();
+  if(!text)text='Bu dosyayı incele.';
+  var a=att,shown=esc(text)+(a?'<br><span class="small">Ek: '+esc(a.name)+'</span>':'');
+  busy=true;inp.value='';clearAtt();add('me',shown);
   var w=add('bot','<span class="typing">Düşünüyorum…</span>');
+  var saved=text+(a?' [Ek: '+a.name+']':'');
   try{
     var s=(await sb.auth.getSession()).data.session;
     var r=await fetch(C.SUPABASE_URL+'/functions/v1/'+FN,{method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+s.access_token,'apikey':C.SUPABASE_ANON_KEY},
-      body:JSON.stringify({message:text,mode:mode,history:history})});
+      body:JSON.stringify({message:text,mode:'genel',history:history,attachment:a?{mime:a.mime,data:a.data}:undefined})});
     var j=await r.json();
     if(r.status===402){w.remove();setQuota(0);paywall()}
     else if(!r.ok){w.querySelector('.bot').innerHTML='<p class="warn">'+esc(j.error||j.message||'Hata oluştu')+'</p><p class="small">Teknik not: kod '+r.status+'</p>'}
     else{
       w.querySelector('.bot').innerHTML=fmt(j.answer);
-      history.push({role:'user',text:text},{role:'bot',text:j.answer});
+      history.push({role:'user',text:saved},{role:'bot',text:j.answer});
       setQuota(j.left,j.paid);
-      persist(text,j.answer);
+      persist(saved,j.answer);
     }
   }catch(e){w.querySelector('.bot').innerHTML='<p class="warn">Bağlantı kurulamadı. İnternetini kontrol et.</p><p class="small">Teknik not: '+esc(String(e&&e.message||e))+'</p>'}
   busy=false;chat.scrollTop=chat.scrollHeight;
