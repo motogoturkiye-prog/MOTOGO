@@ -120,13 +120,13 @@ async function send(){
       body:JSON.stringify({message:text,mode:mode,history:history})});
     var j=await r.json();
     if(r.status===402){w.remove();setQuota(0);paywall()}
-    else if(!r.ok){w.querySelector('.bot').innerHTML='<p class="warn">'+esc(j.error||'Hata oluştu')+'</p>'}
+    else if(!r.ok){w.querySelector('.bot').innerHTML='<p class="warn">'+esc(j.error||j.message||'Hata oluştu')+'</p><p class="small">Teknik not: kod '+r.status+'</p>'}
     else{
       w.querySelector('.bot').innerHTML=fmt(j.answer);
       history.push({role:'user',text:text},{role:'bot',text:j.answer});
       setQuota(j.left,j.paid);
     }
-  }catch(e){w.querySelector('.bot').innerHTML='<p class="warn">Bağlantı kurulamadı. İnternetini kontrol et.</p>'}
+  }catch(e){w.querySelector('.bot').innerHTML='<p class="warn">Bağlantı kurulamadı. İnternetini kontrol et.</p><p class="small">Teknik not: '+esc(String(e&&e.message||e))+'</p>'}
   busy=false;chat.scrollTop=chat.scrollHeight;
 }
 document.getElementById('f').addEventListener('submit',function(e){e.preventDefault();send()});
