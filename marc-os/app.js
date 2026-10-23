@@ -115,7 +115,7 @@ async function send(){
   var w=add('bot','<span class="typing">Düşünüyorum…</span>');
   try{
     var s=(await sb.auth.getSession()).data.session;
-    var r=await fetch(C.SUPABASE_URL+'/functions/v1/chat',{method:'POST',
+    var r=await fetch(C.SUPABASE_URL+'/functions/v1/super-responder',{method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+s.access_token,'apikey':C.SUPABASE_ANON_KEY},
       body:JSON.stringify({message:text,mode:mode,history:history})});
     var j=await r.json();
