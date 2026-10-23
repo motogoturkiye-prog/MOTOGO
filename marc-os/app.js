@@ -1,11 +1,15 @@
 (function(){
-var C=window.MARC_CONFIG, FREE=3;
+var C=window.MARC_CONFIG, FREE=3, FN='super-responder';
 var sb=supabase.createClient(C.SUPABASE_URL,C.SUPABASE_ANON_KEY);
 var col=document.getElementById('col'),chat=document.getElementById('chat'),ttl=document.getElementById('ttl'),
-    inp=document.getElementById('inp'),nav=document.getElementById('nav');
-var mode='yol', history=[], busy=false, session=null;
+    inp=document.getElementById('inp'),nav=document.getElementById('nav'),drawer=document.getElementById('drawer');
+var mode='genel', history=[], busy=false, session=null, chatId=null, chats=[];
 
 var SV=[
+ {k:'genel',n:'Yeni sohbet',t:'Mark',s:'Mark’a her şeyi sor',ai:1,ph:'Motorunla ilgili bir şey sor…',
+  hi:'Ben Mark. Rota, hava, arıza, bakım, sürüş… Motosikletle ilgili ne varsa yaz.',
+  sg:['Yarın Ankara’dan İstanbul’a çıkıyorum','Rölantide tık tık sesi geliyor','Yağmurda nasıl sürmeliyim?'],
+  ic:'<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>'},
  {k:'yol',n:'Yol ve hava',s:'Rota boyunca durum',ai:1,ph:'Örn: Yarın Ankara’dan İstanbul’a çıkıyorum',
   hi:'Nereden nereye gideceksin? Rotandaki hava durumunu bakarım.',
   ic:'<path d="M4 20 9 4M20 20 15 4M12 6v3M12 12v3M12 18v2"/>'},
@@ -23,18 +27,24 @@ var SV=[
   sg:['Yağmurda nasıl sürmeliyim?','Virajda nasıl eğilmeliyim?','Kışın lastik basıncı'],
   ic:'<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 19V5M9 8h6"/>'}
 ];
+function svc(k){return SV.filter(function(x){return x.k===k})[0]}
 SV.forEach(function(v){
   var b=document.createElement('button');b.className='item';b.dataset.k=v.k;
   b.innerHTML='<svg viewBox="0 0 24 24">'+v.ic+'</svg><span>'+v.n+'<small>'+v.s+'</small></span>';
   nav.appendChild(b);
 });
+var hh=document.createElement('h3');hh.textContent='Son yazışmalar';nav.appendChild(hh);
+var histList=document.createElement('div');histList.id='histList';nav.appendChild(histList);
 nav.addEventListener('click',function(e){var b=e.target.closest('.item');if(b)open(b.dataset.k)});
 
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
-function fmt(s){return esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')}
-function add(who,html,cls){
+function fmt(s){
+  return esc(s).split('\n').map(function(l){return l.replace(/^\s*[*-]\s+/,'• ').replace(/^#+\s*/,'')}).join('\n')
+    .replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+}
+function add(who,html){
   var d=document.createElement('div');d.className='msg'+(who==='me'?' me':'');
-  d.innerHTML=who==='me'?'<div class="bubble">'+html+'</div>':'<div class="av">MG</div><div class="bot'+(cls?' '+cls:'')+'">'+html+'</div>';
+  d.innerHTML=who==='me'?'<div class="bubble">'+html+'</div>':'<div class="av">MG</div><div class="bot">'+html+'</div>';
   col.appendChild(d);chat.scrollTop=chat.scrollHeight;return d;
 }
 function setQuota(left,paid){
@@ -48,12 +58,61 @@ function paywall(){
   add('bot','<div class="card paywall"><p><b>3 ücretsiz sorunu kullandın.</b></p><p class="small">Devam etmek için üyelik gerekir. Ödeme sistemi bağlanınca burada açılacak.</p></div>');
 }
 
+/* Sohbet listesi */
+function renderHist(){
+  var targets=[histList,document.getElementById('histDrawer')];
+  targets.forEach(function(t){
+    t.innerHTML='';
+    if(!chats.length){t.innerHTML='<div class="empty">Henüz yazışma yok.</div>';return}
+    chats.forEach(function(c){
+      var r=document.createElement('div');r.className='hl';r.setAttribute('aria-current',c.id===chatId?'true':'false');
+      r.innerHTML='<button class="ht" data-id="'+c.id+'" title="'+esc(c.title)+'">'+esc(c.title)+'</button><button class="hx" data-del="'+c.id+'" aria-label="Sohbeti sil">×</button>';
+      t.appendChild(r);
+    });
+  });
+}
+async function loadChats(){
+  var r=await sb.from('chats').select('id,title,mode,updated_at').order('updated_at',{ascending:false}).limit(30);
+  if(!r.error){chats=r.data||[];renderHist()}
+}
+function histClick(e){
+  var o=e.target.closest('[data-id]'),d=e.target.closest('[data-del]');
+  if(o){drawer.hidden=true;openChat(o.dataset.id)}
+  else if(d){delChat(d.dataset.del)}
+}
+histList.addEventListener('click',histClick);
+document.getElementById('histDrawer').addEventListener('click',histClick);
+document.getElementById('hbtn').addEventListener('click',function(){drawer.hidden=false});
+drawer.addEventListener('click',function(e){if(e.target===drawer)drawer.hidden=true});
+document.getElementById('newc').addEventListener('click',function(){drawer.hidden=true;open('genel')});
+
+async function delChat(id){
+  if(!window.confirm('Bu sohbet silinsin mi?'))return;
+  await sb.from('chats').delete().eq('id',id);
+  if(id===chatId)open('genel');
+  loadChats();
+}
+async function openChat(id){
+  var c=chats.filter(function(x){return x.id===id})[0];if(!c)return;
+  var r=await sb.from('messages').select('role,content').eq('chat_id',id).order('id',{ascending:true});
+  if(r.error)return;
+  var m=svc(c.mode)&&svc(c.mode).ai?c.mode:'genel';
+  mode=m;chatId=id;ttl.textContent=svc(m).t||svc(m).n;col.innerHTML='';history=[];
+  document.querySelectorAll('.item').forEach(function(b){b.setAttribute('aria-current','false')});
+  document.getElementById('f').style.display='';inp.placeholder=svc(m).ph;
+  (r.data||[]).forEach(function(x){
+    if(x.role==='user')add('me',esc(x.content));else add('bot',fmt(x.content));
+    history.push({role:x.role,text:x.content});
+  });
+  renderHist();chat.scrollTop=chat.scrollHeight;
+}
+
 function open(k){
-  mode=k;var v=SV.filter(function(x){return x.k===k})[0];
-  ttl.textContent=v.n;history=[];col.innerHTML='';
+  mode=k;chatId=null;history=[];var v=svc(k);
+  ttl.textContent=v.t||v.n;col.innerHTML='';
   document.querySelectorAll('.item').forEach(function(b){b.setAttribute('aria-current',b.dataset.k===k?'true':'false')});
   document.getElementById('f').style.display=v.ai?'':'none';
-  document.querySelector('.foot').style.display='';
+  renderHist();
   if(v.ai){inp.placeholder=v.ph;
     var h=add('bot','<p>'+esc(v.hi)+'</p>');
     if(v.sg){var s=document.createElement('div');s.className='sug';
@@ -108,14 +167,30 @@ async function motorum(){
   };
 }
 
+async function persist(text,answer){
+  try{
+    var uid=session.user.id;
+    if(!chatId){
+      var c=await sb.from('chats').insert({user_id:uid,title:text.slice(0,48),mode:mode}).select('id').single();
+      if(c.error)return;chatId=c.data.id;
+    }else{
+      await sb.from('chats').update({updated_at:new Date().toISOString()}).eq('id',chatId);
+    }
+    await sb.from('messages').insert([
+      {chat_id:chatId,user_id:uid,role:'user',content:text},
+      {chat_id:chatId,user_id:uid,role:'bot',content:answer}]);
+    loadChats();
+  }catch(e){}
+}
+
 async function send(){
-  var v=SV.filter(function(x){return x.k===mode})[0];
+  var v=svc(mode);
   var text=inp.value.trim();if(!text||busy||!v.ai)return;
   busy=true;inp.value='';add('me',esc(text));
   var w=add('bot','<span class="typing">Düşünüyorum…</span>');
   try{
     var s=(await sb.auth.getSession()).data.session;
-    var r=await fetch(C.SUPABASE_URL+'/functions/v1/super-responder',{method:'POST',
+    var r=await fetch(C.SUPABASE_URL+'/functions/v1/'+FN,{method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+s.access_token,'apikey':C.SUPABASE_ANON_KEY},
       body:JSON.stringify({message:text,mode:mode,history:history})});
     var j=await r.json();
@@ -125,18 +200,19 @@ async function send(){
       w.querySelector('.bot').innerHTML=fmt(j.answer);
       history.push({role:'user',text:text},{role:'bot',text:j.answer});
       setQuota(j.left,j.paid);
+      persist(text,j.answer);
     }
   }catch(e){w.querySelector('.bot').innerHTML='<p class="warn">Bağlantı kurulamadı. İnternetini kontrol et.</p><p class="small">Teknik not: '+esc(String(e&&e.message||e))+'</p>'}
   busy=false;chat.scrollTop=chat.scrollHeight;
 }
 document.getElementById('f').addEventListener('submit',function(e){e.preventDefault();send()});
-document.getElementById('buy').addEventListener('click',function(){alert('Üyelik yakında açılacak.')});
+document.getElementById('buy').addEventListener('click',function(){window.alert('Üyelik yakında açılacak.')});
 
 (async function init(){
   var g=await sb.auth.getSession();session=g.data.session;
   if(!session){var a=await sb.auth.signInAnonymously();if(a.error){col.innerHTML='<div class="msg"><div class="av">MG</div><div class="bot"><p class="warn">Giriş başlatılamadı. Supabase’de “Anonymous sign-ins” açık mı?</p></div></div>';return}session=a.data.session}
   var u=await sb.from('usage').select('used,paid').maybeSingle();
   if(u.data)setQuota(u.data.paid?null:Math.max(0,FREE-u.data.used),u.data.paid);else setQuota(FREE);
-  open('yol');
+  open('genel');loadChats();
 })();
 })();
