@@ -800,7 +800,7 @@ showResultsBtn.addEventListener('click', () => {
     kurgu: function(el){ renderFrame(el, 'kurgu.html?uye=' + ((window.MG && window.MG.rotaImaj) ? 1 : 0)); },
     foto: function(el){ renderFrame(el, 'foto.html?uye=' + ((window.MG && window.MG.rotaImaj) ? 1 : 0)); },
     aktivite: function(el){ renderFrame(el, 'aktivite.html'); },
-    marc: function(el){ renderFrame(el, 'marc-os/'); },
+    marc: function(el){ ucretliKapi(el, 'MARC O.S. 3.0', '🏍', function(){ window.location.href = 'marc-os/'; }); },
     haber: renderHaber,
     konaklama: function(el){ renderDir('konaklama', el); },
     sigorta: function(el){ renderDir('sigorta', el); },
