@@ -799,7 +799,8 @@ showResultsBtn.addEventListener('click', () => {
     kurye: function(el){ renderFrame(el, 'kurye.html'); },
     kurgu: function(el){ renderFrame(el, 'kurgu.html?uye=' + ((window.MG && window.MG.rotaImaj) ? 1 : 0)); },
     foto: function(el){ renderFrame(el, 'foto.html?uye=' + ((window.MG && window.MG.rotaImaj) ? 1 : 0)); },
-    aktivite: function(el){ ucretliKapi(el, 'Aktivite Planım', '🗓️', function(e){ renderFrame(e, 'aktivite.html'); }); },
+    aktivite: function(el){ renderFrame(el, 'aktivite.html'); },
+    marc: function(el){ renderFrame(el, 'marc-os/'); },
     haber: renderHaber,
     konaklama: function(el){ renderDir('konaklama', el); },
     sigorta: function(el){ renderDir('sigorta', el); },
@@ -1296,7 +1297,7 @@ showResultsBtn.addEventListener('click', () => {
   }
   function renderFrame(el, src){
     el.classList.add('is-frame');
-    el.innerHTML = '<iframe class="app-frame" src="' + src + '" title="Uygulama" allow="autoplay; fullscreen; geolocation"></iframe>';
+    el.innerHTML = '<iframe class="app-frame" src="' + src + '" title="Uygulama" allow="autoplay; fullscreen; geolocation; microphone"></iframe>';
   }
 
   // ----- Rota İmaj -----
