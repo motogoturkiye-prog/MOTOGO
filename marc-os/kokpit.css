@@ -1,0 +1,65 @@
+/* MARC O.S. 3.0 — Kokpit (açılış ekranı + sürüş kaydı). Tüm sınıflar k- ile başlar. */
+#kCock{--kbg:#0d1015;--kpanel:#151a21;--kline:#232a34;--ktxt:#eef1f5;--kmut:#8793a3;--kamber:#ffcb2e;--kamber2:#d98200;--kred:#ff5b5b;
+  position:fixed;inset:0;z-index:50;background:var(--kbg);color:var(--ktxt);display:grid;grid-template-rows:minmax(0,1fr) auto auto;gap:8px;
+  padding:10px max(12px,env(safe-area-inset-right)) 8px max(12px,env(safe-area-inset-left));transition:opacity .5s;
+  font-family:"Bahnschrift","Segoe UI",system-ui,-apple-system,sans-serif}
+#kCock[hidden]{display:none}
+#kCock.k-out{opacity:0}
+#kCock button{font-family:inherit;color:inherit;cursor:pointer}
+.k-stage{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--kline);display:grid;grid-template-columns:minmax(0,1fr);place-items:center;min-height:0;
+  background:radial-gradient(ellipse at 50% 45%,#141a22 0%,#0a0d12 70%)}
+.k-tft{position:relative;z-index:2;height:min(94%,340px);width:min(96%,700px);background:#04060a;border-radius:22px;border:4px solid #1d242e;
+  box-shadow:0 0 0 1px #000,0 14px 40px rgba(0,0,0,.75),inset 0 0 28px rgba(255,203,46,.05);display:grid;grid-template-rows:auto minmax(0,1fr) auto;overflow:hidden}
+.k-tft::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,rgba(255,255,255,.07),transparent 28%)}
+.k-strip{display:flex;justify-content:space-between;align-items:center;padding:5px 14px;font-size:12px;color:var(--kmut);font-variant-numeric:tabular-nums}
+.k-strip.k-t{border-bottom:1px solid #121820}
+.k-strip.k-bt{border-top:1px solid #121820;gap:10px}
+.k-strip.k-bt div{text-align:center;flex:1}
+.k-strip.k-bt small{font-size:10.5px}
+.k-strip.k-bt b{display:block;font-size:14px;color:var(--ktxt)}
+.k-rec{color:var(--kred)}
+.k-body{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.25fr) minmax(0,.9fr);align-items:center;gap:4px;padding:0 8px;min-height:0}
+.k-side{display:flex;flex-direction:column;gap:6px}
+.k-it{background:#0a0e14;border:1px solid #151c26;border-radius:10px;padding:5px 8px;text-align:center;min-width:0}
+.k-it small{display:block;color:var(--kmut);font-size:10.5px}
+.k-it b{font-size:clamp(14px,3vh,19px);font-variant-numeric:tabular-nums;display:block;line-height:1.15}
+.k-it em{font-style:normal;color:var(--kmut);font-size:10px;display:block}
+.k-it.k-warn b{color:var(--kamber)}.k-it.k-bad b{color:var(--kred)}
+#kTire{font-size:clamp(12px,2.5vh,15px);white-space:nowrap}
+.k-gauge{width:100%;height:100%;min-height:0}
+.k-gauge text{fill:var(--ktxt);font-family:inherit}
+#kBar{height:3px;background:#10151c;border-radius:99px;overflow:hidden}
+#kBar i{display:block;height:100%;width:100%;background:var(--kamber);transition:width 13s linear}
+#kBar.k-go i{width:0}
+.k-cap{font-size:10.5px;color:var(--kmut);text-align:center;line-height:1.35;margin-top:4px}
+.k-bot{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap}
+.k-bot button{background:var(--kpanel);border:1px solid var(--kline);border-radius:12px;padding:9px 14px;font-size:13px;font-weight:600}
+.k-bot button.k-main{background:linear-gradient(135deg,var(--kamber),var(--kamber2));color:#1a1200;border-color:transparent}
+.k-bot button.k-rec-btn{background:var(--kred);color:#fff;border-color:transparent}
+.k-bot button:disabled{opacity:.4;cursor:not-allowed}
+@media (max-aspect-ratio:1/1){
+  #kCock{overflow:auto;grid-template-rows:auto auto auto}
+  .k-stage{height:min(700px,max(460px,calc(100dvh - 215px)))}
+  .k-tft{height:94%;width:96%}
+  .k-body{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-content:center;gap:8px}
+  .k-gauge{grid-column:1/-1;order:-1;height:250px}
+}
+.k-modal{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.72);display:grid;place-items:center;padding:14px;font-family:"Bahnschrift","Segoe UI",system-ui,sans-serif;color:#eef1f5}
+.k-modal[hidden]{display:none}
+.k-form{background:#151a21;border:1px solid #232a34;border-radius:16px;padding:16px;width:min(440px,100%);max-height:100%;overflow:auto;display:grid;gap:10px}
+.k-form h3{font-size:16px}
+.k-form p{font-size:13px;color:#8793a3;line-height:1.45}
+.k-form label{display:grid;gap:4px;font-size:12px;color:#8793a3;min-width:0}
+.k-form input,.k-form select{background:#0d1015;border:1px solid #232a34;border-radius:10px;padding:9px 10px;color:#eef1f5;font:inherit;font-size:14px;min-width:0;width:100%}
+.k-form .k-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.k-form .k-act{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.k-form .k-act button{border-radius:10px;padding:9px 14px;font-weight:600;border:1px solid #232a34;background:#0d1015;color:#eef1f5;cursor:pointer;font-family:inherit}
+.k-form .k-act .k-ok{background:linear-gradient(135deg,#ffcb2e,#d98200);color:#1a1200;border:0}
+.k-form .k-act button:disabled{opacity:.45;cursor:default}
+.k-sum{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.k-sum div{background:#0a0e14;border:1px solid #151c26;border-radius:10px;padding:8px;text-align:center}
+.k-sum small{display:block;color:#8793a3;font-size:11px}
+.k-sum b{font-size:20px;font-variant-numeric:tabular-nums}
+#kPill{position:fixed;top:10px;right:10px;z-index:40;background:#c0392b;color:#fff;border:0;border-radius:99px;padding:6px 12px;font:600 12px system-ui,sans-serif;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.4)}
+#kPill[hidden]{display:none}
+@media (prefers-reduced-motion:reduce){#kCock{transition:none}#kBar i{transition:none}}

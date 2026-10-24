@@ -1,5 +1,5 @@
 (function(){
-var C=window.MARC_CONFIG, FREE=3, FN='super-responder', MAXB=4*1024*1024;
+var C=window.MARC_CONFIG, FN='super-responder', MAXB=4*1024*1024;
 var sb=supabase.createClient(C.SUPABASE_URL,C.SUPABASE_ANON_KEY);
 var col=document.getElementById('col'),chat=document.getElementById('chat'),ttl=document.getElementById('ttl'),
     inp=document.getElementById('inp'),nav=document.getElementById('nav'),drawer=document.getElementById('drawer'),
@@ -12,7 +12,9 @@ var SV=[
  {k:'kontrol',n:'Çıkış kontrolü',s:'Yola çıkmadan 60 saniye',
   ic:'<path d="M9 6h11M9 12h11M9 18h11M3.5 6l1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5L7.5 17"/>'},
  {k:'guven',n:'Sürüş güvenliği',s:'Yağmur, viraj, kış, kontrol',
-  ic:'<path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6z"/>'}
+  ic:'<path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6z"/>'},
+ {k:'kokpit',n:'Kokpit',s:'Motorun, sigorta, sürüş kaydı',
+  ic:'<path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l4-5"/><circle cx="12" cy="17" r="1"/>'}
 ];
 var TOPICS=['Yağmurda nasıl sürmeliyim?','Virajda nasıl eğilmeliyim?','Kışın lastik basıncı nasıl olmalı?','Gece sürüşünde nelere dikkat etmeliyim?','Grup sürüşünde nelere dikkat etmeliyim?'];
 var CHECK=[
@@ -27,6 +29,13 @@ SV.forEach(function(v){
   b.innerHTML='<svg viewBox="0 0 24 24">'+v.ic+'</svg><span>'+v.n+'<small>'+v.s+'</small></span>';
   nav.appendChild(b);
 });
+var dn=document.getElementById('drawerNav');
+SV.forEach(function(v){
+  var b=document.createElement('button');b.className='item';b.dataset.k=v.k;
+  b.innerHTML='<svg viewBox="0 0 24 24">'+v.ic+'</svg><span>'+v.n+'<small>'+v.s+'</small></span>';
+  dn.appendChild(b);
+});
+dn.addEventListener('click',function(e){var b=e.target.closest('.item');if(b){drawer.hidden=true;open(b.dataset.k)}});
 var hh=document.createElement('h3');hh.textContent='Son yazışmalar';nav.appendChild(hh);
 var histList=document.createElement('div');histList.id='histList';nav.appendChild(histList);
 nav.addEventListener('click',function(e){var b=e.target.closest('.item');if(b)open(b.dataset.k)});
@@ -42,16 +51,31 @@ function add(who,html){
   col.appendChild(d);chat.scrollTop=chat.scrollHeight;return d;
 }
 function note(t){foot.textContent=t;setTimeout(function(){foot.textContent=FOOT},5000)}
-function setQuota(left,paid){
-  var t=document.getElementById('qtext'),bar=document.getElementById('qbar'),chip=document.getElementById('qchip');
-  if(paid){t.innerHTML='<b>Üyelik aktif</b>';bar.style.width='100%';chip.textContent='Üye';return}
-  if(left==null)return;
-  t.innerHTML='<b>'+FREE+' ücretsiz sorudan '+left+'’i kaldı</b>';
-  bar.style.width=(left/FREE*100)+'%';chip.textContent=left+'/'+FREE+' ücretsiz';
+var KOTA=null,AYLAR=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+function yenilenme(){var n=new Date(new Date().getFullYear(),new Date().getMonth()+1,1);return '1 '+AYLAR[n.getMonth()]}
+function setKota(j){
+  if(!j||j.soru==null)return;KOTA=j;
+  var ks=Math.max(0,j.soru_limit-j.soru),km=Math.max(0,j.medya_limit-j.medya);
+  var t1='<b>'+ks+'</b> soru kaldı <span class="small">(ayda '+j.soru_limit+')</span>';
+  var t2='<b>'+km+'</b> fotoğraf/ses kaldı <span class="small">(ayda '+j.medya_limit+')</span>';
+  var ren='Haklar '+yenilenme()+'’de yenilenir.';
+  function set(id,h){var e=document.getElementById(id);if(e)e.innerHTML=h}
+  set('qtext',t1);set('qtext2',t2);set('qren',ren);set('qtextD',t1);set('qtext2D',t2);set('qrenD',ren);
+  document.getElementById('qbar').style.width=(ks/j.soru_limit*100)+'%';
+  document.getElementById('qbar2').style.width=(km/j.medya_limit*100)+'%';
+  document.getElementById('qchip').textContent=ks+' soru kaldı';
 }
-function paywall(){
-  add('bot','<div class="card paywall"><p><b>3 ücretsiz sorunu kullandın.</b></p><p class="small">Devam etmek için üyelik gerekir. Ödeme sistemi bağlanınca burada açılacak.</p></div>');
+var WA='https://wa.me/905331509890?text='+encodeURIComponent('Merhaba, MotoGo ücretli uygulamalar için ücretli üyelik satın almak istiyorum.');
+function lock(kind){
+  var T,Pp,A;
+  if(kind==='uye'){T='Önce MotoGo üyeliği gerekir';Pp='MARC O.S. 3.0, MotoGo ücretli üyelerine açıktır. Bireysel üyelik ücretsizdir. Önce MotoGo’da üye ol, sonra ücretli üyeliği al.';A='<a class="main" href="../">MotoGo’ya git</a><button id="lockR">Üye oldum, yenile</button>'}
+  else if(kind==='ucretli'){T='MARC O.S. 3.0 ücretli üyelere açık';Pp='Ücretli üyelik Rota İmaj, Foto İmaj, Movi İmaj ve MARC O.S. 3.0’ı birlikte açar. Satın aldıysan “Durumu yenile”ye bas.';A='<a class="main" target="_blank" rel="noopener" href="'+WA+'">Ücretli üyelik satın al</a><button id="lockR">Satın aldım, durumu yenile</button><a href="../">‹ MotoGo’ya dön</a>'}
+  else{T='Bağlanamadım';Pp='Üyeliğin şu an doğrulanamadı. İnternetini kontrol edip tekrar dene.';A='<button class="main" id="lockR">Tekrar dene</button><a href="../">‹ MotoGo’ya dön</a>'}
+  document.getElementById('lockT').textContent=T;document.getElementById('lockP').textContent=Pp;
+  document.getElementById('lockA').innerHTML=A;document.getElementById('lock').hidden=false;
+  document.getElementById('lockR').onclick=function(){location.reload()};
 }
+function uyeBilgi(){var k='',c='';try{k=localStorage.getItem('motogo_uye_kod')||'';c=localStorage.getItem('motogo_cihaz')||''}catch(e){}return{kod:k,cihaz:c}}
 function setNav(k){curNav=k;document.querySelectorAll('.item').forEach(function(b){b.setAttribute('aria-current',b.dataset.k===k?'true':'false')})}
 
 /* Sohbet listesi */
@@ -79,7 +103,6 @@ histList.addEventListener('click',histClick);
 document.getElementById('histDrawer').addEventListener('click',histClick);
 document.getElementById('hbtn').addEventListener('click',function(){drawer.hidden=false});
 drawer.addEventListener('click',function(e){if(e.target===drawer)drawer.hidden=true});
-document.getElementById('newc').addEventListener('click',function(){drawer.hidden=true;open('genel')});
 
 async function delChat(id){
   if(!window.confirm('Bu sohbet silinsin mi?'))return;
@@ -101,19 +124,30 @@ async function openChat(id){
 
 function chips(parent,list){
   var s=document.createElement('div');s.className='sug';
-  list.forEach(function(q){var b=document.createElement('button');b.textContent=q;
-    b.onclick=function(){inp.value=q;send()};s.appendChild(b)});
+  list.forEach(function(q){var b=document.createElement('button');b.textContent=q[0];
+    b.onclick=function(){inp.value=q[1];send()};s.appendChild(b)});
   parent.appendChild(s);
 }
 
 function open(k){
+  if(k==='kokpit'){if(window.MarcKokpit)window.MarcKokpit.open(false);return}
   chatId=null;history=[];clearAtt();col.innerHTML='';setNav(k);renderHist();
   document.getElementById('f').style.display='';
   if(k==='kontrol'){kontrol();return}
   if(k==='guven'){ttl.textContent='Sürüş güvenliği';guven();return}
   ttl.textContent='Marc';
-  var h=add('bot','<p>Ben Marc. Rota, hava, arıza, bakım, sürüş… Motosikletle ilgili ne varsa yaz. Fotoğraf ya da motor sesi kaydı da ekleyebilirsin.</p>');
-  chips(h.querySelector('.bot'),['Yarın Ankara’dan İstanbul’a çıkıyorum','Rölantide tık tık sesi geliyor','Yağmurda nasıl sürmeliyim?']);
+  var W='Ben Marc, MotoGo’nun motosiklet asistanı. Yazarak, fotoğraf ya da ses kaydı ekleyerek sorabilirsin.\n\n'+
+   '**Şimdi yapabildiklerim**\n'+
+   '• Yol ve hava: rotandaki şehirlerin hava durumu, soğuk, yağmur ve rüzgâr uyarısı\n'+
+   '• Arıza ve motor sesi: anlat ya da kaydı yükle, olası nedenleri ve servise ne söyleyeceğini yazarım\n'+
+   '• Sürüş bilgisi: viraj, yağmur, kış, grup sürüşü\n'+
+   '• Çıkış kontrolü: yola çıkmadan 60 saniyelik liste (menüde)\n'+
+   '• Motosiklet bilgisi: bakım, ekipman, markalar, MotoGP\n'+
+   '• Kokpit (menüde): motorunun bilgileri, sigorta ve muayene günü, sürüşünü kaydedip Rota İmaj videosu yapma\n\n'+
+   '**Yakında**\n'+
+   '• Yakınımdaki servis: MotoGo onaylı ve diğer servisler\n'+
+   '• Sesli öneriler: sürüşe eşlik eden kısa sesli mesajlar';
+  add('bot',fmt(W));
   inp.focus();
 }
 
@@ -211,27 +245,44 @@ async function send(){
     var s=(await sb.auth.getSession()).data.session;
     var r=await fetch(C.SUPABASE_URL+'/functions/v1/'+FN,{method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+s.access_token,'apikey':C.SUPABASE_ANON_KEY},
-      body:JSON.stringify({message:text,mode:'genel',history:history,attachment:a?{mime:a.mime,data:a.data}:undefined})});
+      body:JSON.stringify({message:text,mode:'genel',history:history,uye_kod:uyeBilgi().kod,cihaz:uyeBilgi().cihaz,attachment:a?{mime:a.mime,data:a.data}:undefined})});
     var j=await r.json();
-    if(r.status===402){w.remove();setQuota(0);paywall()}
+    if(r.status===402){w.remove();lock('ucretli')}
+    else if(r.status===429){setKota(j);w.querySelector('.bot').innerHTML='<p class="warn">'+(j.tur==='medya'?'Bu ayki fotoğraf/ses hakkın bitti.':'Bu ayki soru hakkın bitti.')+'</p><p class="small">Haklar '+yenilenme()+'’de yenilenir.</p>'}
+    else if(r.status===503){w.querySelector('.bot').innerHTML='<p class="warn">Üyeliğin doğrulanamadı.</p><p class="small">İnternetini kontrol edip tekrar dene.</p>'}
     else if(!r.ok){w.querySelector('.bot').innerHTML='<p class="warn">'+esc(j.error||j.message||'Hata oluştu')+'</p><p class="small">Teknik not: kod '+r.status+'</p>'}
     else{
       w.querySelector('.bot').innerHTML=fmt(j.answer);
       history.push({role:'user',text:saved},{role:'bot',text:j.answer});
-      setQuota(j.left,j.paid);
+      setKota(j);
       persist(saved,j.answer);
     }
   }catch(e){w.querySelector('.bot').innerHTML='<p class="warn">Bağlantı kurulamadı. İnternetini kontrol et.</p><p class="small">Teknik not: '+esc(String(e&&e.message||e))+'</p>'}
   busy=false;chat.scrollTop=chat.scrollHeight;
 }
 document.getElementById('f').addEventListener('submit',function(e){e.preventDefault();send()});
-document.getElementById('buy').addEventListener('click',function(){window.alert('Üyelik yakında açılacak.')});
 
+async function gate(){
+  var u=uyeBilgi();if(!u.kod){lock('uye');return false}
+  try{
+    var s2=(await sb.auth.getSession()).data.session;
+    var r=await fetch(C.SUPABASE_URL+'/functions/v1/'+FN,{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+s2.access_token,'apikey':C.SUPABASE_ANON_KEY},
+      body:JSON.stringify({action:'durum',uye_kod:u.kod,cihaz:u.cihaz})});
+    var j={};try{j=await r.json()}catch(e){}
+    if(r.status===402){lock('ucretli');return false}
+    if(!r.ok){lock('baglanti');return false}
+    setKota(j);return true;
+  }catch(e){lock('baglanti');return false}
+}
 (async function init(){
+  var DEMO=!!(window.MarcKokpit&&window.MarcKokpit.demo);
   var g=await sb.auth.getSession();session=g.data.session;
   if(!session){var a=await sb.auth.signInAnonymously();if(a.error){col.innerHTML='<div class="msg"><div class="av">MG</div><div class="bot"><p class="warn">Giriş başlatılamadı. Supabase’de “Anonymous sign-ins” açık mı?</p></div></div>';return}session=a.data.session}
-  var u=await sb.from('usage').select('used,paid').maybeSingle();
-  if(u.data)setQuota(u.data.paid?null:Math.max(0,FREE-u.data.used),u.data.paid);else setQuota(FREE);
+  if(DEMO){setKota({soru:13,medya:2,soru_limit:60,medya_limit:10})}
+  else if(!(await gate()))return;
   open('genel');loadChats();
+  var ilk=true;try{ilk=!sessionStorage.getItem('marc_boot');sessionStorage.setItem('marc_boot','1')}catch(e){}
+  if(ilk&&window.MarcKokpit)window.MarcKokpit.open(true);
 })();
 })();
