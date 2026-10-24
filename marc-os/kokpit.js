@@ -6,8 +6,8 @@ var DEMO=/[?&]demo=1/.test(location.search);
 var KEY='marc_kokpit_v1', RIDE_KEY='marc_son_surus';
 var BRANDS=['BMW','KTM','Honda','Yamaha','Suzuki','Kawasaki','Ducati','Triumph','CFMoto','Jawa','Aurora','Royal Enfield','Harley-Davidson','Vespa','Diğer'];
 
-var P={brand:'',model:'',year:'',km:'',sig:'',mua:'',tf:'',tr:'',adSoyad:''};
-if(DEMO){P={brand:'BMW',model:'F800GS',year:2016,km:48200,sig:'2027-03-14',mua:'2027-09-02',tf:'2,5',tr:'2,9',adSoyad:''}}
+var P={brand:'',model:'',year:'',km:'',sig:'',mua:'',adSoyad:''};
+if(DEMO){P={brand:'BMW',model:'F800GS',year:2016,km:48200,sig:'2027-03-14',mua:'2027-09-02',adSoyad:''}}
 else{try{var sv=localStorage.getItem(KEY);if(sv)P=Object.assign(P,JSON.parse(sv))}catch(e){}}
 function save(){if(DEMO)return;try{localStorage.setItem(KEY,JSON.stringify(P))}catch(e){}}
 
@@ -34,7 +34,7 @@ host.innerHTML=
    '</svg>'+
    '<div class="k-side">'+
     '<div class="k-it" id="kCMua"><small>Muayene</small><b id="kMua">—</b><em id="kMuaD"></em></div>'+
-    '<div class="k-it"><small>Lastik · fabrika değeri</small><b id="kTire">—</b><em>bar · mevcut basınç değil</em></div>'+
+    '<div class="k-it"><small>Lastik · fabrika değeri</small><b id="kTire">—</b><em id="kTireD">fabrika referansı · mevcut basınç değil</em></div>'+
    '</div>'+
   '</div>'+
   '<div class="k-strip k-bt">'+
@@ -58,12 +58,10 @@ host.innerHTML=
 '<button id="kPill" hidden>● Sürüş kaydı açık</button>'+
 '<div class="k-modal" id="kEdit" hidden><div class="k-form" role="dialog" aria-label="Motorumu tanıt">'+
  '<h3>Motorumu tanıt</h3>'+
- '<label>Adın soyadın<input id="kfAd" type="text" maxlength="40" autocomplete="name" placeholder="Örn. Murat Gökçe"></label>'+
+ '<label>Adın soyadın<input id="kfAd" type="text" maxlength="40" autocomplete="name" placeholder="Adın ve soyadın"></label>'+
  '<div class="k-row"><label>Marka<select id="kfBrand"></select></label><label>Model<input id="kfModel" type="text" placeholder="Örn. F800GS"></label></div>'+
  '<div class="k-row"><label>Kilometre (şu an)<input id="kfKm" type="number" inputmode="numeric" min="0"></label><label>Model yılı<input id="kfYear" type="number" inputmode="numeric" min="1980" max="2035"></label></div>'+
  '<div class="k-row"><label>Sigorta bitişi<input id="kfSig" type="date"></label><label>Muayene tarihi<input id="kfMua" type="date"></label></div>'+
- '<div class="k-row"><label>Ön lastik (bar)<input id="kfTf" type="text" inputmode="decimal" placeholder="2,5"></label><label>Arka lastik (bar)<input id="kfTr" type="text" inputmode="decimal" placeholder="2,9"></label></div>'+
- '<p>Lastik değerlerini motorunun kullanım kılavuzundan gir. Marc bunları kontrol etmez.</p>'+
  '<div class="k-act"><button id="kfCancel">Vazgeç</button><button class="k-ok" id="kfSave">Kaydet</button></div>'+
 '</div></div>'+
 '<div class="k-modal" id="kSumM" hidden><div class="k-form" role="dialog" aria-label="Sürüş özeti">'+
@@ -85,6 +83,16 @@ var BIND={};
 })();
 BRANDS.forEach(function(b){var o=document.createElement('option');o.value=b;o.textContent=b;$('kfBrand').appendChild(o)});
 
+/* Fabrika lastik basıncı (bar, sürücü tek). Yalnızca iki ayrı kaynakta teyit edilen modeller. Yeni model eklemek için buraya satır ekle. */
+var TIRES=[
+ {m:'BMW',k:['r1250gs','r1250gsadventure','r1250gsa'],v:['2,5','2,9']}
+];
+function tireFor(brand,model){
+  var b=String(brand||'').toUpperCase(),m=String(model||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  if(!m)return null;
+  for(var i=0;i<TIRES.length;i++){if(TIRES[i].m!==b)continue;for(var j=0;j<TIRES[i].k.length;j++){if(m.indexOf(TIRES[i].k[j])===0)return TIRES[i].v}}
+  return null;
+}
 /* ---------- Yardımcılar ---------- */
 function f1(n){return n.toFixed(1).replace('.',',')}
 function days(s){if(!s)return null;var d=new Date(s+'T00:00:00'),t=new Date();t.setHours(0,0,0,0);return Math.round((d-t)/864e5)}
@@ -107,7 +115,7 @@ function fillProfile(){
   $('kKm').textContent=(P.km!==''&&P.km!=null)?Number(P.km).toLocaleString('tr-TR')+' km':'—';
   dateCard($('kCSig'),'kSig','kSigD',P.sig);
   dateCard($('kCMua'),'kMua','kMuaD',P.mua);
-  $('kTire').textContent=(P.tf&&P.tr)?'Ön '+P.tf+' · Arka '+P.tr:'—';
+  var tv=tireFor(P.brand,P.model);$('kTire').textContent=tv?('Ön '+tv[0]+' · Arka '+tv[1]):'Eklenecek';$('kTireD').textContent=tv?'bar · etiketi kontrol et':'bu model için değer eklenecek';
 }
 
 /* ---------- Sürüş durumu ---------- */
@@ -119,7 +127,7 @@ function caption(){
   var lock=S.active&&S.v>10, c;
   if(lock)c='Hareket halinde düzenleme kilitli. Sürüş sırasında ekrana bakma.';
   else if(!nm())c='Motorunu tanıtmak için “Motorumu düzenle”ye dokun. Sürüş sırasında ekrana bakma.';
-  else c='Sürüş sırasında ekrana bakma. Lastik değerleri senin girdiğin fabrika değeridir.';
+  else c='Sürüş sırasında ekrana bakma. Lastik değerleri fabrika referansıdır, motorundaki etiketi kontrol et.';
   $('kCap').textContent=c;
   $('kEditBtn').disabled=lock;
   function nm(){return (P.brand||P.model)}
@@ -184,14 +192,14 @@ $('kSrv').onclick=function(){window.location.href='../'};
 function openEdit(){
   $('kfAd').value=P.adSoyad||'';
   $('kfBrand').value=P.brand||'BMW';$('kfModel').value=P.model||'';$('kfKm').value=P.km;$('kfYear').value=P.year||'';
-  $('kfSig').value=P.sig||'';$('kfMua').value=P.mua||'';$('kfTf').value=P.tf||'';$('kfTr').value=P.tr||'';
+  $('kfSig').value=P.sig||'';$('kfMua').value=P.mua||'';
   $('kEdit').hidden=false;
 }
 $('kEditBtn').onclick=function(){openEdit(false)};
 $('kfCancel').onclick=function(){$('kEdit').hidden=true};
 $('kfSave').onclick=function(){
   P.brand=$('kfBrand').value;P.model=$('kfModel').value.trim();P.km=$('kfKm').value;P.year=$('kfYear').value;
-  P.sig=$('kfSig').value;P.mua=$('kfMua').value;P.tf=$('kfTf').value.trim();P.tr=$('kfTr').value.trim();
+  P.sig=$('kfSig').value;P.mua=$('kfMua').value;
   P.adSoyad=$('kfAd').value.trim();
   save();$('kEdit').hidden=true;fillProfile();render();
 };
