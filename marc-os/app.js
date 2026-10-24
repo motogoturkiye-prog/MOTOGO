@@ -9,6 +9,8 @@ var history=[], busy=false, session=null, chatId=null, chats=[], att=null, curNa
 var SV=[
  {k:'genel',n:'Yeni sohbet',s:'Marc’a her şeyi sor',
   ic:'<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>'},
+ {k:'kontrol',n:'Çıkış kontrolü',s:'Yola çıkmadan 60 saniye',
+  ic:'<path d="M9 6h11M9 12h11M9 18h11M3.5 6l1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5L7.5 17"/>'},
  {k:'guven',n:'Sürüş güvenliği',s:'Yağmur, viraj, kış, kontrol',
   ic:'<path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6z"/>'}
 ];
@@ -107,6 +109,7 @@ function chips(parent,list){
 function open(k){
   chatId=null;history=[];clearAtt();col.innerHTML='';setNav(k);renderHist();
   document.getElementById('f').style.display='';
+  if(k==='kontrol'){kontrol();return}
   if(k==='guven'){ttl.textContent='Sürüş güvenliği';guven();return}
   ttl.textContent='Marc';
   var h=add('bot','<p>Ben Marc. Rota, hava, arıza, bakım, sürüş… Motosikletle ilgili ne varsa yaz. Fotoğraf ya da motor sesi kaydı da ekleyebilirsin.</p>');
@@ -127,7 +130,7 @@ function guven(){
 }
 
 function kontrol(){
-  col.innerHTML='';chatId=null;history=[];ttl.textContent='Çıkış kontrolü';setNav('guven');
+  col.innerHTML='';chatId=null;history=[];ttl.textContent='Çıkış kontrolü';setNav('kontrol');
   var h='<p>Çıkmadan önce 60 saniyede bak. Baktığın maddeye dokun, işaretlensin:</p><div class="cards"><div class="card">';
   CHECK.forEach(function(g){
     h+='<div class="chk-h">'+g[0]+'</div>';
