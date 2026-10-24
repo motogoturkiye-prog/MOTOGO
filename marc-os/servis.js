@@ -62,7 +62,7 @@ function telHref(s){var t=String(s||'').replace(/[^0-9+]/g,'');return t?'tel:'+t
 function hav(a,b,c,d){var R=6371,r=Math.PI/180,x=(c-a)*r,y=(d-b)*r,h=Math.sin(x/2)*Math.sin(x/2)+Math.cos(a*r)*Math.cos(c*r)*Math.sin(y/2)*Math.sin(y/2);return 2*R*Math.asin(Math.sqrt(h))}
 function tout(ms){var c=new AbortController();setTimeout(function(){c.abort()},ms);return c.signal}
 function mono(n){var w=String(n||'').trim().split(/\s+/).filter(Boolean);return ((w[0]||'?').charAt(0)+(w[1]||'').charAt(0)).toLocaleUpperCase('tr')}
-function brandName(k){var s=String(k||'').replace(/[_-]+/g,' ').trim();if(!s)return '';return s.length<=3?s.toUpperCase():s.replace(/\b\w/g,function(c){return c.toLocaleUpperCase('tr')})}
+function brandName(k){if(BR&&BR[k])return BR[k];var s=String(k||'').replace(/[_-]+/g,' ').trim();if(!s)return '';return s.length<=3?s.toUpperCase():s.replace(/\b\w/g,function(c){return c.toLocaleUpperCase('tr')})}
 
 function getPos(){return new Promise(function(ok,no){
   if(!navigator.geolocation){no(new Error('yok'));return}
@@ -105,22 +105,45 @@ function card(o){
 
 function emptyCard(title,msg){return '<div class="sv-empty"><b>'+esc(title)+'</b>'+esc(msg)+'</div>'}
 
+var BR=null;
+async function brands(){
+  if(BR)return BR;BR={};
+  try{
+    var t=await (await fetch('../js/brands-data.js',{signal:tout(6000)})).text(),re=/key:\s*"([^"]+)"\s*,\s*name:\s*"([^"]+)"/g,m;
+    while((m=re.exec(t)))BR[m[1]]=m[2];
+  }catch(e){}
+  return BR;
+}
+function detectBrand(text,keys){
+  var ws=String(text||'').toLocaleLowerCase('tr').split(/[^a-z0-9çğıöşü]+/).filter(Boolean).map(fold),g={};
+  for(var i=0;i<ws.length;i++){g[ws[i]]=1;if(i+1<ws.length)g[ws[i]+ws[i+1]]=1;if(i+2<ws.length)g[ws[i]+ws[i+1]+ws[i+2]]=1}
+  var best=null;keys.forEach(function(k){var f=fold(k);if(f.length>=3&&g[f]&&(!best||fold(best).length<f.length))best=k});
+  return best;
+}
 async function runServis(box,y){
   box.innerHTML='<p class="sv-note">MotoGo onaylı servisler aranıyor…</p>';
   var mem=null;try{mem=await servisFirmalari()}catch(e){}
   if(!mem){box.innerHTML=emptyCard('Liste şu an yüklenemedi','Bağlantını kontrol edip birkaç saniye sonra tekrar yaz.');return}
-  var il=cleanIl(y.il),ilce=fold(y.ilce),mk=y.marka?fold(y.marka):'';
+  var il=cleanIl(y.il),ilce=fold(y.ilce);
+  var keys=[];mem.forEach(function(r){if(r.marka&&keys.indexOf(r.marka)<0)keys.push(r.marka)});
+  var bm=await brands();Object.keys(bm).forEach(function(k){if(keys.indexOf(k)<0)keys.push(k)});
+  var mk=y.hepsi?null:detectBrand(y.text,keys);
   var rows=[];
   mem.forEach(function(r){
     if(il&&cleanIl(r.sehir)!==il)return;
-    var brandOk=mk&&fold(r.marka).indexOf(mk)>=0;
+    if(mk&&r.marka!==mk)return;
+    var brandOk=!!mk;
     rows.push({ad:r.ad,yer:[r.ilce,r.sehir].filter(Boolean).join(', '),adres:r.adres,tel:r.telefon,wa:r.whatsapp||r.telefon,
       sub:(r.kategori==='yetkiliServis'?'Yetkili servis':'Özel servis')+(r.marka?' · '+brandName(r.marka):''),
       s:(brandOk?0:2)+(ilce&&fold(r.ilce)===ilce?0:1)});
   });
   rows.sort(function(a,b){return a.s-b.s||String(a.ad).localeCompare(String(b.ad),'tr')});
   var yer=[y.ilce,y.il].filter(Boolean).join(', ')||'Bulunduğun yer';
-  if(!rows.length){box.innerHTML='<div class="sv"><div class="sv-head"><span class="sv-title">'+esc(yer)+'</span></div>'+emptyCard(y.il?(y.il+' için henüz MotoGo onaylı servis yok'):'Bu bölgede servis yok','MotoGo’ya katılan servisler burada görünecek.')+'<div class="sv-row"><button class="sv-btn" id="svOther" type="button">Başka şehir ara</button></div></div>';
+  if(mk)yer+=' · '+brandName(mk);
+  if(!rows.length){
+    var ttl=mk?((y.il?y.il+'’da ':'')+brandName(mk)+' için henüz MotoGo onaylı servis yok'):(y.il?y.il+' için henüz MotoGo onaylı servis yok':'Bu bölgede servis yok');
+    box.innerHTML='<div class="sv"><div class="sv-head"><span class="sv-title">'+esc(yer)+'</span></div>'+emptyCard(ttl,'MotoGo’ya katılan servisler burada görünecek.')+'<div class="sv-row">'+(mk?'<button class="sv-btn p" id="svAll" type="button">'+esc(y.il||'Bu şehir')+'’daki tüm servisleri göster</button>':'')+'<button class="sv-btn" id="svOther" type="button">Başka şehir ara</button></div></div>';
+    var al=box.querySelector('#svAll');if(al)al.onclick=function(){var z={}; for(var k in y)z[k]=y[k]; z.hepsi=true; runServis(box,z)};
     var o=box.querySelector('#svOther');if(o)o.onclick=function(){cityForm(box,'servis','Hangi şehirde arayalım?')};return}
   var h='<div class="sv"><div class="sv-head"><span class="sv-title">'+esc(yer)+'</span><span class="sv-count">'+rows.length+' MotoGo onaylı servis</span></div>';
   h+=rows.slice(0,15).map(card).join('');
@@ -202,6 +225,7 @@ async function fromText(box,text){
     try{if(y.ilce)pos=await geocode(y.ilce+', '+y.il)}catch(e){}
     try{if(!pos)pos=await geocode(y.il)}catch(e){}
   }
+  y.text=text;
   start(box,mode,pos,y);
 }
 

@@ -160,7 +160,7 @@ function open(k){
    '• Çıkış kontrolü: yola çıkmadan 60 saniyelik liste (menüde)\n'+
    '• Motosiklet bilgisi: bakım, ekipman, markalar\n'+
    '• Kokpit (menüde): motorunun bilgileri, sigorta ve muayene günü, sürüşünü kaydedip Rota İmaj videosu yapma\n'+
-   '• Servis ve yol yardımı: sohbete şehrini yazarak sor (örn. “İzmir Buca’da BMW servisi”), MotoGo onaylı firmalar gelir\n'+
+   '• Servis ve yol yardımı: şehrini yazarak sor (örn. “Ankara’da servis” ya da “Ankara’da çekici”), MotoGo firmaları gelir\n'+
    '• Sesli öneriler: sürüşe eşlik eden kısa sesli mesajlar';
   add('bot',fmt(W));
   inp.focus();
