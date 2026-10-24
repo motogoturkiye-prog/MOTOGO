@@ -102,7 +102,7 @@ async function openChat(id){
 function chips(parent,list){
   var s=document.createElement('div');s.className='sug';
   list.forEach(function(q){var b=document.createElement('button');b.textContent=q;
-    b.onclick=function(){if(q==='Çıkış kontrolü')kontrol();else{inp.value=q;send()}};s.appendChild(b)});
+    b.onclick=function(){inp.value=q;send()};s.appendChild(b)});
   parent.appendChild(s);
 }
 
@@ -113,18 +113,17 @@ function open(k){
   if(k==='guven'){ttl.textContent='Sürüş güvenliği';guven();return}
   ttl.textContent='Marc';
   var h=add('bot','<p>Ben Marc. Rota, hava, arıza, bakım, sürüş… Motosikletle ilgili ne varsa yaz. Fotoğraf ya da motor sesi kaydı da ekleyebilirsin.</p>');
-  chips(h.querySelector('.bot'),['Yarın Ankara’dan İstanbul’a çıkıyorum','Rölantide tık tık sesi geliyor','Yağmurda nasıl sürmeliyim?','Çıkış kontrolü']);
+  chips(h.querySelector('.bot'),['Yarın Ankara’dan İstanbul’a çıkıyorum','Rölantide tık tık sesi geliyor','Yağmurda nasıl sürmeliyim?']);
   inp.focus();
 }
 
 function guven(){
   var h='<p>Bir konu seç, Marc anlatsın:</p><div class="topics">';
   TOPICS.forEach(function(t,i){h+='<button data-t="'+i+'">'+esc(t)+'</button>'});
-  h+='<button data-t="kontrol">Çıkış kontrolü</button></div>';
+  h+='</div>';
   var d=add('bot',h);
   d.querySelector('.topics').addEventListener('click',function(e){
     var b=e.target.closest('button');if(!b)return;
-    if(b.dataset.t==='kontrol'){kontrol();return}
     var q=TOPICS[+b.dataset.t];open('genel');inp.value=q;send();
   });
 }
