@@ -134,17 +134,16 @@ function open(k){
   chatId=null;history=[];clearAtt();col.innerHTML='';setNav(k);renderHist();
   document.getElementById('f').style.display='';
   if(k==='kontrol'){kontrol();return}
-  if(k==='guven'){ttl.textContent='Sürüş güvenliği';guven();return}
+  if(k==='guven'){ttl.textContent='Marc';guven();return}
   ttl.textContent='Marc';
   var W='Ben Marc, MotoGo’nun motosiklet asistanı. Yazarak, fotoğraf ya da ses kaydı ekleyerek sorabilirsin.\n\n'+
-   '**Şimdi yapabildiklerim**\n'+
+   '**Yapabildiklerim**\n'+
    '• Yol ve hava: rotandaki şehirlerin hava durumu, soğuk, yağmur ve rüzgâr uyarısı\n'+
    '• Arıza ve motor sesi: anlat ya da kaydı yükle, olası nedenleri ve servise ne söyleyeceğini yazarım\n'+
    '• Sürüş bilgisi: viraj, yağmur, kış, grup sürüşü\n'+
    '• Çıkış kontrolü: yola çıkmadan 60 saniyelik liste (menüde)\n'+
-   '• Motosiklet bilgisi: bakım, ekipman, markalar, MotoGP\n'+
-   '• Kokpit (menüde): motorunun bilgileri, sigorta ve muayene günü, sürüşünü kaydedip Rota İmaj videosu yapma\n\n'+
-   '**Yakında**\n'+
+   '• Motosiklet bilgisi: bakım, ekipman, markalar\n'+
+   '• Kokpit (menüde): motorunun bilgileri, sigorta ve muayene günü, sürüşünü kaydedip Rota İmaj videosu yapma\n'+
    '• Yakınımdaki servis: MotoGo onaylı ve diğer servisler\n'+
    '• Sesli öneriler: sürüşe eşlik eden kısa sesli mesajlar';
   add('bot',fmt(W));
@@ -163,7 +162,7 @@ function guven(){
 }
 
 function kontrol(){
-  col.innerHTML='';chatId=null;history=[];ttl.textContent='Çıkış kontrolü';setNav('kontrol');
+  col.innerHTML='';chatId=null;history=[];ttl.textContent='Marc';setNav('kontrol');
   var h='<p>Çıkmadan önce 60 saniyede bak. Baktığın maddeye dokun, işaretlensin:</p><div class="cards"><div class="card">';
   CHECK.forEach(function(g){
     h+='<div class="chk-h">'+g[0]+'</div>';
@@ -210,7 +209,7 @@ micBtn.addEventListener('click',function(){
   if(rec){rec.stop();return}
   rec=new SR();rec.lang='tr-TR';rec.interimResults=true;rec.continuous=false;
   var base=inp.value?inp.value+' ':'';
-  rec.onresult=function(e){var t='';for(var i=0;i<e.results.length;i++)t+=e.results[i][0].transcript;inp.value=(base+t).slice(0,800)};
+  rec.onresult=function(e){var t='';for(var i=0;i<e.results.length;i++)t+=e.results[i][0].transcript;inp.value=(base+t).slice(0,800);grow()};
   rec.onend=function(){rec=null;micBtn.classList.remove('on');inp.focus()};
   rec.onerror=function(){note('Ses alınamadı. Mikrofon iznini kontrol et.')};
   micBtn.classList.add('on');rec.start();
@@ -232,13 +231,16 @@ async function persist(text,answer){
   }catch(e){}
 }
 
+function grow(){inp.style.height='auto';inp.style.height=Math.min(inp.scrollHeight,150)+'px'}
+inp.addEventListener('input',grow);
+inp.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();document.getElementById('f').requestSubmit?document.getElementById('f').requestSubmit():send()}});
 async function send(){
   var text=inp.value.trim();
   if((!text&&!att)||busy)return;
   if(rec)rec.stop();
   if(!text)text='Bu dosyayı incele.';
   var a=att,shown=esc(text)+(a?'<br><span class="small">Ek: '+esc(a.name)+'</span>':'');
-  busy=true;inp.value='';clearAtt();add('me',shown);
+  busy=true;inp.value='';grow();clearAtt();add('me',shown);
   var w=add('bot','<span class="typing">Düşünüyorum…</span>');
   var saved=text+(a?' [Ek: '+a.name+']':'');
   try{
@@ -250,7 +252,7 @@ async function send(){
     if(r.status===402){w.remove();lock('ucretli')}
     else if(r.status===429){setKota(j);w.querySelector('.bot').innerHTML='<p class="warn">'+(j.tur==='medya'?'Bu ayki fotoğraf/ses hakkın bitti.':'Bu ayki soru hakkın bitti.')+'</p><p class="small">Haklar '+yenilenme()+'’de yenilenir.</p>'}
     else if(r.status===503){w.querySelector('.bot').innerHTML='<p class="warn">Üyeliğin doğrulanamadı.</p><p class="small">İnternetini kontrol edip tekrar dene.</p>'}
-    else if(!r.ok){w.querySelector('.bot').innerHTML='<p class="warn">'+esc(j.error||j.message||'Hata oluştu')+'</p><p class="small">Teknik not: kod '+r.status+'</p>'}
+    else if(!r.ok){w.querySelector('.bot').innerHTML='<p class="warn">'+esc(j.error||j.message||'Hata oluştu')+'</p><p class="small">Teknik not: kod '+r.status+(j.detay?' · '+esc(j.detay):'')+'</p>'}
     else{
       w.querySelector('.bot').innerHTML=fmt(j.answer);
       history.push({role:'user',text:saved},{role:'bot',text:j.answer});

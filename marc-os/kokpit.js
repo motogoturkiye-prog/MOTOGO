@@ -6,8 +6,8 @@ var DEMO=/[?&]demo=1/.test(location.search);
 var KEY='marc_kokpit_v1', RIDE_KEY='marc_son_surus';
 var BRANDS=['BMW','KTM','Honda','Yamaha','Suzuki','Kawasaki','Ducati','Triumph','CFMoto','Jawa','Aurora','Royal Enfield','Harley-Davidson','Vespa','Diğer'];
 
-var P={brand:'',model:'',year:'',km:'',sig:'',mua:'',tf:'',tr:'',srvN:'',srvT:''};
-if(DEMO){P={brand:'BMW',model:'F800GS',year:2016,km:48200,sig:'2027-03-14',mua:'2027-09-02',tf:'2,5',tr:'2,9',srvN:'',srvT:''}}
+var P={brand:'',model:'',year:'',km:'',sig:'',mua:'',tf:'',tr:'',adSoyad:''};
+if(DEMO){P={brand:'BMW',model:'F800GS',year:2016,km:48200,sig:'2027-03-14',mua:'2027-09-02',tf:'2,5',tr:'2,9',adSoyad:''}}
 else{try{var sv=localStorage.getItem(KEY);if(sv)P=Object.assign(P,JSON.parse(sv))}catch(e){}}
 function save(){if(DEMO)return;try{localStorage.setItem(KEY,JSON.stringify(P))}catch(e){}}
 
@@ -29,7 +29,8 @@ host.innerHTML=
     '<g id="kTicks"></g>'+
     '<text id="kSpd" x="150" y="138" text-anchor="middle" font-size="74" font-weight="800">0</text>'+
     '<text id="kUnit" x="150" y="160" text-anchor="middle" font-size="14" style="fill:#8793a3">km/sa</text>'+
-    '<text id="kBrand" x="150" y="140" text-anchor="middle" font-size="30" font-weight="800" opacity="0">MARC <tspan fill="#ffcb2e">O.S.</tspan> 3.0</text>'+
+    '<text id="kBrand" x="150" y="132" text-anchor="middle" font-size="30" font-weight="800" opacity="0">MARC <tspan fill="#ffcb2e">O.S.</tspan> 3.0</text>'+
+    '<text id="kHello" x="150" y="164" text-anchor="middle" font-size="15" font-weight="600" opacity="0" style="fill:#c9d1db"></text>'+
    '</svg>'+
    '<div class="k-side">'+
     '<div class="k-it" id="kCMua"><small>Muayene</small><b id="kMua">—</b><em id="kMuaD"></em></div>'+
@@ -47,7 +48,7 @@ host.innerHTML=
  '<div>'+
   '<div class="k-bot">'+
    '<button class="k-main" id="kRide">▶ Sürüşü başlat</button>'+
-   '<button id="kSrv">📞 Beni servisime bağla</button>'+
+   '<button id="kSrv">🆘 Yol yardımı ara</button>'+
    '<button id="kEditBtn">Motorumu düzenle</button>'+
    '<button id="kClose">Geç ›</button>'+
   '</div>'+
@@ -57,13 +58,12 @@ host.innerHTML=
 '<button id="kPill" hidden>● Sürüş kaydı açık</button>'+
 '<div class="k-modal" id="kEdit" hidden><div class="k-form" role="dialog" aria-label="Motorumu tanıt">'+
  '<h3>Motorumu tanıt</h3>'+
+ '<label>Adın soyadın<input id="kfAd" type="text" maxlength="40" autocomplete="name" placeholder="Örn. Murat Gökçe"></label>'+
  '<div class="k-row"><label>Marka<select id="kfBrand"></select></label><label>Model<input id="kfModel" type="text" placeholder="Örn. F800GS"></label></div>'+
  '<div class="k-row"><label>Kilometre (şu an)<input id="kfKm" type="number" inputmode="numeric" min="0"></label><label>Model yılı<input id="kfYear" type="number" inputmode="numeric" min="1980" max="2035"></label></div>'+
  '<div class="k-row"><label>Sigorta bitişi<input id="kfSig" type="date"></label><label>Muayene tarihi<input id="kfMua" type="date"></label></div>'+
  '<div class="k-row"><label>Ön lastik (bar)<input id="kfTf" type="text" inputmode="decimal" placeholder="2,5"></label><label>Arka lastik (bar)<input id="kfTr" type="text" inputmode="decimal" placeholder="2,9"></label></div>'+
  '<p>Lastik değerlerini motorunun kullanım kılavuzundan gir. Marc bunları kontrol etmez.</p>'+
- '<label>Servisim<input id="kfSrvN" type="text" placeholder="Servis adı"></label>'+
- '<label>Servis telefonu<input id="kfSrvT" type="tel" placeholder="0 5xx xxx xx xx"></label>'+
  '<div class="k-act"><button id="kfCancel">Vazgeç</button><button class="k-ok" id="kfSave">Kaydet</button></div>'+
 '</div></div>'+
 '<div class="k-modal" id="kSumM" hidden><div class="k-form" role="dialog" aria-label="Sürüş özeti">'+
@@ -149,13 +149,13 @@ setInterval(function(){
 /* ---------- Açılış: ibre süpürür, sonra veriler ---------- */
 var autoT=null;
 function sweep(){
-  S.boot=true;$('kBrand').setAttribute('opacity','1');$('kSpd').setAttribute('opacity','0');$('kUnit').setAttribute('opacity','0');
+  S.boot=true;$('kHello').textContent=P.adSoyad?('Hoş geldin '+P.adSoyad):'Hoş geldin';$('kHello').setAttribute('opacity','1');$('kBrand').setAttribute('opacity','1');$('kSpd').setAttribute('opacity','0');$('kUnit').setAttribute('opacity','0');
   var t0=performance.now(),DUR=2600;
   (function step(now){
     var p=Math.min(1,(now-t0)/DUR),k=p<.5?p*2:(1-p)*2;
     $('kArc').setAttribute('stroke-dasharray',(k*100).toFixed(1)+' 100');
     if(p<1){requestAnimationFrame(step)}
-    else{S.boot=false;$('kBrand').setAttribute('opacity','0');$('kSpd').setAttribute('opacity','1');$('kUnit').setAttribute('opacity','1');render()}
+    else{S.boot=false;$('kBrand').setAttribute('opacity','0');$('kHello').setAttribute('opacity','0');$('kSpd').setAttribute('opacity','1');$('kUnit').setAttribute('opacity','1');render()}
   })(t0);
 }
 function openCock(auto){
@@ -177,25 +177,22 @@ $('kCock').addEventListener('pointerdown',function(e){
 $('kClose').onclick=closeCock;
 $('kPill').onclick=function(){openCock(false)};
 
-/* ---------- Servis ---------- */
-$('kSrv').onclick=function(){
-  if(P.srvT){window.location.href='tel:'+String(P.srvT).replace(/[^0-9+]/g,'')}
-  else openEdit(true);
-};
+/* ---------- Yol yardımı ---------- */
+$('kSrv').onclick=function(){window.location.href='../'};
 
 /* ---------- Motorumu düzenle ---------- */
-function openEdit(focusTel){
+function openEdit(){
+  $('kfAd').value=P.adSoyad||'';
   $('kfBrand').value=P.brand||'BMW';$('kfModel').value=P.model||'';$('kfKm').value=P.km;$('kfYear').value=P.year||'';
   $('kfSig').value=P.sig||'';$('kfMua').value=P.mua||'';$('kfTf').value=P.tf||'';$('kfTr').value=P.tr||'';
-  $('kfSrvN').value=P.srvN||'';$('kfSrvT').value=P.srvT||'';
-  $('kEdit').hidden=false;if(focusTel)$('kfSrvT').focus();
+  $('kEdit').hidden=false;
 }
 $('kEditBtn').onclick=function(){openEdit(false)};
 $('kfCancel').onclick=function(){$('kEdit').hidden=true};
 $('kfSave').onclick=function(){
   P.brand=$('kfBrand').value;P.model=$('kfModel').value.trim();P.km=$('kfKm').value;P.year=$('kfYear').value;
   P.sig=$('kfSig').value;P.mua=$('kfMua').value;P.tf=$('kfTf').value.trim();P.tr=$('kfTr').value.trim();
-  P.srvN=$('kfSrvN').value.trim();P.srvT=$('kfSrvT').value.trim();
+  P.adSoyad=$('kfAd').value.trim();
   save();$('kEdit').hidden=true;fillProfile();render();
 };
 
