@@ -13,8 +13,6 @@ var SV=[
   ic:'<path d="M9 6h11M9 12h11M9 18h11M3.5 6l1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5L7.5 17"/>'},
  {k:'guven',n:'Sürüş güvenliği',s:'Yağmur, viraj, kış, kontrol',
   ic:'<path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6z"/>'},
- {k:'servis',n:'Yakınımdaki servis',s:'MotoGo onaylı ve yetkili servisler',
-  ic:'<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>'},
  {k:'kokpit',n:'Kokpit',s:'Motorun, sigorta, sürüş kaydı',
   ic:'<path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l4-5"/><circle cx="12" cy="17" r="1"/>'}
 ];
@@ -151,7 +149,6 @@ function open(k){
     if(window.MarcKokpit)window.MarcKokpit.open(false);return}
   chatId=null;history=[];clearAtt();col.innerHTML='';setNav(k);renderHist();
   document.getElementById('f').style.display='';
-  if(k==='servis'){servis();return}
   if(k==='kontrol'){kontrol();return}
   if(k==='guven'){ttl.textContent='Marc';guven();return}
   ttl.textContent='Marc';
@@ -163,7 +160,7 @@ function open(k){
    '• Çıkış kontrolü: yola çıkmadan 60 saniyelik liste (menüde)\n'+
    '• Motosiklet bilgisi: bakım, ekipman, markalar\n'+
    '• Kokpit (menüde): motorunun bilgileri, sigorta ve muayene günü, sürüşünü kaydedip Rota İmaj videosu yapma\n'+
-   '• Yakınımdaki servis: menüden aç, MotoGo onaylı ve yakındaki yetkili servisleri gör\n'+
+   '• Servis ve yol yardımı: sohbete şehrini yazarak sor (örn. “İzmir Buca’da BMW servisi”), MotoGo onaylı firmalar gelir\n'+
    '• Sesli öneriler: sürüşe eşlik eden kısa sesli mesajlar';
   add('bot',fmt(W));
   inp.focus();
@@ -178,14 +175,6 @@ function guven(){
     var b=e.target.closest('button');if(!b)return;
     var q=TOPICS[+b.dataset.t];open('genel');inp.value=q;send();
   });
-}
-
-function servis(){
-  col.innerHTML='';chatId=null;history=[];ttl.textContent='Marc';setNav('servis');
-  if(TRIAL){add('bot',upsell('Yakınımdaki servis ücretli üyelere açık.','MotoGo onaylı servisleri ve yakındaki diğer servisleri görmek için ücretli üyelik gerekir.'));return}
-  var w=add('bot','<div id="svBox"></div>');
-  if(window.MarcServis)window.MarcServis.render(document.getElementById('svBox'));
-  else document.getElementById('svBox').textContent='Bu bölüm şu an yüklenemedi. Sayfayı yenile.';
 }
 
 function kontrol(){
@@ -261,6 +250,14 @@ async function persist(text,answer){
 function grow(){inp.style.height='auto';inp.style.height=Math.min(inp.scrollHeight,150)+'px'}
 inp.addEventListener('input',grow);
 inp.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();document.getElementById('f').requestSubmit?document.getElementById('f').requestSubmit():send()}});
+function servisSorusu(t){
+  var f=String(t).toLocaleLowerCase('tr');
+  var kelime=/(servis|tamirci|tamirhane|usta|bayi|çekici|yol yardım|yolda kal|akü|marş|patlak)/.test(f);
+  if(!kelime)return false;
+  var fiil=/(öner|bul|nerede|yakın|var mı|tavsiye|lazım|arıyorum|istiyorum|gerek|lütfen|göster)/.test(f);
+  var yer=window.MarcServis&&window.MarcServis.parseYer(t).il;
+  return fiil||!!yer;
+}
 async function send(){
   var text=inp.value.trim();
   if((!text&&!att)||busy)return;
@@ -268,14 +265,20 @@ async function send(){
   if(!text)text='Bu dosyayı incele.';
   var a=att,shown=esc(text)+(a?'<br><span class="small">Ek: '+esc(a.name)+'</span>':'');
   busy=true;inp.value='';grow();clearAtt();add('me',shown);
+  if(servisSorusu(text)){
+    if(TRIAL){add('bot',upsell('Servis ve yol yardım önerileri ücretli üyelere açık.','MotoGo onaylı servisleri ve yol yardım firmalarını görmek için ücretli üyelik gerekir.'))}
+    else{add('bot','<div id="svBox"></div>');var bx=document.getElementById('svBox');bx.removeAttribute('id');if(window.MarcServis)window.MarcServis.fromText(bx,text)}
+    busy=false;chat.scrollTop=chat.scrollHeight;return;
+  }
   var w=add('bot','<span class="typing">Düşünüyorum…</span>');
   var saved=text+(a?' [Ek: '+a.name+']':'');
   try{
     var s=(await sb.auth.getSession()).data.session;
-    var r=await fetch(C.SUPABASE_URL+'/functions/v1/'+FN,{method:'POST',
+    var ac=new AbortController(),to=setTimeout(function(){ac.abort()},70000);
+    var r=await fetch(C.SUPABASE_URL+'/functions/v1/'+FN,{method:'POST',signal:ac.signal,
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+s.access_token,'apikey':C.SUPABASE_ANON_KEY},
       body:JSON.stringify({message:text,mode:'genel',history:history,uye_kod:uyeBilgi().kod,cihaz:uyeBilgi().cihaz,attachment:a?{mime:a.mime,data:a.data}:undefined})});
-    var j=await r.json();
+    clearTimeout(to);var j=await r.json();
     if(r.status===402){w.remove();if(j.error==='ucretli_medya'){note('Fotoğraf ve ses ücretli üyelere açık.')}else lock('uye')}
     else if(r.status===429&&j.deneme){setDeneme(j);w.querySelector('.bot').innerHTML=j.error==='deneme_dolu'?upsell('Bugünkü ücretsiz deneme kontenjanı doldu.','Yarın tekrar deneyebilirsin ya da ücretli üyelikle hemen devam edebilirsin.'):upsell('3 ücretsiz deneme hakkın bitti.','Marc’ın tüm özelliklerini ve her ay 60 soruyu açmak için ücretli üyeliğe geç. Tek üyelik Rota İmaj, Foto İmaj ve Movi İmaj’ı da açar.')}
     else if(r.status===429){setKota(j);w.querySelector('.bot').innerHTML='<p class="warn">'+(j.tur==='medya'?'Bu ayki fotoğraf/ses hakkın bitti.':'Bu ayki soru hakkın bitti.')+'</p><p class="small">Haklar '+yenilenme()+'’de yenilenir.</p>'}
@@ -287,7 +290,7 @@ async function send(){
       if(j.deneme)setDeneme(j);else setKota(j);
       persist(saved,j.answer);
     }
-  }catch(e){w.querySelector('.bot').innerHTML='<p class="warn">Bağlantı kurulamadı. İnternetini kontrol et.</p><p class="small">Teknik not: '+esc(String(e&&e.message||e))+'</p>'}
+  }catch(e){w.querySelector('.bot').innerHTML=(e&&e.name==='AbortError')?'<p class="warn">Cevap çok gecikti.</p><p class="small">Hakkın düşmemiş olabilir. Birkaç saniye sonra tekrar dene.</p>':'<p class="warn">Bağlantı kurulamadı. İnternetini kontrol et.</p><p class="small">Teknik not: '+esc(String(e&&e.message||e))+'</p>'}
   busy=false;chat.scrollTop=chat.scrollHeight;
 }
 document.getElementById('f').addEventListener('submit',function(e){e.preventDefault();send()});
