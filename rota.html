@@ -1705,10 +1705,36 @@ function toast(msg){
 function boot(){
   heights(7); paintTerrain(7);
   initMap(); renderThumbs(); renderChips();
-  posterNext=true; loadSample(); setFmt("16:9");
+  posterNext=true; if(!marcHazir()) loadSample(); setFmt("16:9");
   window.__rota={R:function(){ return V.R; },mapReal:function(){ return MAPREAL; },frame:function(){ return FR; },wps:function(){ return wps.length; },note:function(){ return routeNote; },TW:function(){ return TW; },TH:function(){ return TH; },tl:function(){ return V.tl; },dur:function(){ return V.dur; },seekTo:function(t){ V.t=t; drawVideo(t); },vidTimes:function(){ return userPhotos.filter(function(i){ return i.isVideo; }).map(function(i){ return +i.el.currentTime.toFixed(2); }); },vidPlaying:function(){ return userPhotos.some(function(i){ return i.isVideo&&!i.el.paused; }); }};
 }
+/* MARC O.S. 3.0 sürüş kaydını al: marc-os kokpitinde "Rota İmaj videosu yap" ile gelir */
+function marcVeri(){
+  try{
+    if(!/[?&]marc=1/.test(location.search)) return null;
+    var s=JSON.parse(localStorage.getItem("marc_son_surus")||"null");
+    return (s&&s.pts&&s.pts.length>=2)?s:null;
+  }catch(e){ return null; }
+}
+function marcHazir(){ return !!marcVeri(); }
+function marcAktar(){
+  try{
+    var s=marcVeri(); if(!s) return;
+    var list=s.pts.map(function(p){ return [parseFloat(p[0]),parseFloat(p[1])]; }).filter(function(p){ return isFinite(p[0])&&isFinite(p[1]); });
+    if(list.length<2) return;
+    gpxGeom=thin(list,1500); var g=gpxGeom;
+    wps=[{lat:g[0][0],lon:g[0][1],custom:null},{lat:g[g.length-1][0],lon:g[g.length-1][1],custom:null}];
+    kmOverride=null; V.t=0; seek.value=0; changed(true);
+    var d=new Date(s.t||Date.now());
+    $("#tourName").value="Sürüşüm · "+d.toLocaleDateString("tr-TR",{day:"numeric",month:"long"});
+    toast("Sürüşün Rota İmaj'a aktarıldı.");
+    var a=document.createElement("a"); a.href="marc-os/"; a.textContent="‹ Marc'a dön";
+    a.style.cssText="position:fixed;top:8px;left:8px;z-index:60;background:rgba(0,0,0,.72);color:#fff;padding:6px 12px;border-radius:99px;font:600 13px system-ui,sans-serif;text-decoration:none";
+    document.body.appendChild(a);
+  }catch(e){}
+}
 boot();
+marcAktar();
 })();
 </script>
 </body>
