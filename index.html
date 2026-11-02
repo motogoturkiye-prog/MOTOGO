@@ -23,7 +23,7 @@
   <div class="g-in g-nav-ic">
     <a href="./" class="g-nav-logo" aria-label="MotoGo Garajım"><img src="img/logo.png" alt="MotoGo" class="g-logo"></a>
     <nav class="g-nav-linkler" aria-label="Ana menü">
-      <a href="app.html?ana=1">Firma ara</a>
+      <a href="#" data-go="vAra">Firma ara</a>
       <a href="#" data-firma>Firmalar için</a>
       <a href="https://motogo.com.tr/prime/">MotoGo Prime</a>
       <a href="https://www.motogoprime.com/category/all-products" target="_blank" rel="noopener">Store</a>
@@ -93,7 +93,7 @@
     </section>
 
     <section class="g-bolum" id="bReels" hidden>
-      <div class="g-bolum-ust"><h2 class="g-h2">MotoGo Reels</h2><a href="app.html?ana=1#shorts" class="g-link">Hepsini izle</a></div>
+      <div class="g-bolum-ust"><h2 class="g-h2">MotoGo Reels</h2></div>
       <div class="g-reels" id="reelsListe"></div>
     </section>
 
@@ -102,7 +102,7 @@
       <button type="button" class="g-btn ikinci" data-firma>Firmalar için bilgi</button>
     </section>
 
-    <a href="app.html?ana=1&amp;yardim=1" class="g-yolbant">
+    <a href="#" data-go="vAra" data-ara="yardim" class="g-yolbant">
       <span><b>Yolda mı kaldın?</b><small>Üye olmadan en yakın yol yardım firmasını bul.</small></span><span class="g-yolbtn">MotoGo Yol Yardım</span>
     </a>
   </section>
@@ -126,7 +126,7 @@
         <div class="g-alan"><label for="uYil">Model yılı</label><select id="uYil"><option value="">Seç</option></select></div>
       </div>
       <div class="g-alan"><label for="uSehir">Şehir</label><select id="uSehir"><option value="">Seç</option></select></div>
-      <label class="g-onay" id="uOnayKutu"><input type="checkbox" id="uOnay"><span>Kullanıcı sözleşmesini ve aydınlatma metnini okudum, kabul ediyorum. <a href="app.html?ana=1&amp;ac=sozlesme">Metni oku</a></span></label>
+      <label class="g-onay" id="uOnayKutu"><input type="checkbox" id="uOnay"><span>Kullanıcı sözleşmesini ve aydınlatma metnini okudum, kabul ediyorum. <a href="#" data-go="vSoz">Metni oku</a></span></label>
       <button type="button" class="g-btn" id="uGonder">Garajımı aç</button>
       <div class="g-durum" id="uDurum" role="status" aria-live="polite"></div>
       <p class="g-not">Ücretsiz. Kart bilgisi istenmez. Firmalara kişisel bilgin verilmez, bir firmayı kendin ararsın.</p>
@@ -155,7 +155,89 @@
     </div>
     <div class="g-cta g-cta-s">
       <a class="g-btn" href="https://www.motogoprime.com/pricing-plans/plans-pricing" target="_blank" rel="noopener">Paketleri incele ve satın al</a>
-      <a class="g-btn ikinci" href="app.html?ana=1&amp;ac=firma">Paketim var, firmamı ekle</a>
+      <a class="g-btn ikinci" href="#" data-go="vBasvuru">Paketim var, firmamı ekle</a>
+    </div>
+  </section>
+
+  <!-- FİRMA ARA -->
+  <section id="vAra" hidden>
+    <a href="#" class="g-geri" data-go="geri">‹ Geri</a>
+    <h2 class="g-baslik g-baslik-k">Firma ara</h2>
+    <p class="g-metin">Markana ve şehrine göre servis, aksesuar, yakıt ve yol yardım firmalarını bul.</p>
+    <div class="g-kutu g-ara">
+      <div class="g-sekme" id="aKat"></div>
+      <div class="g-sekme" id="aYardimKat" hidden></div>
+      <div class="g-alan" id="aMarkaKutu"><label for="aMarka">Marka</label><input type="text" id="aMarka" list="aMarkaListe" placeholder="Örn: BMW" autocomplete="off"><datalist id="aMarkaListe"></datalist></div>
+      <div class="g-alan"><label for="aSehir">Şehir</label><select id="aSehir"><option value="">Seç</option></select></div>
+      <button type="button" class="g-btn" id="aAra">Firmaları göster</button>
+      <div class="g-durum" id="aDurum" role="status" aria-live="polite"></div>
+    </div>
+    <div id="aSonuc"></div>
+  </section>
+
+  <!-- UYGULAMA -->
+  <section id="vUyg" hidden>
+    <a href="#" class="g-geri" data-go="geri">‹ Geri</a>
+    <h2 class="g-baslik g-baslik-k" id="yBaslik"></h2>
+    <div id="yIcerik"></div>
+  </section>
+
+  <!-- SÖZLEŞME -->
+  <section id="vSoz" hidden>
+    <a href="#" class="g-geri" data-go="geri">‹ Geri</a>
+    <div class="g-kutu g-soz"><h2>Kullanıcı Sözleşmesi</h2>
+
+        <p><b>MotoGo Bireysel Üyelik: Kullanıcı Sözleşmesi ve Aydınlatma Metni</b></p>
+        <p><b>1. Taraflar ve veri sorumlusu.</b> Bu sözleşme, motogo.com.tr ve motogo.tr internet sitelerini işleten <b>Kombin Medya Radyo ve Televizyon Yapımcılık Tekstil Sanayi ve Ticaret Limited Şirketi</b> ("MotoGo Türkiye"; Eskişehir Defterdarlığı, Vergi No: 5760529676; Sümer Mahallesi Evliyagil Sokak No:44/A Odunpazarı / Eskişehir) ile siteye bireysel üye olan kullanıcı arasındadır. MotoGo Türkiye kişisel verilerinizin veri sorumlusudur. İletişim: motogoturkiye@gmail.com, 0533 150 98 90.</p>
+        <p><b>2. Hizmet ve bireysel üyelik.</b> MotoGo, motosiklet sektöründe hizmet veren firmaları ve motorcuları tek bir platformda buluşturur. Bireysel üyelik ücretsizdir ve evrak ya da ıslak imza gerektirmez. Rota İmaj, Movi İmaj, Foto İmaj ve MARC O.S. 3.0 ücretli uygulamalardır (Movi İmaj ve Foto İmaj sınırlı olarak ücretsiz denenebilir; MARC O.S. 3.0 yalnızca ücretli üyelere açıktır). Ücretli üyelik tek ödemeyle dördünü birden kapsar ve ayrıca satın alınır.</p>
+        <p><b>3. Firmalar ve indirimler.</b> Platformda yer alan firmalar kendi hizmet, ürün ve kampanyalarından sorumludur. İndirim ve avantaj oranları dönemsel olarak değişebilir. Güncel koşullar ilgili firmanın ve MotoGo Türkiye'nin duyurularına tabidir. MotoGo Türkiye firmaların sunduğu hizmetin kalitesini ya da uygunluğunu garanti etmez.</p>
+        <p><b>4. Toplanan bilgiler.</b> Ad soyad ve telefon numarası zorunludur. E-posta, kan grubu ve yaşadığınız il isteğe bağlıdır. Verdiğiniz bilgilerin doğru ve güncel olduğunu, değişen bilgileri bildireceğinizi kabul edersiniz.</p>
+        <p><b>5. Kullanım amacı.</b> Üyeliğinizin oluşturulması ve yönetilmesi, uygulama hizmetlerinin sunulması, kampanya ve avantajlardan yararlandırılmanız, gerektiğinde sizinle iletişim kurulması.</p>
+        <p><b>6. Paylaşım.</b> Bilgileriniz üçüncü kişilere satılmaz ve yasal zorunluluklar dışında üçüncü kişilerle paylaşılmaz. Bir firmadan hizmet almak istediğinizde, yalnızca sizinle iletişim kurulması için gereken bilgiler talebiniz doğrultusunda o firmaya iletilebilir.</p>
+        <p><b>7. Saklama.</b> Bilgileriniz üyeliğiniz sürdüğü sürece saklanır, silinmesini talep ettiğinizde silinir.</p>
+        <p><b>8. Haklarınız.</b> 6698 sayılı Kişisel Verilerin Korunması Kanunu'nun 11. maddesi kapsamında bilgilerinize erişme, düzeltme, silme ve işlenmesine itiraz etme haklarına sahipsiniz. Başvuru için motogoturkiye@gmail.com adresine ya da 0533 150 98 90 numarasına ulaşabilirsiniz.</p>
+        <p><b>9. Ücretli uygulamalar, ödeme ve cayma.</b> Ücretli üyelik ödemeleri motogoprime.com üzerinden alınır, ödeme sayfasında gösterilen satış koşulları ayrıca geçerlidir. Ücretli üyelik ödeme tarihinden itibaren 12 ay geçerlidir, süre sonunda kendiliğinden yenilenmez. Tüketici, 14 gün içinde cayma hakkını kullanabilir. Ancak cayma süresi dolmadan tüketicinin onayıyla hizmetin ifasına başlanmışsa (ücretli uygulamalar açılmışsa) cayma hakkı kullanılamaz.</p>
+        <p><b>10. Kullanım kuralları.</b> Siteyi yasalara ve genel ahlaka aykırı, başkalarının haklarını ihlal eden ya da sistemin işleyişine zarar veren (virüs, casus yazılım, spam gibi) şekilde kullanamazsınız. Site içeriğinin izinsiz kopyalanması ve paylaşılması yasaktır.</p>
+        <p><b>11. Sorumluluğun sınırı.</b> İnternet kesintileri, yazılım ve altyapı sorunları, elektrik kesintisi, doğal afet, savaş, isyan, grev gibi tarafların makul kontrolü dışındaki olaylar ve sitenin üçüncü kişilerce ele geçirilmesi nedeniyle oluşan aksaklıklardan MotoGo Türkiye sorumlu tutulamaz.</p>
+        <p><b>12. Üyeliğin sona ermesi.</b> Yanlış ya da eksik bilgi verilmesi veya hizmetlerin kötüye kullanılması halinde MotoGo Türkiye üyeliği sona erdirme hakkına sahiptir.</p>
+        <p><b>13. Uygulanacak hukuk ve yetkili merci.</b> Bu sözleşme Türkiye Cumhuriyeti kanunlarına tabidir. Tüketici işlemlerinden doğan uyuşmazlıklarda, tüketicinin yerleşim yerindeki ya da tüketici işleminin yapıldığı yerdeki Tüketici Hakem Heyeti veya Tüketici Mahkemesi yetkilidir.</p>
+        <p><b>14. Değişiklik.</b> Bu metin güncellenebilir, güncel hâli sitede yayımlanır.</p>
+        <p>Üyelik formunu onaylayarak bu metni okuduğunuzu ve kabul ettiğinizi beyan edersiniz.</p>
+      
+    </div>
+  </section>
+
+  <!-- FİRMA BAŞVURU -->
+  <section id="vBasvuru" hidden>
+    <a href="#" class="g-geri" data-go="geri">‹ Geri</a>
+    <div class="g-kutu g-form">
+      <h2>Üyelik talep formu</h2>
+      <p class="g-not" style="margin-top:4px;">Tarih: <span id="fgTarih"></span></p>
+      <div class="g-uyari g-uyari-b" id="fgKilitKutu"><b>Bu formu doldurmadan önce bir MotoGo paketi satın almalısın.</b>
+        <a class="g-btn g-btn-k" href="https://www.motogoprime.com/pricing-plans/plans-pricing" target="_blank" rel="noopener">Paketleri incele ve satın al</a>
+        <label class="g-onay"><input type="checkbox" id="fgPaketOnay"><span>Paketimi satın aldım, forma devam ediyorum.</span></label>
+      </div>
+      <div id="fgFormAlani" class="g-kilitli">
+        <div class="g-alan"><label for="fgFirmaUnvani">Firma unvanı *</label><input type="text" id="fgFirmaUnvani"></div>
+        <div class="g-iki"><div class="g-alan"><label for="fgMarkaIsmi">Marka ismi</label><input type="text" id="fgMarkaIsmi"></div>
+        <div class="g-alan"><label for="fgYetkiliAdSoyad">Yetkili adı soyadı *</label><input type="text" id="fgYetkiliAdSoyad"></div></div>
+        <div class="g-alan"><label for="fgAdres">Adres</label><input type="text" id="fgAdres"></div>
+        <div class="g-iki"><div class="g-alan"><label for="fgFirmaTelefon">Firma telefon</label><input type="tel" id="fgFirmaTelefon"></div>
+        <div class="g-alan"><label for="fgYetkiliGsm">Yetkili GSM *</label><input type="tel" id="fgYetkiliGsm"></div></div>
+        <div class="g-iki"><div class="g-alan"><label for="fgEmail">E-posta</label><input type="email" id="fgEmail"></div>
+        <div class="g-alan"><label for="fgWeb">Web</label><input type="text" id="fgWeb"></div></div>
+        <div class="g-iki"><div class="g-alan"><label for="fgVergiDairesi">Vergi dairesi</label><input type="text" id="fgVergiDairesi"></div>
+        <div class="g-alan"><label for="fgVergiNo">Vergi numarası</label><input type="text" id="fgVergiNo"></div></div>
+        <div class="g-iki"><div class="g-alan"><label for="fgTcKimlik">TC kimlik no</label><input type="text" id="fgTcKimlik"></div>
+        <div class="g-alan"><label for="fgFaaliyetAlani">Faaliyet alanı</label><input type="text" id="fgFaaliyetAlani"></div></div>
+        <div class="g-alan"><label for="fgFirmaOzellikleri">Firma özellikleri</label><textarea id="fgFirmaOzellikleri" rows="3"></textarea></div>
+        <div class="g-iki"><div class="g-alan"><label for="fgHizmetPaketleri">Satın alınan hizmet paketleri</label><input type="text" id="fgHizmetPaketleri" placeholder="Örn: Temel İşletme, Yol Yardım"></div>
+        <div class="g-alan"><label for="fgOdemePlani">Ödeme planı talebi</label><select id="fgOdemePlani"><option value="">Seç</option><option value="Nakit">Nakit</option><option value="Kredi Kartı">Kredi Kartı</option></select></div></div>
+        <label class="g-onay"><input type="checkbox" id="fgOnay"><span>Bilgilerimin MotoGo tarafından üyelik değerlendirmesi amacıyla işlenmesini kabul ediyorum.</span></label>
+        <label class="g-onay"><input type="checkbox" id="fgMesafeliSatis"><span>Mesafeli Satış Sözleşmesini onaylıyorum ve gönderiyorum. (<a href="dosyalar/mesafeli-satis-sozlesmesi.pdf" target="_blank" rel="noopener">PDF'i indir</a>)</span></label>
+      </div>
+      <button type="button" class="g-btn" id="fgKaydetBtn">Gönder</button>
+      <div class="g-durum" id="fgDurum" role="status" aria-live="polite"></div>
     </div>
   </section>
 
@@ -164,12 +246,19 @@
 
 </main>
 
+<div class="g-video" id="gVideo" hidden role="dialog" aria-label="Video">
+  <button type="button" class="g-vx" id="gVx" aria-label="Kapat">✕</button>
+  <button type="button" class="g-vo g-vg" id="gVg" aria-label="Önceki">‹</button>
+  <div class="g-vkutu" id="gVkutu"></div>
+  <button type="button" class="g-vo g-vi" id="gVi" aria-label="Sonraki">›</button>
+</div>
+
 <footer class="g-foot">
   <div class="g-in">
     <div class="g-foot-ust">
       <img src="img/logo.png" alt="MotoGo" class="g-logo">
       <div class="g-linkler">
-        <a href="app.html?ana=1">Firma ara</a>
+        <a href="#" data-go="vAra">Firma ara</a>
         <a href="#" data-firma>Firmalar için</a>
         <a href="https://motogo.com.tr/prime/">MotoGo Prime</a>
         <a href="https://www.motogoprime.com/category/all-products" target="_blank" rel="noopener">Store</a>

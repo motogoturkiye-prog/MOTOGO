@@ -10,8 +10,8 @@
   var $ = function (id) { return document.getElementById(id); };
   var LS_KOD = 'motogo_uye_kod';
 
-  var DATA = { firma: {}, yardim: [], yakit: [], avantaj: [], kilavuz: {} };
-  var ST = { kod: '', ad: '', garaj: null, acik: null, sekme: '', hosgeldin: false, onMarka: '' };
+  var DATA = { firma: {}, yardim: [], yakit: [], avantaj: [], ekspertiz: [], kilavuz: {} };
+  var ST = { rota: false, geri: 'vZiyaretci', kod: '', ad: '', garaj: null, acik: null, sekme: '', hosgeldin: false, onMarka: '' };
 
   // ---------- yardımcılar ----------
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -54,12 +54,23 @@
     document.body.appendChild(e);
     clearTimeout(toastT); toastT = setTimeout(function () { if (e.parentNode) e.remove(); }, 2300);
   }
-  function goster(id) {
-    ['vYukle', 'vZiyaretci', 'vUyeOl', 'vFirma', 'vGaraj'].forEach(function (v) { $(v).hidden = (v !== id); });
-    var ub = $('zUyeGiris'), uye = !!(ST.kod && ST.garaj && ST.garaj.marka);
-    ub.textContent = uye ? 'Garajım' : 'Giriş yap';
+  var GOR = ['vYukle', 'vZiyaretci', 'vUyeOl', 'vFirma', 'vGaraj', 'vAra', 'vSoz', 'vBasvuru', 'vUyg'];
+  var SIMDI = null;
+  function uyeMi() { return !!(ST.kod && ST.garaj && ST.garaj.marka); }
+  function goster(id, push) {
+    if (SIMDI && SIMDI !== id && id !== 'vYukle' && SIMDI !== 'vYukle') ST.geri = SIMDI;
+    SIMDI = id;
+    GOR.forEach(function (v) { $(v).hidden = (v !== id); });
+    $('zUyeGiris').textContent = uyeMi() ? 'Garajım' : 'Giriş yap';
+    if (push !== false && id !== 'vYukle') { try { history.pushState({ v: id }, '', location.pathname); } catch (e) {} }
     window.scrollTo(0, 0);
   }
+  window.addEventListener('popstate', function (e) {
+    var v = e.state && e.state.v;
+    if (!v || GOR.indexOf(v) < 0) return;
+    if (v === 'vGaraj' && !uyeMi()) v = 'vZiyaretci';
+    goster(v, false);
+  });
 
   var IK = {
     motorum: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></svg>',
@@ -75,14 +86,15 @@
   var veriHazir = (function () {
     if (!SB) return Promise.resolve();
     function oku(t) { return Promise.resolve(SB.from(t).select('*')).then(function (r) { return (r && r.data) || []; }, function () { return []; }); }
-    return Promise.all([oku('firmalar'), oku('yardim_firmalari'), oku('yakit_indirimleri'), oku('avantaj_kampanyalar'), oku('motor_kilavuzu')]).then(function (r) {
+    return Promise.all([oku('firmalar'), oku('yardim_firmalari'), oku('yakit_indirimleri'), oku('avantaj_kampanyalar'), oku('motor_kilavuzu'), oku('ekspertiz_firmalari')]).then(function (r) {
       r[0].forEach(function (x) {
         var key = x.marka + '_' + x.kategori;
         (DATA.firma[key] = DATA.firma[key] || []).push({ name: x.ad, whatsapp: x.whatsapp, phone: x.telefon, city: x.sehir, district: x.ilce, website: x.website, description: x.aciklama, address: x.adres, siraNo: x.sira_no });
       });
       DATA.yardim = r[1].map(function (x) { return { name: x.ad, region: x.bolge_metni, city: x.sehir, phone: x.telefon, whatsapp: x.whatsapp, categories: x.kategoriler || [], website: x.website, address: x.adres, siraNo: x.sira_no }; });
       DATA.yakit = r[2].map(function (x) { return { name: x.ad, city: x.sehir, district: x.ilce, whatsapp: x.whatsapp, phone: x.telefon, website: x.website, description: x.indirim_orani ? x.indirim_orani + ' indirim' : '', badge: 'İndirim', address: x.adres, siraNo: x.sira_no }; });
-      DATA.avantaj = r[3].map(function (x) { return { name: x.firma_adi, kategori: x.kategori, city: x.sehir, description: x.baslik || x.aciklama, whatsapp: x.whatsapp, phone: x.telefon, website: x.website, badge: x.rozet || '', address: x.adres, siraNo: x.sira_no }; });
+      DATA.avantaj = r[3].map(function (x) { return { name: x.firma_adi, kategori: x.kategori, city: x.sehir, description: [x.baslik, x.aciklama, x.odul].filter(Boolean).join(' · '), whatsapp: x.whatsapp, phone: x.telefon, website: x.website, badge: x.rozet || '', address: x.adres, siraNo: x.sira_no }; });
+      DATA.ekspertiz = r[5].map(function (x) { return { name: x.ad, city: x.sehir, district: x.ilce, whatsapp: x.whatsapp, phone: x.telefon, website: x.website, description: x.aciklama, address: x.adres, siraNo: x.sira_no }; });
       r[4].forEach(function (x) { if (x.marka) DATA.kilavuz[x.marka] = x.bilgi; });
     }).catch(function () {});
   })();
@@ -123,7 +135,7 @@
 
   // ---------- firma kartı ----------
   function acikMi() { var d = new Date(), gun = d.getDay(), s = d.getHours() + d.getMinutes() / 60; return gun !== 0 && s >= 9 && s < 19; }
-  var YARDIM_AD = { cekici: 'Çekici', lastik: 'Lastik', aku: 'Akü / Marş', ariza: 'Genel arıza', marş: 'Akü / Marş' };
+  var YARDIM_AD = {}; (typeof YARDIM_CATEGORIES !== 'undefined' ? YARDIM_CATEGORIES : []).forEach(function (c) { YARDIM_AD[c.id] = c.label; });
   function firmaKart(f, o) {
     o = o || {};
     var wa = temizTel(f.whatsapp);
@@ -169,11 +181,13 @@
 
   // ---------- Prime ve Reels (ana sayfa) ----------
   function yt(id) { return 'https://i.ytimg.com/vi/' + id + '/hqdefault.jpg'; }
+  var PRIME_IDS = [], REEL_IDS = [];
   function primeKur() {
     var P = (typeof TV_PROGRAMS !== 'undefined' && TV_PROGRAMS) || [];
     if (!P.length) return;
+    PRIME_IDS = P.map(function (v) { return v.youtubeId; });
     $('primeListe').innerHTML = P.slice(0, 3).map(function (v, i) {
-      return '<a class="g-pv' + (i === 0 ? ' b' : '') + '" href="prime/"><span class="r"><img src="' + yt(v.youtubeId) + '" alt="" loading="lazy"><i class="pl"></i></span><b>' + esc(v.title) + '</b></a>';
+      return '<a class="g-pv' + (i === 0 ? ' b' : '') + '" href="#" data-pv="' + esc(v.youtubeId) + '"><span class="r"><img src="' + yt(v.youtubeId) + '" alt="" loading="lazy"><i class="pl"></i></span><b>' + esc(v.title) + '</b></a>';
     }).join('');
     $('bPrime').hidden = false;
   }
@@ -183,7 +197,8 @@
       var d = (r && r.data) || [];
       d = d.slice().sort(function (a, b) { return (a.sira_no == null ? 9999 : a.sira_no) - (b.sira_no == null ? 9999 : b.sira_no); }).slice(0, 8);
       var id = function (raw) { raw = String(raw || '').trim(); if (/^[A-Za-z0-9_-]{11}$/.test(raw)) return raw; var m = raw.match(/(?:v=|youtu\.be\/|shorts\/|embed\/|live\/)([A-Za-z0-9_-]{11})/); return m ? m[1] : ''; };
-      var h = d.map(function (v) { var y = id(v.youtube_id); return y ? '<a class="g-rl" href="app.html?ana=1#shorts"><img src="' + yt(y) + '" alt="" loading="lazy"><i class="pl"></i></a>' : ''; }).join('');
+      var h = d.map(function (v) { var y = id(v.youtube_id); return y ? '<a class="g-rl" href="#" data-rl="' + y + '"><img src="' + yt(y) + '" alt="" loading="lazy"><i class="pl"></i></a>' : ''; }).join('');
+      REEL_IDS = d.map(function (v) { return id(v.youtube_id); }).filter(Boolean);
       if (h) { $('reelsListe').innerHTML = h; $('bReels').hidden = false; }
     }, function () {});
   }
@@ -252,7 +267,7 @@
     Promise.resolve(SB.rpc('uye_ol', { p_ad: ad, p_telefon: temizTel(telRaw) || telRaw, p_email: mail || null, p_il: sehir || null, p_sozlesme: true })).then(function (r) {
       var x = r && r.data;
       if (x && x.ok) {
-        ST.kod = norm(x.kod); ST.ad = x.ad || ad;
+        ST.kod = norm(x.kod); ST.ad = x.ad || ad; ST.rota = !!x.rota_imaj;
         try { localStorage.setItem(LS_KOD, ST.kod); } catch (e) {}
         motoruYaz(function () { ST.hosgeldin = true; garajGoster(); });
       } else if (x && x.neden === 'kayitli') {
@@ -269,6 +284,7 @@
       if (d && d.ok) {
         ST.ad = d.ad || ST.ad; ST.garaj = d.garaj || null;
         try { localStorage.setItem(LS_KOD, ST.kod); } catch (e) {}
+        Promise.resolve(SB.rpc('uye_dogrula', { p_kod: ST.kod, p_cihaz: cihaz() })).then(function (r) { var x = r && r.data; ST.rota = !!(x && x.ok && x.rota_imaj); }, function () {});
         cb(true);
       } else {
         var n = d && d.neden;
@@ -377,7 +393,7 @@
         ['M', 'MARC O.S. 3.0', 'Motosiklet asistanı', 'Paket', 'p', 'marc']
       ];
       return L.map(function (u) {
-        return '<a class="g-uyg" href="app.html?ac=' + u[5] + '"><span class="ik">' + u[0] + '</span><span><b>' + u[1] + '</b><small>' + u[2] + '</small></span><span class="d ' + u[4] + '">' + u[3] + '</span></a>';
+        return '<a class="g-uyg" href="#" data-uyg="' + u[5] + '"><span class="ik">' + u[0] + '</span><span><b>' + u[1] + '</b><small>' + u[2] + '</small></span><span class="d ' + u[4] + '">' + u[3] + '</span></a>';
       }).join('') + '<div class="g-paket"><b>Tek ödemede 4 uygulama.</b> Foto İmaj ve Movi İmaj ücretsiz denenir, çıktılarda MotoGo logosu olur. Rota İmaj ve MARC O.S. 3.0 ücretlidir. Ücretli üyelik dördünü de açar ve logoyu kaldırır.</div>';
     }
   };
@@ -392,12 +408,13 @@
     if (ST.hosgeldin) h += '<div class="g-karsila">Hoş geldin ' + esc((ST.ad || '').split(' ')[0]) + '. Garajın hazır. Üye kodun: <b>' + esc(ST.kod) + '</b>. Başka telefondan girmek için lazım olur, bir yere not et.</div>';
     var isim = (ST.ad || '').trim();
     if (!isim) { try { isim = (localStorage.getItem('motogo_garaj_ad') || '').trim(); } catch (e) {} }
+    if (!isim) { try { isim = String((JSON.parse(localStorage.getItem('motogo_profilim') || '{}')).adSoyad || '').trim(); } catch (e) {} }
     var bas = isim ? isim.split(/\s+/).slice(0, 2).map(function (w) { return w.charAt(0); }).join('').toLocaleUpperCase('tr') : 'M';
     var av = g.foto ? '<img src="' + esc(g.foto) + '" alt="Profil fotoğrafı">' : '<span class="bas">' + esc(bas) + '</span>';
     h += '<div class="g-kimlik g-profil"><div class="g-profil-ust">' +
       '<button type="button" class="g-av' + (g.foto ? ' var' : '') + '" id="gFoto" aria-label="Fotoğraf yükle">' + av + '<i class="kam">+</i></button>' +
       '<div class="g-pb">' +
-      (isim ? '<div class="g-ad">' + esc(isim) + '</div>' : '<button type="button" class="g-adekle" id="gAdEkle">Adını ekle</button>') +
+      (isim ? '<h2 class="g-ad" style="display:block;color:#f4f4f2;margin:0;">' + esc(isim) + '</h2>' : '<button type="button" class="g-adekle" id="gAdEkle">Adını ekle</button>') +
       '<div class="g-motor">' + esc((ad + ' ' + (g.model || '')).trim()) + (g.yil ? ' · ' + esc(g.yil) : '') + '</div>' +
       (g.sehir ? '<div class="g-konum">' + esc(g.sehir) + '</div>' : '') +
       (g.plaka ? '<div class="g-plaka">' + esc(g.plaka) + '</div>' : '<button type="button" class="g-plaka bos" data-sec="duzenle">Plaka ekle</button>') +
@@ -415,8 +432,8 @@
     h += satir('duzenle', 'duzenle', 'Motorumu düzenle');
     h += satir('uyg', 'uyg', 'Diğer uygulamalar');
     h += '</div>';
-    h += '<div class="g-alt"><a href="app.html?ana=1&amp;yardim=1" class="g-btn kirmizi g-yol">Yolda mı kaldın? MotoGo Yol Yardım</a>' +
-      '<div class="g-linkler"><a href="app.html?ana=1">Firma ara</a><a href="https://motogo.com.tr/prime/">MotoGo Prime</a><a href="https://www.motogoprime.com/category/all-products" target="_blank" rel="noopener">Store</a></div></div>';
+    h += '<div class="g-alt"><a href="#" data-go="vAra" data-ara="yardim" class="g-btn kirmizi g-yol">Yolda mı kaldın? MotoGo Yol Yardım</a>' +
+      '<div class="g-linkler"><a href="#" data-go="vAra">Firma ara</a><a href="https://motogo.com.tr/prime/">MotoGo Prime</a><a href="https://www.motogoprime.com/category/all-products" target="_blank" rel="noopener">Store</a></div></div>';
     $('vGaraj').innerHTML = h;
   }
 
@@ -497,6 +514,33 @@
     function firmaAc(e) { e.preventDefault(); goster('vFirma'); }
     Array.prototype.forEach.call(document.querySelectorAll('[data-firma]'), function (el) { el.addEventListener('click', firmaAc); });
     $('fGeri').addEventListener('click', function (e) { e.preventDefault(); ziyaretci(); });
+    document.addEventListener('click', function (e) {
+      var t = e.target; if (!t.closest) return;
+      var g = t.closest('[data-go]');
+      if (g) {
+        e.preventDefault();
+        var hedef = g.getAttribute('data-go');
+        if (hedef === 'geri') { var gg = ST.geri || 'vZiyaretci'; if (gg === 'vGaraj' && !uyeMi()) gg = 'vZiyaretci'; if (gg === 'vYukle') gg = 'vZiyaretci'; goster(gg); }
+        else if (hedef === 'vAra') araAc(g.getAttribute('data-ara') || '');
+        else if (hedef === 'vBasvuru') basvuruAc();
+        else goster(hedef);
+        return;
+      }
+      var u = t.closest('[data-uyg]'); if (u) { e.preventDefault(); uygAc(u.getAttribute('data-uyg')); return; }
+      var pv = t.closest('[data-pv]'); if (pv) { e.preventDefault(); var pi = PRIME_IDS.indexOf(pv.getAttribute('data-pv')); vidAc(PRIME_IDS.length ? PRIME_IDS : [pv.getAttribute('data-pv')], Math.max(pi, 0), 'prime'); return; }
+      var rl = t.closest('[data-rl]'); if (rl) { e.preventDefault(); var ri = REEL_IDS.indexOf(rl.getAttribute('data-rl')); vidAc(REEL_IDS.length ? REEL_IDS : [rl.getAttribute('data-rl')], Math.max(ri, 0), 'reels'); return; }
+      var ak = t.closest('[data-ak]'); if (ak) { ARA.kat = ak.getAttribute('data-ak'); $('aSonuc').innerHTML = ''; araCiz(); return; }
+      var ay = t.closest('[data-ay]'); if (ay) { ARA.yk = ay.getAttribute('data-ay'); araCiz(); return; }
+      if (t.closest('#aAra')) { araSonuc(); return; }
+      if (t.closest('#aUyeOl')) { uyeOlGoster(''); return; }
+      if (t.closest('#fgKaydetBtn')) { basvuruGonder(); return; }
+      if (t.closest('#gVx')) { vidKapat(); return; }
+      if (t.closest('#gVg')) { vidGit(-1); return; }
+      if (t.closest('#gVi')) { vidGit(1); return; }
+      if (t.id === 'gVideo') { vidKapat(); return; }
+    });
+    document.addEventListener('keydown', function (e) { if (!$('gVideo').hidden) { if (e.key === 'Escape') vidKapat(); else if (e.key === 'ArrowLeft') vidGit(-1); else if (e.key === 'ArrowRight') vidGit(1); } });
+    $('fgPaketOnay').addEventListener('change', function () { $('fgFormAlani').classList.toggle('g-kilitli', !this.checked); });
     $('gFotoDosya').addEventListener('change', function () { fotoSec(this.files && this.files[0]); this.value = ''; });
 
     $('vGaraj').addEventListener('click', function (e) {
@@ -544,6 +588,139 @@
     });
   }
 
+  // ---------- firma ara (kendi sitemizde) ----------
+  var KATLAR = [['yetkiliServis', 'Yetkili servis'], ['ozelServis', 'Özel servis'], ['avantaj', 'Aksesuar ve ekipman'], ['yakit', 'Yakıt'], ['ekspertiz', 'Ekspertiz'], ['yardim', 'Yol Yardım']];
+  var ARA = { kat: 'yetkiliServis', yk: 'cekici', hazir: false };
+  function araKur() {
+    if (ARA.hazir) return; ARA.hazir = true;
+    var dl = $('aMarkaListe'); BRANDS.forEach(function (b) { var o = document.createElement('option'); o.value = b.name; dl.appendChild(o); });
+    var s = $('aSehir'); CITIES.forEach(function (c) { var o = document.createElement('option'); o.value = c; o.textContent = c; s.appendChild(o); });
+  }
+  function araCiz() {
+    $('aKat').innerHTML = KATLAR.map(function (k) { return '<button type="button" data-ak="' + k[0] + '" class="' + (k[0] === ARA.kat ? 's' : '') + '">' + k[1] + '</button>'; }).join('');
+    var y = ARA.kat === 'yardim';
+    $('aYardimKat').hidden = !y;
+    if (y) $('aYardimKat').innerHTML = (typeof YARDIM_CATEGORIES !== 'undefined' ? YARDIM_CATEGORIES : []).map(function (c) { return '<button type="button" data-ay="' + c.id + '" class="' + (c.id === ARA.yk ? 's' : '') + '">' + esc(c.label) + '</button>'; }).join('');
+    $('aMarkaKutu').hidden = !(ARA.kat === 'yetkiliServis' || ARA.kat === 'ozelServis');
+  }
+  function araAc(kat) {
+    araKur();
+    if (kat) ARA.kat = kat;
+    if (ST.garaj && !$('aMarka').value) { var b = brandByKey(ST.garaj.marka); if (b) $('aMarka').value = b.name; }
+    if (ST.garaj && !$('aSehir').value && ST.garaj.sehir) $('aSehir').value = ST.garaj.sehir;
+    $('aSonuc').innerHTML = ''; $('aDurum').textContent = '';
+    araCiz(); goster('vAra');
+  }
+  function araSonuc() {
+    var d = $('aDurum'); d.className = 'g-durum'; d.textContent = '';
+    function hata(m) { d.textContent = m; d.className = 'g-durum hata'; }
+    var kat = ARA.kat, sehir = $('aSehir').value;
+    if (!sehir) return hata('Şehrini seç.');
+    if (kat !== 'yardim' && !ST.kod) {
+      $('aSonuc').innerHTML = '<div class="g-uyari g-uyari-b">Firmaları görmek için ücretsiz Garajım aç. Yol Yardım üye olmadan da açıktır.<button type="button" class="g-btn g-btn-k" id="aUyeOl">Garajımı aç</button></div>';
+      return;
+    }
+    var b = null;
+    if (kat === 'yetkiliServis' || kat === 'ozelServis') { b = brandByName($('aMarka').value); if (!b) return hata('Markayı listeden seç.'); }
+    veriHazir.then(function () {
+      var l = [], not = '', bos = '', amac = '', durum = false;
+      var etik = KATLAR.filter(function (k) { return k[0] === kat; })[0][1];
+      if (b) {
+        var hepsi = (DATA.firma[b.key + '_' + kat] || []).slice().sort(sirala);
+        l = hepsi.filter(function (f) { return !f.city || f.city === sehir; });
+        if (!l.length && hepsi.length) { l = hepsi.slice(0, 9); not = sehir + ' şehrinde henüz ' + b.name + ' ' + etik.toLowerCase() + ' firmamız yok. Diğer illerdeki firmalar listelendi.'; }
+        bos = b.name + ' ' + etik.toLowerCase() + ' firmamız henüz yok, yakında eklenecek.'; amac = b.name + ' ' + etik; durum = true;
+      } else if (kat === 'yardim') {
+        l = DATA.yardim.filter(function (f) { return (f.categories || []).indexOf(ARA.yk) >= 0 && f.city === sehir; }).sort(sirala);
+        bos = 'Bu şehirde, bu Yol Yardım hizmetinde henüz üye firma yok, yakında eklenecek.'; amac = 'Yol Yardım'; durum = false;
+      } else {
+        var src = kat === 'avantaj' ? DATA.avantaj : (kat === 'yakit' ? DATA.yakit : DATA.ekspertiz);
+        l = src.filter(function (f) { return f.city === sehir; }).sort(sirala);
+        bos = 'Bu şehirde henüz üye ' + etik.toLowerCase() + ' firması yok, yakında eklenecek.'; amac = etik;
+      }
+      var h = '';
+      if (!l.length) h = '<div class="g-uyari g-uyari-b">' + esc(bos) + '</div>';
+      else h = (not ? '<div class="g-uyari g-uyari-b">' + esc(not) + '</div>' : '') + '<div class="g-sonuc">' + l.slice(0, 30).map(function (f) { return firmaKart(f, { durum: durum, amac: amac }); }).join('') + '</div>';
+      $('aSonuc').innerHTML = h;
+    });
+  }
+
+  // ---------- uygulamalar (kendi sitemizde) ----------
+  var UYG = {
+    etkinlik: { ad: 'Etkinlik takvimi', tip: 'liste', tablo: 'etkinlikler' },
+    rota: { ad: 'Rota önerileri', tip: 'liste', tablo: 'rotalar' },
+    foto: { ad: 'Foto İmaj', tip: 'frame', src: function () { return 'foto.html?uye=' + (ST.rota ? 1 : 0); } },
+    kurgu: { ad: 'Movi İmaj', tip: 'frame', src: function () { return 'kurgu.html?uye=' + (ST.rota ? 1 : 0); } },
+    gun: { ad: 'Rota İmaj', tip: 'frame', src: function () { return 'rota.html'; }, ucretli: true },
+    aktivite: { ad: 'Aktivite Planım', tip: 'frame', src: function () { return 'aktivite.html'; } },
+    marc: { ad: 'MARC O.S. 3.0', tip: 'link', src: function () { return 'marc-os/'; }, ucretli: true }
+  };
+  function uygAc(id) {
+    var u = UYG[id]; if (!u) return;
+    $('yBaslik').textContent = u.ad;
+    var k = $('yIcerik');
+    if (u.ucretli && !ST.rota) {
+      k.innerHTML = '<div class="g-kutu"><h2>' + esc(u.ad) + ' ücretli üyelere açık</h2><p class="g-metin">Ücretli üyelik tek ödemeyle Foto İmaj, Movi İmaj, Rota İmaj ve MARC O.S. 3.0 uygulamalarını açar.</p><a class="g-btn" href="https://www.motogoprime.com/pricing-plans/plans-pricing" target="_blank" rel="noopener">Paketleri incele</a></div>';
+      goster('vUyg'); return;
+    }
+    if (u.tip === 'link') { window.location.href = u.src(); return; }
+    if (u.tip === 'frame') {
+      k.innerHTML = '<iframe class="g-frame" src="' + esc(u.src()) + '" title="' + esc(u.ad) + '" allow="camera; microphone; clipboard-write"></iframe>';
+      goster('vUyg'); return;
+    }
+    k.innerHTML = '<p class="g-metin">Yükleniyor...</p>'; goster('vUyg');
+    Promise.resolve(SB.from(u.tablo).select('*')).then(function (r) {
+      var d = (r && r.data) || [], h = '';
+      if (!d.length) h = '<p class="g-metin">Şu an listelenmiş bir kayıt yok.</p>';
+      else if (id === 'etkinlik') h = '<div class="g-sonuc">' + d.map(function (e) { return '<div class="g-firma"><b>' + esc(e.ad) + '</b>' + (e.tarih_metni ? '<small>' + esc(e.tarih_metni) + '</small>' : '') + (e.konum ? '<small>' + esc(e.konum) + '</small>' : '') + (e.aciklama ? '<p>' + esc(e.aciklama) + '</p>' : '') + '</div>'; }).join('') + '</div>';
+      else h = '<div class="g-sonuc">' + d.map(function (r2) { return '<div class="g-firma"><b>' + esc(r2.ad) + '</b><small>' + esc(r2.bolge || '') + '</small>' + (r2.not_metni ? '<p>' + esc(r2.not_metni) + '</p>' : '') + '<div class="g-d"><a class="k" href="https://www.google.com/maps/search/' + encodeURIComponent(r2.arama_terimi || r2.ad) + '" target="_blank" rel="noopener">Haritada aç</a></div></div>'; }).join('') + '</div>';
+      $('yIcerik').innerHTML = h;
+    }, function () { $('yIcerik').innerHTML = '<p class="g-metin">Yüklenemedi, tekrar dene.</p>'; });
+  }
+
+  // ---------- firma başvuru formu ----------
+  var FG = ['fgFirmaUnvani', 'fgMarkaIsmi', 'fgYetkiliAdSoyad', 'fgAdres', 'fgFirmaTelefon', 'fgYetkiliGsm', 'fgEmail', 'fgWeb', 'fgVergiDairesi', 'fgVergiNo', 'fgTcKimlik', 'fgFaaliyetAlani', 'fgFirmaOzellikleri', 'fgHizmetPaketleri', 'fgOdemePlani'];
+  function basvuruAc() {
+    var p = {}; try { p = JSON.parse(localStorage.getItem('motogo_firma_basvuru') || '{}'); } catch (e) {}
+    FG.forEach(function (id) { $(id).value = p[id] || ''; });
+    $('fgOnay').checked = false; $('fgMesafeliSatis').checked = false; $('fgPaketOnay').checked = false;
+    $('fgFormAlani').classList.add('g-kilitli');
+    $('fgTarih').textContent = new Date().toLocaleDateString('tr-TR'); $('fgDurum').textContent = '';
+    goster('vBasvuru');
+  }
+  function basvuruGonder() {
+    var d = $('fgDurum');
+    function m(t, c) { d.textContent = t; d.className = 'g-durum ' + (c || ''); }
+    var v = {}; FG.forEach(function (id) { v[id] = $(id).value.trim(); });
+    if (!$('fgPaketOnay').checked) return m('Devam etmek için önce paket satın alman ve kutuyu işaretlemen gerekiyor.', 'hata');
+    if (!v.fgFirmaUnvani || !v.fgYetkiliAdSoyad || !v.fgYetkiliGsm) return m('Firma unvanı, yetkili adı soyadı ve yetkili GSM zorunlu.', 'hata');
+    if (!$('fgOnay').checked || !$('fgMesafeliSatis').checked) return m('Devam etmek için iki onay kutusunu da işaretlemen gerekiyor.', 'hata');
+    try { localStorage.setItem('motogo_firma_basvuru', JSON.stringify(v)); } catch (e) {}
+    if (!SB) return m('Bağlantı kurulamadı, tekrar dene.', 'hata');
+    m('Gönderiliyor...');
+    Promise.resolve(SB.from('firma_basvurulari').insert({
+      firma_unvani: v.fgFirmaUnvani, marka_ismi: v.fgMarkaIsmi || null, yetkili_ad_soyad: v.fgYetkiliAdSoyad, adres: v.fgAdres || null,
+      firma_telefon: v.fgFirmaTelefon || null, yetkili_gsm: v.fgYetkiliGsm, email: v.fgEmail || null, web: v.fgWeb || null,
+      vergi_dairesi: v.fgVergiDairesi || null, vergi_no: v.fgVergiNo || null, tc_kimlik: v.fgTcKimlik || null, faaliyet_alani: v.fgFaaliyetAlani || null,
+      firma_ozellikleri: v.fgFirmaOzellikleri || null, hizmet_paketleri: v.fgHizmetPaketleri || null, odeme_plani: v.fgOdemePlani || null, onay: true
+    })).then(function (r) {
+      if (r && r.error) m('Gönderilemedi, tekrar dene. Bilgilerin bu cihazda saklandı.', 'hata');
+      else m('Başvurun alındı. Teşekkürler.', 'ok');
+    }, function () { m('Gönderilemedi, tekrar dene. Bilgilerin bu cihazda saklandı.', 'hata'); });
+  }
+
+  // ---------- video oynatıcı (Reels ve Prime, sayfa içinde) ----------
+  var VID = { l: [], i: 0, t: 'reels' };
+  function vidAc(liste, i, tip) { VID.l = liste; VID.i = i; VID.t = tip; vidCiz(); $('gVideo').hidden = false; document.body.style.overflow = 'hidden'; }
+  function vidCiz() {
+    var id = VID.l[VID.i]; if (!id) return;
+    var k = $('gVkutu'); k.className = 'g-vkutu ' + (VID.t === 'reels' ? 'dikey' : 'yatay');
+    k.innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + encodeURIComponent(id) + '?autoplay=1&playsinline=1&rel=0&modestbranding=1" title="Video" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>';
+    $('gVg').hidden = VID.l.length < 2; $('gVi').hidden = VID.l.length < 2;
+  }
+  function vidKapat() { $('gVkutu').innerHTML = ''; $('gVideo').hidden = true; document.body.style.overflow = ''; }
+  function vidGit(d) { if (!VID.l.length) return; VID.i = (VID.i + d + VID.l.length) % VID.l.length; vidCiz(); }
+
   // ---------- başlangıç ----------
   function basla() {
     olaylar();
@@ -557,6 +734,7 @@
       } else ziyaretci();
     });
   }
+  try { history.replaceState({ v: 'vZiyaretci' }, '', location.pathname); } catch (e) {}
   primeKur(); reelsKur();
   basla();
 })();
