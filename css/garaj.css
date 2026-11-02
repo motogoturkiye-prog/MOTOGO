@@ -335,3 +335,39 @@ body.garaj{display:flex;flex-direction:column;}
   .g-nav-linkler a{padding:8px 0;font-size:13.5px;}
   .g-nav-ic>.g-pil{min-height:36px;padding:7px 14px;}
 }
+
+/* Reels: ızgara ve dikey akış */
+.g-reels{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;overflow:visible;padding:20px 0 0;}
+.g-rl{width:auto;}
+@media (min-width:760px){.g-reels{grid-template-columns:repeat(6,1fr);gap:14px;}}
+.g-rf{position:fixed;inset:0;z-index:100;background:#050608;}
+.g-rf-liste{height:100%;overflow-y:auto;scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+.g-rf-it{height:100vh;height:100dvh;scroll-snap-align:start;scroll-snap-stop:always;display:flex;align-items:center;justify-content:center;padding:12px;}
+.g-rf-kutu{position:relative;height:min(88vh,860px);aspect-ratio:9/16;max-width:94vw;background:#000;border-radius:18px;overflow:hidden;}
+.g-rf-kutu img{width:100%;height:100%;object-fit:cover;display:block;}
+.g-rf-kutu iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000;}
+
+/* firma kartı fotoğrafı */
+.g-firma.fotolu{padding:0;overflow:hidden;}
+.g-fth{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;cursor:zoom-in;background:#1b1e24;}
+.g-fic{padding:14px 16px 16px;}
+.g-firma:not(.fotolu) .g-fic{padding:0;}
+.g-firma .adr{display:block;margin-top:6px;font-size:12px;color:var(--g-sol);}
+.g-lb{position:fixed;inset:0;z-index:120;background:rgba(5,6,8,.94);display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out;}
+.g-lb img{max-width:100%;max-height:100%;border-radius:12px;}
+
+/* firma ara: düzenli kategori düğmeleri */
+#aKat{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+#aKat button{min-height:48px;border-radius:14px;font-size:14px;text-align:center;padding:8px 10px;}
+#aYardimKat{display:grid;grid-template-columns:1fr;gap:8px;margin-top:-4px;}
+#aYardimKat button{min-height:44px;border-radius:12px;font-size:13.5px;}
+@media (min-width:760px){#aKat{grid-template-columns:repeat(4,1fr);}#aYardimKat{grid-template-columns:repeat(3,1fr);}}
+
+/* uygulamalar: tam ekran */
+.g-app{position:fixed;inset:0;z-index:95;background:#0b0c0e;display:flex;justify-content:center;}
+.g-app-ic{display:flex;flex-direction:column;width:100%;max-width:640px;height:100%;background:var(--g-bg);}
+.g-app-bar{flex:none;display:flex;align-items:center;gap:12px;padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top,0px));background:#14161b;border-bottom:1px solid var(--g-cizgi);}
+.g-app-bar button{width:44px;height:44px;border-radius:12px;border:1px solid var(--g-cizgi);background:var(--g-kart);color:var(--g-yazi);font-size:24px;cursor:pointer;line-height:1;}
+.g-app-bar button:hover{border-color:var(--g-sari);}
+.g-app-bar b{font-size:17px;}
+.g-app-frame{flex:1;width:100%;border:0;background:#fff;}

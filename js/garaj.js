@@ -11,7 +11,7 @@
   var LS_KOD = 'motogo_uye_kod';
 
   var DATA = { firma: {}, yardim: [], yakit: [], avantaj: [], ekspertiz: [], kilavuz: {} };
-  var ST = { rota: false, geri: 'vZiyaretci', kod: '', ad: '', garaj: null, acik: null, sekme: '', hosgeldin: false, onMarka: '' };
+  var ST = { yk: '', rota: false, geri: 'vZiyaretci', kod: '', ad: '', garaj: null, acik: null, sekme: '', hosgeldin: false, onMarka: '' };
 
   // ---------- yardımcılar ----------
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -61,11 +61,12 @@
     if (SIMDI && SIMDI !== id && id !== 'vYukle' && SIMDI !== 'vYukle') ST.geri = SIMDI;
     SIMDI = id;
     GOR.forEach(function (v) { $(v).hidden = (v !== id); });
-    $('zUyeGiris').textContent = uyeMi() ? 'Garajım' : 'Giriş yap';
+    $('zUyeGiris').textContent = 'Garajım';
     if (push !== false && id !== 'vYukle') { try { history.pushState({ v: id }, '', location.pathname); } catch (e) {} }
     window.scrollTo(0, 0);
   }
   window.addEventListener('popstate', function (e) {
+    if (!$('gApp').hidden) { appKapat(false); }
     var v = e.state && e.state.v;
     if (!v || GOR.indexOf(v) < 0) return;
     if (v === 'vGaraj' && !uyeMi()) v = 'vZiyaretci';
@@ -89,11 +90,11 @@
     return Promise.all([oku('firmalar'), oku('yardim_firmalari'), oku('yakit_indirimleri'), oku('avantaj_kampanyalar'), oku('motor_kilavuzu'), oku('ekspertiz_firmalari')]).then(function (r) {
       r[0].forEach(function (x) {
         var key = x.marka + '_' + x.kategori;
-        (DATA.firma[key] = DATA.firma[key] || []).push({ name: x.ad, whatsapp: x.whatsapp, phone: x.telefon, city: x.sehir, district: x.ilce, website: x.website, description: x.aciklama, address: x.adres, siraNo: x.sira_no });
+        (DATA.firma[key] = DATA.firma[key] || []).push({ name: x.ad, whatsapp: x.whatsapp, phone: x.telefon, city: x.sehir, district: x.ilce, website: x.website, instagram: x.instagram, photo: x.foto_url, description: x.aciklama, address: x.adres, siraNo: x.sira_no });
       });
-      DATA.yardim = r[1].map(function (x) { return { name: x.ad, region: x.bolge_metni, city: x.sehir, phone: x.telefon, whatsapp: x.whatsapp, categories: x.kategoriler || [], website: x.website, address: x.adres, siraNo: x.sira_no }; });
-      DATA.yakit = r[2].map(function (x) { return { name: x.ad, city: x.sehir, district: x.ilce, whatsapp: x.whatsapp, phone: x.telefon, website: x.website, description: x.indirim_orani ? x.indirim_orani + ' indirim' : '', badge: 'İndirim', address: x.adres, siraNo: x.sira_no }; });
-      DATA.avantaj = r[3].map(function (x) { return { name: x.firma_adi, kategori: x.kategori, city: x.sehir, description: [x.baslik, x.aciklama, x.odul].filter(Boolean).join(' · '), whatsapp: x.whatsapp, phone: x.telefon, website: x.website, badge: x.rozet || '', address: x.adres, siraNo: x.sira_no }; });
+      DATA.yardim = r[1].map(function (x) { return { name: x.ad, region: x.bolge_metni, city: x.sehir, phone: x.telefon, whatsapp: x.whatsapp, categories: x.kategoriler || [], website: x.website, instagram: x.instagram, photo: x.foto_url, address: x.adres, siraNo: x.sira_no }; });
+      DATA.yakit = r[2].map(function (x) { return { name: x.ad, city: x.sehir, district: x.ilce, whatsapp: x.whatsapp, phone: x.telefon, website: x.website, instagram: x.instagram, photo: x.foto_url, description: x.indirim_orani ? x.indirim_orani + ' indirim' : '', badge: 'İndirim', address: x.adres, siraNo: x.sira_no }; });
+      DATA.avantaj = r[3].map(function (x) { return { name: x.firma_adi, kategori: x.kategori, city: x.sehir, description: [x.baslik, x.aciklama, x.odul].filter(Boolean).join(' · '), whatsapp: x.whatsapp, phone: x.telefon, website: x.website, instagram: x.instagram, photo: x.foto_url, badge: x.rozet || '', address: x.adres, siraNo: x.sira_no }; });
       DATA.ekspertiz = r[5].map(function (x) { return { name: x.ad, city: x.sehir, district: x.ilce, whatsapp: x.whatsapp, phone: x.telefon, website: x.website, description: x.aciklama, address: x.adres, siraNo: x.sira_no }; });
       r[4].forEach(function (x) { if (x.marka) DATA.kilavuz[x.marka] = x.bilgi; });
     }).catch(function () {});
@@ -129,31 +130,36 @@
   }
   function yolVerisi() {
     var g = ST.garaj; if (!g) return null;
-    var l = DATA.yardim.filter(function (f) { return f.city === g.sehir; }).sort(sirala);
-    return l.length ? { firmalar: l, not: '' } : null;
+    var kats = (typeof YARDIM_CATEGORIES !== 'undefined' ? YARDIM_CATEGORIES : []), out = {}, any = false;
+    kats.forEach(function (c) {
+      var l = DATA.yardim.filter(function (f) { return f.city === g.sehir && (f.categories || []).indexOf(c.id) >= 0; }).sort(sirala);
+      if (l.length) { out[c.id] = { firmalar: l, not: '', etiket: c.label }; any = true; }
+    });
+    return any ? out : null;
   }
 
   // ---------- firma kartı ----------
   function acikMi() { var d = new Date(), gun = d.getDay(), s = d.getHours() + d.getMinutes() / 60; return gun !== 0 && s >= 9 && s < 19; }
   var YARDIM_AD = {}; (typeof YARDIM_CATEGORIES !== 'undefined' ? YARDIM_CATEGORIES : []).forEach(function (c) { YARDIM_AD[c.id] = c.label; });
+  function igUrl(v) { v = String(v || '').trim(); if (!v) return ''; if (/^https?:\/\//i.test(v)) return v; return 'https://www.instagram.com/' + v.replace(/^@/, '').replace(/^instagram\.com\//i, ''); }
   function firmaKart(f, o) {
     o = o || {};
     var wa = temizTel(f.whatsapp);
-    var msg = encodeURIComponent('Merhaba, MotoGo Garajım üzerinden ulaşıyorum. ' + (o.amac || 'Bilgi') + ' için bilgi almak istiyorum.');
+    var msg = encodeURIComponent('Merhaba, MotoGo üzerinden ulaşıyorum. ' + (o.amac || 'Bilgi') + ' için bilgi almak istiyorum.');
     var sorgu = f.address ? f.address : (f.name + ' ' + (f.district || '') + ' ' + (f.city || '')).trim();
-    var rozet = '';
-    if (o.durum) rozet = acikMi() ? '<span class="g-rozet acik">Açık</span>' : '<span class="g-rozet kap">Kapalı</span>';
-    else if (f.badge) rozet = '<span class="g-rozet ind">' + esc(f.badge) + '</span>';
+    var rozet = f.badge ? '<span class="g-rozet ind">' + esc(f.badge) + '</span>' : '';
     var meta = [f.district, f.city, f.region].filter(Boolean).join(' · ');
     var chips = '';
     if (f.categories && f.categories.length) chips = '<div class="g-ch">' + f.categories.map(function (c) { return '<span>' + esc(YARDIM_AD[c] || c) + '</span>'; }).join('') + '</div>';
     var d = '';
     if (f.phone) d += '<a class="k" href="tel:' + esc(f.phone) + '">Ara</a>';
     if (wa) d += '<a href="https://wa.me/' + wa + '?text=' + msg + '" target="_blank" rel="noopener">WhatsApp</a>';
+    if (f.instagram) d += '<a href="' + esc(igUrl(f.instagram)) + '" target="_blank" rel="noopener">Instagram</a>';
     if (f.website) d += '<a href="' + esc(webUrl(f.website)) + '" target="_blank" rel="noopener">Web</a>';
     d += '<a href="https://www.google.com/maps/search/' + encodeURIComponent(sorgu) + '" target="_blank" rel="noopener">Konum</a>';
-    return '<div class="g-firma"><div class="a"><div><b>' + esc(f.name) + '</b>' + (meta ? '<small>' + esc(meta) + '</small>' : '') + '</div>' + rozet + '</div>' +
-      chips + (f.description ? '<p>' + esc(f.description) + '</p>' : '') + '<div class="g-d">' + d + '</div></div>';
+    var foto = false ? '<img class="g-fth" src="' + esc(f.photo) + '" alt="' + esc(f.name) + '" loading="lazy" data-lb="' + esc(f.photo) + '">' : '';
+    return '<div class="g-firma' + '' + '">' + foto + '<div class="g-fic"><div class="a"><div><b>' + esc(f.name) + '</b>' + (meta ? '<small>' + esc(meta) + '</small>' : '') + '</div>' + rozet + '</div>' +
+      chips + (f.description ? '<p>' + esc(f.description) + '</p>' : '') + (f.address ? '<small class="adr">' + esc(f.address) + '</small>' : '') + '<div class="g-d">' + d + '</div></div></div>';
   }
   function firmaListe(m, o) {
     return (m.not ? '<div class="g-uyari">' + esc(m.not) + '</div>' : '') + m.firmalar.slice(0, 12).map(function (f) { return firmaKart(f, o); }).join('');
@@ -166,7 +172,7 @@
   function kaydet(patch, cb) {
     var g = ST.garaj || {};
     var o = {};
-    ['marka', 'model', 'yil', 'sehir', 'plaka', 'km', 'bakim_km', 'muayene', 'sigorta'].forEach(function (k) {
+    ['marka', 'model', 'yil', 'sehir', 'ilce', 'plaka', 'km', 'bakim_km', 'muayene', 'sigorta'].forEach(function (k) {
       o[k] = Object.prototype.hasOwnProperty.call(patch, k) ? patch[k] : (g[k] == null ? null : g[k]);
     });
     if (Object.prototype.hasOwnProperty.call(patch, 'foto')) o.foto = patch.foto;
@@ -181,13 +187,12 @@
 
   // ---------- Prime ve Reels (ana sayfa) ----------
   function yt(id) { return 'https://i.ytimg.com/vi/' + id + '/hqdefault.jpg'; }
-  var PRIME_IDS = [], REEL_IDS = [];
+  var REEL_IDS = [];
   function primeKur() {
     var P = (typeof TV_PROGRAMS !== 'undefined' && TV_PROGRAMS) || [];
     if (!P.length) return;
-    PRIME_IDS = P.map(function (v) { return v.youtubeId; });
     $('primeListe').innerHTML = P.slice(0, 3).map(function (v, i) {
-      return '<a class="g-pv' + (i === 0 ? ' b' : '') + '" href="#" data-pv="' + esc(v.youtubeId) + '"><span class="r"><img src="' + yt(v.youtubeId) + '" alt="" loading="lazy"><i class="pl"></i></span><b>' + esc(v.title) + '</b></a>';
+      return '<a class="g-pv' + (i === 0 ? ' b' : '') + '" href="prime/"><span class="r"><img src="' + yt(v.youtubeId) + '" alt="" loading="lazy"><i class="pl"></i></span><b>' + esc(v.title) + '</b></a>';
     }).join('');
     $('bPrime').hidden = false;
   }
@@ -195,12 +200,45 @@
     if (!SB) return;
     Promise.resolve(SB.from('shorts_videolar').select('*')).then(function (r) {
       var d = (r && r.data) || [];
-      d = d.slice().sort(function (a, b) { return (a.sira_no == null ? 9999 : a.sira_no) - (b.sira_no == null ? 9999 : b.sira_no); }).slice(0, 8);
+      d = d.slice().sort(function (a, b) { return (a.sira_no == null ? 9999 : a.sira_no) - (b.sira_no == null ? 9999 : b.sira_no); });
       var id = function (raw) { raw = String(raw || '').trim(); if (/^[A-Za-z0-9_-]{11}$/.test(raw)) return raw; var m = raw.match(/(?:v=|youtu\.be\/|shorts\/|embed\/|live\/)([A-Za-z0-9_-]{11})/); return m ? m[1] : ''; };
-      var h = d.map(function (v) { var y = id(v.youtube_id); return y ? '<a class="g-rl" href="#" data-rl="' + y + '"><img src="' + yt(y) + '" alt="" loading="lazy"><i class="pl"></i></a>' : ''; }).join('');
       REEL_IDS = d.map(function (v) { return id(v.youtube_id); }).filter(Boolean);
-      if (h) { $('reelsListe').innerHTML = h; $('bReels').hidden = false; }
+      if (!REEL_IDS.length) return;
+      $('reelsListe').innerHTML = REEL_IDS.slice(0, 6).map(function (y, i) { return '<a class="g-rl" href="#" data-rl="' + i + '"><img src="' + yt(y) + '" alt="" loading="lazy"><i class="pl"></i></a>'; }).join('');
+      $('bReels').hidden = false;
     }, function () {});
+  }
+  var rfGoz = null;
+  function reelsAc(i) {
+    var L = $('gRfListe');
+    L.innerHTML = REEL_IDS.map(function (y, k) { return '<div class="g-rf-it" data-i="' + k + '" data-y="' + y + '"><div class="g-rf-kutu"><img src="' + yt(y) + '" alt=""><i class="pl"></i></div></div>'; }).join('');
+    $('gReels').hidden = false; document.body.style.overflow = 'hidden';
+    function aktif(it) {
+      Array.prototype.forEach.call(L.querySelectorAll('iframe'), function (f) { f.parentNode.removeChild(f); });
+      var kutu = it.querySelector('.g-rf-kutu'), y = it.getAttribute('data-y');
+      var f = document.createElement('iframe');
+      f.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(y) + '?autoplay=1&playsinline=1&rel=0&modestbranding=1&loop=1&playlist=' + encodeURIComponent(y);
+      f.title = 'Reels'; f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen'; f.setAttribute('allowfullscreen', '');
+      kutu.appendChild(f);
+    }
+    if (rfGoz) rfGoz.disconnect();
+    if ('IntersectionObserver' in window) {
+      rfGoz = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting && e.intersectionRatio > 0.6) aktif(e.target); }); }, { root: L, threshold: [0.6] });
+      Array.prototype.forEach.call(L.children, function (c) { rfGoz.observe(c); });
+    }
+    var hedef = L.children[i] || L.children[0];
+    if (hedef) { L.scrollTop = hedef.offsetTop; if (!('IntersectionObserver' in window)) aktif(hedef); }
+  }
+  function reelsKapat() { if (rfGoz) rfGoz.disconnect(); $('gRfListe').innerHTML = ''; $('gReels').hidden = true; document.body.style.overflow = ''; }
+
+  // Garajım düğmesi: üyeyse profil, değilse üye ol
+  var HAZIR = Promise.resolve();
+  function garajaGit(marka) {
+    HAZIR.then(function () {
+      if (!ST.kod) uyeOlGoster(marka || '');
+      else if (ST.garaj && ST.garaj.marka) garajGoster();
+      else uyeOlGoster(marka || '', 'motor');
+    });
   }
 
   // ---------- ziyaretçi ekranı ----------
@@ -211,11 +249,11 @@
       ['BMW', 'KTM', 'Ducati', 'Honda', 'Bajaj', 'Yamaha'].forEach(function (n) {
         var b = brandByName(n); if (!b) return;
         var bt = document.createElement('button'); bt.type = 'button'; bt.className = 'g-marka'; bt.textContent = b.name;
-        bt.addEventListener('click', function () { uyeOlGoster(b.name); });
+        bt.addEventListener('click', function () { garajaGit(b.name); });
         kutu.appendChild(bt);
       });
       var dg = document.createElement('button'); dg.type = 'button'; dg.className = 'g-marka'; dg.textContent = 'Diğer markalar…';
-      dg.addEventListener('click', function () { uyeOlGoster(''); });
+      dg.addEventListener('click', function () { garajaGit(''); });
       kutu.appendChild(dg);
     }
     goster('vZiyaretci');
@@ -246,16 +284,17 @@
     function hata(m) { d.textContent = m; d.className = 'g-durum hata'; }
     var yeni = uyeModu === 'yeni';
     var ad = $('uAd').value.trim(), telRaw = $('uTel').value.trim(), mail = $('uMail').value.trim();
-    var b = brandByName($('uMarka').value), model = $('uModel').value.trim(), yil = sayi($('uYil').value), sehir = $('uSehir').value;
+    var b = brandByName($('uMarka').value), model = $('uModel').value.trim(), yil = sayi($('uYil').value), sehir = $('uSehir').value, ilce = $('uIlce').value.trim();
     if (yeni && (!ad || !telRaw)) return hata('Ad soyad ve telefon zorunlu.');
     if (yeni && temizTel(telRaw).length < 12) return hata('Telefon numarasını başında 0 ile yaz: 05XX XXX XX XX');
     if (!b) return hata('Markayı listeden seç. Bulamazsan en yakın yazılışını dene.');
     if (!model) return hata('Motorunun modelini yaz.');
     if (!sehir) return hata('Şehrini seç.');
+    if (!ilce) return hata('İlçeni ya da semtini yaz.');
     if (yeni && !$('uOnay').checked) return hata('Devam etmek için sözleşmeyi onaylaman gerekiyor.');
     if (!SB) return hata('Bağlantı kurulamadı, tekrar dene.');
     var btn = $('uGonder'); btn.disabled = true; d.textContent = yeni ? 'Garajın hazırlanıyor...' : 'Kaydediliyor...'; d.className = 'g-durum';
-    var motor = { marka: b.key, model: model, yil: yil, sehir: sehir };
+    var motor = { marka: b.key, model: model, yil: yil, sehir: sehir, ilce: ilce };
     function motoruYaz(sonra) {
       kaydet(motor, function (ok, neden) {
         btn.disabled = false;
@@ -359,7 +398,12 @@
       return tab + '<p class="g-etk">Sadece ' + esc(b ? b.name : '') + ' firmaları</p>' + firmaListe(v[ST.sekme], { durum: true, amac: (b ? b.name : '') + ' ' + v[ST.sekme].etiket });
     },
     aksesuar: function () { var m = aksesuarVerisi(); return m ? '<p class="g-etk">Tüm motorculara gösterilen firmalar</p>' + firmaListe(m, { amac: 'Aksesuar ve ekipman' }) : ''; },
-    yol: function () { var m = yolVerisi(); return m ? '<p class="g-etk">' + esc(ST.garaj.sehir) + ' yol yardım firmaları</p>' + firmaListe(m, { amac: 'Yol yardım' }) : ''; },
+    yol: function () {
+      var v = yolVerisi(); if (!v) return '';
+      var ks = Object.keys(v); if (!v[ST.yk]) ST.yk = v.cekici ? 'cekici' : ks[0];
+      var tab = '<div class="g-sekme">' + ks.map(function (k) { return '<button type="button" data-yk="' + k + '" class="' + (k === ST.yk ? 's' : '') + '">' + esc(v[k].etiket) + '</button>'; }).join('') + '</div>';
+      return tab + '<p class="g-etk">' + esc(ST.garaj.sehir) + ' · ' + esc(v[ST.yk].etiket) + '</p>' + firmaListe(v[ST.yk], { amac: 'Yol Yardım ' + v[ST.yk].etiket });
+    },
     hatir: function () {
       var g = ST.garaj, s = hatirSatirlari(g);
       return (s.length ? s.map(function (x) { return '<p class="g-hat ' + x[0] + '">' + esc(x[1]) + '</p>'; }).join('') : '<p class="g-etk">Kilometreni, bakım kilometreni ve tarihleri gir, yaklaşınca burada görürsün.</p>') +
@@ -377,7 +421,8 @@
       return '<p class="g-etk">Motorunu sattın ve yenisini mi aldın? Marka ve modeli değiştir, listeler yeni motoruna göre değişir.</p>' +
         '<div class="g-alan"><label for="dMarka">Marka</label><input type="text" id="dMarka" list="dMarkaListe" value="' + esc(b ? b.name : '') + '" autocomplete="off"><datalist id="dMarkaListe">' + BRANDS.map(function (x) { return '<option value="' + esc(x.name) + '">'; }).join('') + '</datalist></div>' +
         '<div class="g-iki"><div class="g-alan"><label for="dModel">Model</label><input type="text" id="dModel" value="' + esc(g.model || '') + '"></div><div class="g-alan"><label for="dYil">Model yılı</label><select id="dYil">' + yo + '</select></div></div>' +
-        '<div class="g-iki"><div class="g-alan"><label for="dSehir">Şehir</label><select id="dSehir">' + so + '</select></div><div class="g-alan"><label for="dPlaka">Plaka</label><input type="text" id="dPlaka" value="' + esc(g.plaka || '') + '" maxlength="12" autocapitalize="characters"></div></div>' +
+        '<div class="g-iki"><div class="g-alan"><label for="dSehir">Şehir</label><select id="dSehir">' + so + '</select></div><div class="g-alan"><label for="dIlce">İlçe / semt</label><input type="text" id="dIlce" value="' + esc(g.ilce || '') + '" maxlength="40"></div></div>' +
+        '<div class="g-alan"><label for="dPlaka">Plaka</label><input type="text" id="dPlaka" value="' + esc(g.plaka || '') + '" maxlength="12" autocapitalize="characters"></div>' +
         '<button type="button" class="g-btn" id="dKaydet" style="margin-top:14px;">Kaydet</button><div class="g-durum" id="dDurum" role="status"></div>' +
         '<div class="g-kod">Üye kodum: <b>' + esc(ST.kod) + '</b><br>Başka telefondan girmek için bu kodu kullan, kimseyle paylaşma.<br><button type="button" id="kodKopya">Kodu kopyala</button></div>' +
         '<button type="button" class="g-cikis" id="cikisYap">Bu cihazdan çıkış yap</button>';
@@ -416,7 +461,7 @@
       '<div class="g-pb">' +
       (isim ? '<h2 class="g-ad" style="display:block;color:#f4f4f2;margin:0;">' + esc(isim) + '</h2>' : '<button type="button" class="g-adekle" id="gAdEkle">Adını ekle</button>') +
       '<div class="g-motor">' + esc((ad + ' ' + (g.model || '')).trim()) + (g.yil ? ' · ' + esc(g.yil) : '') + '</div>' +
-      (g.sehir ? '<div class="g-konum">' + esc(g.sehir) + '</div>' : '') +
+      (g.sehir ? '<div class="g-konum">' + esc((g.ilce ? g.ilce + ', ' : '') + g.sehir) + '</div>' : '') +
       (g.plaka ? '<div class="g-plaka">' + esc(g.plaka) + '</div>' : '<button type="button" class="g-plaka bos" data-sec="duzenle">Plaka ekle</button>') +
       '</div></div>' +
       '<div class="g-km"><button type="button" data-sec="hatir"><small>Güncel km</small><b' + (g.km == null ? ' class="bos">Ekle' : '>' + fmt(g.km)) + '</b></button>' +
@@ -440,43 +485,60 @@
   // ---------- paylaşım kartı (hikâye boyutu) ----------
   function paylasKarti() {
     var g = ST.garaj, b = brandByKey(g.marka);
-    var W = 1080, H = 1920, c = document.createElement('canvas'); c.width = W; c.height = H;
+    var isim = (ST.ad || '').trim();
+    if (!isim) { try { isim = (localStorage.getItem('motogo_garaj_ad') || '').trim(); } catch (e) {} }
+    if (!isim) { try { isim = String((JSON.parse(localStorage.getItem('motogo_profilim') || '{}')).adSoyad || '').trim(); } catch (e) {} }
+    isim = isim || 'MotoGo Üyesi';
+    var bas = isim.split(/\s+/).slice(0, 2).map(function (w) { return w.charAt(0); }).join('').toLocaleUpperCase('tr');
+    var motor = ((b ? b.name : g.marka) + ' ' + (g.model || '')).trim();
+    var konum = [g.ilce, g.sehir].filter(Boolean).join(', ');
+    var W = 1080, H = 1350, c = document.createElement('canvas'); c.width = W; c.height = H;
     var x = c.getContext('2d');
-    var gr = x.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, '#171a1f'); gr.addColorStop(1, '#0b0c0e');
-    x.fillStyle = gr; x.fillRect(0, 0, W, H);
-    x.fillStyle = '#f9eb22'; x.fillRect(0, 0, 18, H);
-    function bitir(logo) {
-      if (logo) { var lw = 360, lh = lw * logo.height / logo.width; x.drawImage(logo, 90, 130, lw, lh); }
-      function yaz(t, px, y, w, col, mx) {
-        x.font = w + ' ' + px + 'px Inter, "Segoe UI", sans-serif'; x.fillStyle = col; x.textBaseline = 'alphabetic';
-        var s = t; while (x.measureText(s).width > (mx || 900) && s.length > 3) s = s.slice(0, -2); if (s !== t) s += '…';
-        x.fillText(s, 90, y);
-      }
-      var fy = 560;
-      function son() {
-        yaz((ST.ad || 'Motorcu'), 96, fy + 80, '800', '#f4f4f2');
-        yaz(((b ? b.name : g.marka) + ' ' + (g.model || '')).trim(), 60, fy + 170, '600', '#f9eb22');
-        yaz([g.yil, g.sehir].filter(Boolean).join(' · '), 40, fy + 240, '500', '#9aa0a8');
-        yaz('Garajım', 44, H - 250, '700', '#f4f4f2');
-        yaz('motogo.com.tr', 40, H - 190, '500', '#9aa0a8');
-        c.toBlob(function (blob) {
-          if (!blob) return toast('Kart oluşturulamadı');
-          var f = new File([blob], 'motogo-garajim.png', { type: 'image/png' });
-          if (navigator.canShare && navigator.canShare({ files: [f] }) && navigator.share) {
-            navigator.share({ files: [f], title: 'MotoGo Garajım', text: 'Garajım: motogo.com.tr' }).catch(function () {});
-          } else {
-            var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'motogo-garajim.png';
-            document.body.appendChild(a); a.click(); a.remove(); toast('Kart indirildi, hikâyene ekleyebilirsin');
-          }
-        }, 'image/png');
-      }
-      if (g.foto) {
-        var im = new Image();
-        im.onload = function () { x.save(); x.beginPath(); x.arc(W - 270, 380, 160, 0, Math.PI * 2); x.closePath(); x.clip(); var s = Math.max(320 / im.width, 320 / im.height); x.drawImage(im, W - 430 + (320 - im.width * s) / 2, 220 + (320 - im.height * s) / 2, im.width * s, im.height * s); x.restore(); x.lineWidth = 8; x.strokeStyle = '#f9eb22'; x.beginPath(); x.arc(W - 270, 380, 160, 0, Math.PI * 2); x.stroke(); son(); };
-        im.onerror = son; im.src = g.foto;
-      } else son();
+    function kutu(px, py, w, h, rr, fill) { x.beginPath(); x.moveTo(px + rr, py); x.arcTo(px + w, py, px + w, py + h, rr); x.arcTo(px + w, py + h, px, py + h, rr); x.arcTo(px, py + h, px, py, rr); x.arcTo(px, py, px + w, py, rr); x.closePath(); x.fillStyle = fill; x.fill(); }
+    function yaz(t, px, py, size, w, col, mx, al) {
+      x.font = w + ' ' + size + 'px Inter, "Segoe UI", sans-serif'; x.fillStyle = col; x.textBaseline = 'alphabetic'; x.textAlign = al || 'left';
+      var s = t; while (x.measureText(s).width > (mx || 900) && s.length > 3) s = s.slice(0, -2); if (s !== t) s += '…';
+      x.fillText(s, px, py);
     }
-    var lg = new Image(); lg.onload = function () { bitir(lg); }; lg.onerror = function () { bitir(null); }; lg.src = 'img/logo.png';
+    function ciz(logo) {
+      var gr = x.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, '#171a1f'); gr.addColorStop(1, '#0b0c0e');
+      x.fillStyle = gr; x.fillRect(0, 0, W, H);
+      x.fillStyle = '#1d2026'; x.fillRect(0, 0, W, 330);
+      x.fillStyle = '#f9eb22'; x.fillRect(0, 330, W, 12);
+      if (logo) { var lw = 340, lh = lw * logo.height / logo.width; x.drawImage(logo, 70, 90, lw, lh); }
+      // profil dairesi (fotoğraf paylaşılmaz, baş harfler)
+      x.beginPath(); x.arc(210, 342, 142, 0, Math.PI * 2); x.fillStyle = '#0f1114'; x.fill();
+      x.beginPath(); x.arc(210, 342, 128, 0, Math.PI * 2); x.fillStyle = '#23272e'; x.fill();
+      x.lineWidth = 10; x.strokeStyle = '#f9eb22'; x.beginPath(); x.arc(210, 342, 128, 0, Math.PI * 2); x.stroke();
+      yaz(bas, 210, 382, 104, '800', '#f9eb22', 200, 'center');
+      // isim ve rozet
+      yaz(isim, 70, 580, 78, '800', '#f4f4f2', 940);
+      kutu(70, 618, 330, 62, 31, '#f9eb22'); yaz('MotoGo üyesi', 235, 661, 32, '800', '#14161b', 300, 'center');
+      // motosiklet
+      kutu(70, 730, 940, 270, 30, '#1b1e24');
+      yaz('Motosiklet', 110, 790, 30, '500', '#9aa0a8', 860);
+      yaz(motor, 110, 880, 76, '800', '#f4f4f2', 860);
+      yaz((g.yil ? g.yil + ' model' : ''), 110, 950, 40, '600', '#f9eb22', 860);
+      // konum
+      kutu(70, 1030, 940, 150, 30, '#1b1e24');
+      yaz('Konum', 110, 1090, 30, '500', '#9aa0a8', 860);
+      yaz(konum || '-', 110, 1148, 54, '700', '#f4f4f2', 860);
+      // alt
+      yaz('Garajım', 70, 1268, 40, '800', '#f4f4f2', 400);
+      yaz('motogo.com.tr', 1010, 1268, 40, '700', '#f9eb22', 500, 'right');
+      c.toBlob(function (blob) {
+        if (!blob) return toast('Kart oluşturulamadı');
+        var f = new File([blob], 'motogo-garajim.png', { type: 'image/png' });
+        var metin = 'MotoGo üyesi ' + isim + ': ' + motor + (g.yil ? ', ' + g.yil : '') + (konum ? ', ' + konum : '') + '. Garajım: https://motogo.com.tr';
+        if (navigator.canShare && navigator.canShare({ files: [f] }) && navigator.share) {
+          navigator.share({ files: [f], title: 'MotoGo Garajım', text: metin }).catch(function () {});
+        } else {
+          var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'motogo-garajim.png';
+          document.body.appendChild(a); a.click(); a.remove(); toast('Kart indirildi, istediğin yerde paylaşabilirsin');
+        }
+      }, 'image/png');
+    }
+    var lg = new Image(); lg.onload = function () { ciz(lg); }; lg.onerror = function () { ciz(null); }; lg.src = 'img/logo.png';
   }
 
   // ---------- fotoğraf yükleme (küçültülmüş) ----------
@@ -500,12 +562,9 @@
 
   // ---------- olaylar ----------
   function olaylar() {
-    $('zAc').addEventListener('click', function () { uyeOlGoster(''); });
-    $('zUyeGiris').addEventListener('click', function (e) {
-      e.preventDefault();
-      if (ST.kod && ST.garaj && ST.garaj.marka) { garajGoster(); return; }
-      ziyaretci(); var k = $('zKodKutu'); k.open = true; $('zKod').focus();
-    });
+    $('zAc').addEventListener('click', function () { garajaGit(''); });
+    $('zUyeGiris').addEventListener('click', function (e) { e.preventDefault(); garajaGit(''); });
+    $('uKodaGit').addEventListener('click', function (e) { e.preventDefault(); ziyaretci(); var k = $('zKodKutu'); k.open = true; $('zKod').focus(); });
     $('zKodGiris').addEventListener('click', kodlaGiris);
     $('zKod').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); kodlaGiris(); } });
     $('uVazgec').addEventListener('click', function (e) { e.preventDefault(); if (ST.kod && ST.garaj) garajGoster(); else ziyaretci(); });
@@ -527,19 +586,17 @@
         return;
       }
       var u = t.closest('[data-uyg]'); if (u) { e.preventDefault(); uygAc(u.getAttribute('data-uyg')); return; }
-      var pv = t.closest('[data-pv]'); if (pv) { e.preventDefault(); var pi = PRIME_IDS.indexOf(pv.getAttribute('data-pv')); vidAc(PRIME_IDS.length ? PRIME_IDS : [pv.getAttribute('data-pv')], Math.max(pi, 0), 'prime'); return; }
-      var rl = t.closest('[data-rl]'); if (rl) { e.preventDefault(); var ri = REEL_IDS.indexOf(rl.getAttribute('data-rl')); vidAc(REEL_IDS.length ? REEL_IDS : [rl.getAttribute('data-rl')], Math.max(ri, 0), 'reels'); return; }
+      var rl = t.closest('[data-rl]'); if (rl) { e.preventDefault(); reelsAc(parseInt(rl.getAttribute('data-rl'), 10) || 0); return; }
+      var lb = t.closest('[data-lb]'); if (lb) { var kutu = document.createElement('div'); kutu.className = 'g-lb'; kutu.innerHTML = '<img src="' + esc(lb.getAttribute('data-lb')) + '" alt="">'; kutu.addEventListener('click', function () { kutu.remove(); }); document.body.appendChild(kutu); return; }
       var ak = t.closest('[data-ak]'); if (ak) { ARA.kat = ak.getAttribute('data-ak'); $('aSonuc').innerHTML = ''; araCiz(); return; }
       var ay = t.closest('[data-ay]'); if (ay) { ARA.yk = ay.getAttribute('data-ay'); araCiz(); return; }
       if (t.closest('#aAra')) { araSonuc(); return; }
       if (t.closest('#aUyeOl')) { uyeOlGoster(''); return; }
       if (t.closest('#fgKaydetBtn')) { basvuruGonder(); return; }
-      if (t.closest('#gVx')) { vidKapat(); return; }
-      if (t.closest('#gVg')) { vidGit(-1); return; }
-      if (t.closest('#gVi')) { vidGit(1); return; }
-      if (t.id === 'gVideo') { vidKapat(); return; }
+      if (t.closest('#gRx')) { reelsKapat(); return; }
+      if (t.closest('#gAppGeri')) { appKapat(true); return; }
     });
-    document.addEventListener('keydown', function (e) { if (!$('gVideo').hidden) { if (e.key === 'Escape') vidKapat(); else if (e.key === 'ArrowLeft') vidGit(-1); else if (e.key === 'ArrowRight') vidGit(1); } });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('gReels').hidden) reelsKapat(); });
     $('fgPaketOnay').addEventListener('change', function () { $('fgFormAlani').classList.toggle('g-kilitli', !this.checked); });
     $('gFotoDosya').addEventListener('change', function () { fotoSec(this.files && this.files[0]); this.value = ''; });
 
@@ -547,6 +604,8 @@
       var t = e.target;
       var sec = t.closest && t.closest('[data-sec]');
       if (sec) { var id = sec.getAttribute('data-sec'); ST.acik = (ST.acik === id) ? null : id; renderGaraj(); var el = document.querySelector('.g-satir[data-sec="' + id + '"]'); if (el && ST.acik) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
+      var yk = t.closest && t.closest('[data-yk]');
+      if (yk) { ST.yk = yk.getAttribute('data-yk'); renderGaraj(); return; }
       var tab = t.closest && t.closest('[data-tab]');
       if (tab) { ST.sekme = tab.getAttribute('data-tab'); renderGaraj(); return; }
       if (t.closest('#gFoto')) { $('gFotoDosya').click(); return; }
@@ -570,8 +629,9 @@
         if (!b) { d2.textContent = 'Markayı listeden seç.'; d2.className = 'g-durum hata'; return; }
         if (!$('dModel').value.trim()) { d2.textContent = 'Modeli yaz.'; d2.className = 'g-durum hata'; return; }
         if (!$('dSehir').value) { d2.textContent = 'Şehrini seç.'; d2.className = 'g-durum hata'; return; }
+        if (!$('dIlce').value.trim()) { d2.textContent = 'İlçeni ya da semtini yaz.'; d2.className = 'g-durum hata'; return; }
         var pl = $('dPlaka').value.trim().toUpperCase();
-        kaydet({ marka: b.key, model: $('dModel').value.trim(), yil: sayi($('dYil').value), sehir: $('dSehir').value, plaka: pl || null }, function (ok) {
+        kaydet({ marka: b.key, model: $('dModel').value.trim(), yil: sayi($('dYil').value), sehir: $('dSehir').value, ilce: $('dIlce').value.trim(), plaka: pl || null }, function (ok) {
           if (ok) { ST.sekme = ''; renderGaraj(); toast('Kaydedildi ✓'); } else { d2.textContent = 'Kaydedilemedi, tekrar dene.'; d2.className = 'g-durum hata'; }
         });
         return;
@@ -589,8 +649,8 @@
   }
 
   // ---------- firma ara (kendi sitemizde) ----------
-  var KATLAR = [['yetkiliServis', 'Yetkili servis'], ['ozelServis', 'Özel servis'], ['avantaj', 'Aksesuar ve ekipman'], ['yakit', 'Yakıt'], ['ekspertiz', 'Ekspertiz'], ['yardim', 'Yol Yardım']];
-  var ARA = { kat: 'yetkiliServis', yk: 'cekici', hazir: false };
+  var KATLAR = [['yetkiliServis', 'Yetkili servis'], ['ozelServis', 'Özel servis'], ['avantaj', 'Aksesuar ve ekipman'], ['yardim', 'Yol Yardım']];
+  var ARA = { kat: 'yetkiliServis', yk: 'cekici', mod: 'tam', hazir: false };
   function araKur() {
     if (ARA.hazir) return; ARA.hazir = true;
     var dl = $('aMarkaListe'); BRANDS.forEach(function (b) { var o = document.createElement('option'); o.value = b.name; dl.appendChild(o); });
@@ -599,13 +659,19 @@
   function araCiz() {
     $('aKat').innerHTML = KATLAR.map(function (k) { return '<button type="button" data-ak="' + k[0] + '" class="' + (k[0] === ARA.kat ? 's' : '') + '">' + k[1] + '</button>'; }).join('');
     var y = ARA.kat === 'yardim';
+    var sade = ARA.mod === 'yardim';
+    $('aKat').hidden = sade;
+    $('aBaslik').textContent = sade ? 'Yol Yardım' : 'Firma ara';
+    $('aMetin').textContent = sade ? 'Çekici, lastik ve genel arıza için şehrini seç, firmaları görüp hemen ara.' : 'Markana ve şehrine göre servis, aksesuar ve yol yardım firmalarını bul.';
     $('aYardimKat').hidden = !y;
     if (y) $('aYardimKat').innerHTML = (typeof YARDIM_CATEGORIES !== 'undefined' ? YARDIM_CATEGORIES : []).map(function (c) { return '<button type="button" data-ay="' + c.id + '" class="' + (c.id === ARA.yk ? 's' : '') + '">' + esc(c.label) + '</button>'; }).join('');
     $('aMarkaKutu').hidden = !(ARA.kat === 'yetkiliServis' || ARA.kat === 'ozelServis');
   }
   function araAc(kat) {
     araKur();
+    ARA.mod = kat === 'yardim' ? 'yardim' : 'tam';
     if (kat) ARA.kat = kat;
+    else if (ARA.kat === 'yardim' && ARA.mod === 'tam') ARA.kat = 'yetkiliServis';
     if (ST.garaj && !$('aMarka').value) { var b = brandByKey(ST.garaj.marka); if (b) $('aMarka').value = b.name; }
     if (ST.garaj && !$('aSehir').value && ST.garaj.sehir) $('aSehir').value = ST.garaj.sehir;
     $('aSonuc').innerHTML = ''; $('aDurum').textContent = '';
@@ -634,13 +700,13 @@
         l = DATA.yardim.filter(function (f) { return (f.categories || []).indexOf(ARA.yk) >= 0 && f.city === sehir; }).sort(sirala);
         bos = 'Bu şehirde, bu Yol Yardım hizmetinde henüz üye firma yok, yakında eklenecek.'; amac = 'Yol Yardım'; durum = false;
       } else {
-        var src = kat === 'avantaj' ? DATA.avantaj : (kat === 'yakit' ? DATA.yakit : DATA.ekspertiz);
+        var src = DATA.avantaj;
         l = src.filter(function (f) { return f.city === sehir; }).sort(sirala);
         bos = 'Bu şehirde henüz üye ' + etik.toLowerCase() + ' firması yok, yakında eklenecek.'; amac = etik;
       }
       var h = '';
       if (!l.length) h = '<div class="g-uyari g-uyari-b">' + esc(bos) + '</div>';
-      else h = (not ? '<div class="g-uyari g-uyari-b">' + esc(not) + '</div>' : '') + '<div class="g-sonuc">' + l.slice(0, 30).map(function (f) { return firmaKart(f, { durum: durum, amac: amac }); }).join('') + '</div>';
+      else h = (not ? '<div class="g-uyari g-uyari-b">' + esc(not) + '</div>' : '') + '<div class="g-sonuc">' + l.slice(0, 30).map(function (f) { return firmaKart(f, { amac: amac }); }).join('') + '</div>';
       $('aSonuc').innerHTML = h;
     });
   }
@@ -664,10 +730,7 @@
       goster('vUyg'); return;
     }
     if (u.tip === 'link') { window.location.href = u.src(); return; }
-    if (u.tip === 'frame') {
-      k.innerHTML = '<iframe class="g-frame" src="' + esc(u.src()) + '" title="' + esc(u.ad) + '" allow="camera; microphone; clipboard-write"></iframe>';
-      goster('vUyg'); return;
-    }
+    if (u.tip === 'frame') { appAc(u.ad, u.src()); return; }
     k.innerHTML = '<p class="g-metin">Yükleniyor...</p>'; goster('vUyg');
     Promise.resolve(SB.from(u.tablo).select('*')).then(function (r) {
       var d = (r && r.data) || [], h = '';
@@ -676,6 +739,18 @@
       else h = '<div class="g-sonuc">' + d.map(function (r2) { return '<div class="g-firma"><b>' + esc(r2.ad) + '</b><small>' + esc(r2.bolge || '') + '</small>' + (r2.not_metni ? '<p>' + esc(r2.not_metni) + '</p>' : '') + '<div class="g-d"><a class="k" href="https://www.google.com/maps/search/' + encodeURIComponent(r2.arama_terimi || r2.ad) + '" target="_blank" rel="noopener">Haritada aç</a></div></div>'; }).join('') + '</div>';
       $('yIcerik').innerHTML = h;
     }, function () { $('yIcerik').innerHTML = '<p class="g-metin">Yüklenemedi, tekrar dene.</p>'; });
+  }
+
+  // ---------- uygulama: tam ekran ----------
+  function appAc(ad, src) {
+    $('gAppAd').textContent = ad; $('gAppFrame').src = src;
+    $('gApp').hidden = false; document.body.style.overflow = 'hidden';
+    try { history.pushState({ v: 'app' }, '', location.pathname); } catch (e) {}
+  }
+  function appKapat(geri) {
+    if ($('gApp').hidden) return;
+    $('gAppFrame').src = 'about:blank'; $('gApp').hidden = true; document.body.style.overflow = '';
+    if (geri) { try { history.back(); } catch (e) {} }
   }
 
   // ---------- firma başvuru formu ----------
@@ -709,30 +784,14 @@
     }, function () { m('Gönderilemedi, tekrar dene. Bilgilerin bu cihazda saklandı.', 'hata'); });
   }
 
-  // ---------- video oynatıcı (Reels ve Prime, sayfa içinde) ----------
-  var VID = { l: [], i: 0, t: 'reels' };
-  function vidAc(liste, i, tip) { VID.l = liste; VID.i = i; VID.t = tip; vidCiz(); $('gVideo').hidden = false; document.body.style.overflow = 'hidden'; }
-  function vidCiz() {
-    var id = VID.l[VID.i]; if (!id) return;
-    var k = $('gVkutu'); k.className = 'g-vkutu ' + (VID.t === 'reels' ? 'dikey' : 'yatay');
-    k.innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + encodeURIComponent(id) + '?autoplay=1&playsinline=1&rel=0&modestbranding=1" title="Video" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>';
-    $('gVg').hidden = VID.l.length < 2; $('gVi').hidden = VID.l.length < 2;
-  }
-  function vidKapat() { $('gVkutu').innerHTML = ''; $('gVideo').hidden = true; document.body.style.overflow = ''; }
-  function vidGit(d) { if (!VID.l.length) return; VID.i = (VID.i + d + VID.l.length) % VID.l.length; vidCiz(); }
-
   // ---------- başlangıç ----------
   function basla() {
     olaylar();
     var kayitli = null;
     try { kayitli = localStorage.getItem(LS_KOD); } catch (e) {}
-    if (!kayitli) { ziyaretci(); return; }
-    dogrulaVeAc(kayitli, function (ok, neden) {
-      if (ok) { ST.hosgeldin = false; garajGoster(); }
-      else if (neden === 'baglanti') { // internet yoksa ziyaretçi ekranı yerine dürüst mesaj
-        $('vYukle').textContent = 'Bağlantı kurulamadı. İnternetini kontrol edip sayfayı yenile.'; goster('vYukle');
-      } else ziyaretci();
-    });
+    ziyaretci();
+    if (!kayitli) return;
+    HAZIR = new Promise(function (res) { dogrulaVeAc(kayitli, function () { res(); }); });
   }
   try { history.replaceState({ v: 'vZiyaretci' }, '', location.pathname); } catch (e) {}
   primeKur(); reelsKur();

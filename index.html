@@ -44,7 +44,6 @@
         <p class="g-metin">Motorunu seç. Markana ve şehrine göre bayiler, servisler, aksesuar ve yol yardım karşına gelsin. Ücretsiz.</p>
         <div class="g-cta">
           <button type="button" class="g-btn" id="zAc">Garajımı aç</button>
-          <button type="button" class="g-btn ikinci" data-firma>Firmayım, kendimi eklemek istiyorum</button>
         </div>
         <div class="g-etiket">Motorunu seç</div>
         <div class="g-markalar" id="zMarkalar"></div>
@@ -60,8 +59,8 @@
       <div class="g-hero-sag" aria-hidden="true">
         <div class="g-ornek-etk">Örnek bir Garajım</div>
         <div class="g-kimlik g-profil">
-          <div class="g-profil-ust"><span class="g-av var"><span class="bas">MG</span><i class="kam">+</i></span>
-            <div class="g-pb"><div class="g-ad">Murat Gökçe</div><div class="g-motor">BMW F 800 GS · 2016</div><div class="g-konum">Ankara</div><div class="g-plaka">06 ABC 123</div></div></div>
+          <div class="g-profil-ust"><span class="g-av var"><span class="bas">MZ</span><i class="kam">+</i></span>
+            <div class="g-pb"><div class="g-ad">Murat Zorlu</div><div class="g-motor">BMW F 800 GS · 2016</div><div class="g-konum">Ankara</div><div class="g-plaka">06 ABC 123</div></div></div>
           <div class="g-km"><div><small>Güncel km</small><b>12.000</b></div><div><small>Bakım km</small><b>13.000</b></div></div>
           <div class="g-bar"><i style="width:92%"></i></div><div class="g-bar-not">Bakıma 1.000 km kaldı</div>
         </div>
@@ -125,8 +124,9 @@
         <div class="g-alan"><label for="uModel">Model</label><input type="text" id="uModel" placeholder="Örn: F 800 GS" autocomplete="off"></div>
         <div class="g-alan"><label for="uYil">Model yılı</label><select id="uYil"><option value="">Seç</option></select></div>
       </div>
-      <div class="g-alan"><label for="uSehir">Şehir</label><select id="uSehir"><option value="">Seç</option></select></div>
+      <div class="g-iki"><div class="g-alan"><label for="uSehir">Şehir</label><select id="uSehir"><option value="">Seç</option></select></div><div class="g-alan"><label for="uIlce">İlçe / semt</label><input type="text" id="uIlce" placeholder="Örn: Kadıköy" maxlength="40" autocomplete="off"></div></div>
       <label class="g-onay" id="uOnayKutu"><input type="checkbox" id="uOnay"><span>Kullanıcı sözleşmesini ve aydınlatma metnini okudum, kabul ediyorum. <a href="#" data-go="vSoz">Metni oku</a></span></label>
+      <p class="g-not" style="margin-top:14px;">Zaten üyeysen <a href="#" class="g-link" id="uKodaGit">üye kodunla gir</a>.</p>
       <button type="button" class="g-btn" id="uGonder">Garajımı aç</button>
       <div class="g-durum" id="uDurum" role="status" aria-live="polite"></div>
       <p class="g-not">Ücretsiz. Kart bilgisi istenmez. Firmalara kişisel bilgin verilmez, bir firmayı kendin ararsın.</p>
@@ -162,8 +162,8 @@
   <!-- FİRMA ARA -->
   <section id="vAra" hidden>
     <a href="#" class="g-geri" data-go="geri">‹ Geri</a>
-    <h2 class="g-baslik g-baslik-k">Firma ara</h2>
-    <p class="g-metin">Markana ve şehrine göre servis, aksesuar, yakıt ve yol yardım firmalarını bul.</p>
+    <h2 class="g-baslik g-baslik-k" id="aBaslik">Firma ara</h2>
+    <p class="g-metin" id="aMetin">Markana ve şehrine göre servis, aksesuar ve yol yardım firmalarını bul.</p>
     <div class="g-kutu g-ara">
       <div class="g-sekme" id="aKat"></div>
       <div class="g-sekme" id="aYardimKat" hidden></div>
@@ -246,11 +246,16 @@
 
 </main>
 
-<div class="g-video" id="gVideo" hidden role="dialog" aria-label="Video">
-  <button type="button" class="g-vx" id="gVx" aria-label="Kapat">✕</button>
-  <button type="button" class="g-vo g-vg" id="gVg" aria-label="Önceki">‹</button>
-  <div class="g-vkutu" id="gVkutu"></div>
-  <button type="button" class="g-vo g-vi" id="gVi" aria-label="Sonraki">›</button>
+<div class="g-app" id="gApp" hidden role="dialog" aria-label="Uygulama">
+  <div class="g-app-ic">
+    <div class="g-app-bar"><button type="button" id="gAppGeri" aria-label="Geri">‹</button><b id="gAppAd"></b></div>
+    <iframe id="gAppFrame" class="g-app-frame" title="Uygulama" allow="autoplay; fullscreen; geolocation; microphone; camera; clipboard-write"></iframe>
+  </div>
+</div>
+
+<div class="g-rf" id="gReels" hidden role="dialog" aria-label="MotoGo Reels">
+  <button type="button" class="g-vx" id="gRx" aria-label="Kapat">✕</button>
+  <div class="g-rf-liste" id="gRfListe"></div>
 </div>
 
 <footer class="g-foot">
