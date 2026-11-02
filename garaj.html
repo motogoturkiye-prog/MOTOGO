@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MotoGo Garajım — Motorun için kendi sayfan</title>
+<meta name="description" content="Motorunu seç, markana özel bayiler, servisler, aksesuar ve yol yardım karşına gelsin. Ücretsiz.">
+<meta property="og:title" content="MotoGo Garajım">
+<meta property="og:description" content="Motorun için kendi sayfan. Ücretsiz.">
+<meta property="og:image" content="https://motogo.com.tr/img/icon-512.png">
+<link rel="canonical" href="https://motogo.com.tr/garaj.html">
+<link rel="icon" type="image/png" sizes="192x192" href="img/icon-192.png">
+<link rel="apple-touch-icon" href="img/icon-512.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f1114">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/garaj.css">
+</head>
+<body class="garaj">
+<div class="g-wrap">
+
+  <div id="vYukle" class="g-yukle">Garajın hazırlanıyor...</div>
+
+  <!-- ZİYARETÇİ: siteye ilk giren -->
+  <section id="vZiyaretci" hidden>
+    <div class="g-ust">
+      <div><img src="img/logo.png" alt="MotoGo" class="g-logo"><div class="g-alt-ad">Türkiye</div></div>
+      <a href="#" class="g-pil" id="zUyeGiris">Giriş yap</a>
+    </div>
+    <h1 class="g-baslik">Motorun için<br>kendi sayfan.</h1>
+    <p class="g-metin">Motorunu seç, bayiler, servisler, aksesuar ve yol yardım karşına gelsin. Ücretsiz.</p>
+    <button type="button" class="g-btn" id="zAc">Garajımı aç</button>
+    <div class="g-etiket">Motorunu seç</div>
+    <div class="g-markalar" id="zMarkalar"></div>
+    <div class="g-ornek"><small>Örnek bir Garajım</small><b>Murat Gökçe · BMW F 800 GS</b><span>Bayiler · Aksesuar · Yol Yardım · Hatırlatıcılar</span></div>
+    <button type="button" class="g-btn ikinci g-firmabtn" id="zFirma">Firmayım: kendimi eklemek istiyorum</button>
+    <details class="g-kodgiris" id="zKodKutu">
+      <summary>Zaten üyeyim, üye kodumla gireceğim</summary>
+      <div class="g-kodsatir">
+        <input type="text" id="zKod" placeholder="Üye kodum" maxlength="14" autocapitalize="characters" autocomplete="off" spellcheck="false">
+        <button type="button" class="g-pil" id="zKodGiris">Giriş</button>
+      </div>
+      <div class="g-durum" id="zKodDurum" role="status" aria-live="polite"></div>
+    </details>
+    <div class="g-alt">
+      <a href="index.html?ana=1&amp;yardim=1" class="g-btn kirmizi">Yolda mı kaldın? MotoGo Yol Yardım</a>
+      <div class="g-linkler">
+        <a href="https://motogo.com.tr/prime/">MotoGo Prime</a>
+        <a href="https://www.motogoprime.com/category/all-products" target="_blank" rel="noopener">Store</a>
+        <a href="index.html?ana=1">Firma ara</a>
+        <a href="#" id="zFirmaLink">Firma girişi</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ÜYE OL: motorunu seç -->
+  <section id="vUyeOl" hidden>
+    <div class="g-ust">
+      <div><img src="img/logo.png" alt="MotoGo" class="g-logo"><div class="g-alt-ad">Garajımı aç</div></div>
+      <a href="#" class="g-pil" id="uVazgec">Vazgeç</a>
+    </div>
+    <div class="g-form">
+      <h2 id="uBaslik">Motorunu seç</h2>
+      <p class="g-metin" id="uAlt" style="margin-top:6px;">Birkaç alan, bir dakika. Fotoğraf ve plakayı sonra eklersin.</p>
+      <div id="uKimlik">
+        <div class="g-alan"><label for="uAd">Ad soyad</label><input type="text" id="uAd" autocomplete="name"></div>
+        <div class="g-alan"><label for="uTel">Telefon</label><input type="tel" id="uTel" placeholder="05XX XXX XX XX" autocomplete="tel"></div>
+        <div class="g-alan"><label for="uMail">E-posta <span style="color:#6f757e;">(isteğe bağlı)</span></label><input type="email" id="uMail" autocomplete="email"></div>
+      </div>
+      <div class="g-alan"><label for="uMarka">Marka</label><input type="text" id="uMarka" list="uMarkaListe" placeholder="Örn: BMW" autocomplete="off"><datalist id="uMarkaListe"></datalist></div>
+      <div class="g-iki">
+        <div class="g-alan"><label for="uModel">Model</label><input type="text" id="uModel" placeholder="Örn: F 800 GS" autocomplete="off"></div>
+        <div class="g-alan"><label for="uYil">Model yılı</label><select id="uYil"><option value="">Seç</option></select></div>
+      </div>
+      <div class="g-alan"><label for="uSehir">Şehir</label><select id="uSehir"><option value="">Seç</option></select></div>
+      <label class="g-onay" id="uOnayKutu"><input type="checkbox" id="uOnay"><span>Kullanıcı sözleşmesini ve aydınlatma metnini okudum, kabul ediyorum. <a href="index.html?ana=1&amp;ac=sozlesme">Metni oku</a></span></label>
+      <button type="button" class="g-btn" id="uGonder">Garajımı aç</button>
+      <div class="g-durum" id="uDurum" role="status" aria-live="polite"></div>
+      <p class="g-not">Ücretsiz. Kart bilgisi istenmez. Firmalara kişisel bilgin verilmez, bir firmayı kendin ararsın.</p>
+    </div>
+  </section>
+
+  <!-- FİRMA: kendini eklemek isteyen firma -->
+  <section id="vFirma" hidden>
+    <div class="g-ust">
+      <div><img src="img/logo.png" alt="MotoGo" class="g-logo"><div class="g-alt-ad">Firmalar için</div></div>
+      <a href="#" class="g-pil" id="fGeri">Geri</a>
+    </div>
+    <h2 class="g-baslik" style="font-size:28px;">Motorcunun önüne çık.</h2>
+    <p class="g-metin">Firmanı kendin eklersin. Garajım açan motorcuya, motorunun markasına ve şehrine göre firman gösterilir.</p>
+    <div class="g-uyari" style="margin-top:14px;"><b>Önce uygun paketi satın almalısın.</b> Firma formu paket satın alındıktan sonra doldurulur.</div>
+    <div class="g-liste" style="margin-top:14px;">
+      <div class="g-firma"><div class="a"><div><b>Nerede görünürsün?</b></div></div>
+        <p><b>Bayiler ve servisler:</b> Yetkili veya özel servis olarak eklenirsen, o markanın motoruna sahip ve senin şehrindeki motorculara çıkarsın. Başka markanın sahibine gösterilmezsin.</p>
+        <p><b>Aksesuar ve avantajlar:</b> Aksesuar, ekipman, yakıt, market gibi tüm markalara hizmet veren firmalar, her motorcunun Garajım sayfasında görünür.</p>
+        <p><b>Yol Yardım:</b> Çekici, lastik, akü gibi hizmetlerle, hizmet verdiğin şehirdeki motorculara çıkarsın.</p>
+      </div>
+      <div class="g-firma"><div class="a"><div><b>Ne kazanırsın?</b></div></div>
+        <p>Motorcu seni doğrudan Ara, WhatsApp, Web ve Konum düğmeleriyle bulur. Aracı yok, komisyon yok.</p>
+        <p>Motorcunun kişisel bilgisi firmalara verilmez. Motorcu seni kendisi arar, bu da gelen işin gerçek ilgiden geldiği anlamına gelir.</p>
+        <p>Şehrinde marka için başka firma yoksa motorcu "şehrinde henüz yok" notuyla diğer illerdeki firmaları görür. Şehrindeki ilk firma sen olabilirsin.</p>
+      </div>
+      <div class="g-firma"><div class="a"><div><b>Nasıl eklenirsin?</b></div></div>
+        <p>1. Paketini seç ve satın al.<br>2. Firma formunu doldur: marka, kategori, şehir, telefon, WhatsApp, fotoğraf.<br>3. Kaydın bize iletilir, yayına alınır.</p>
+      </div>
+    </div>
+    <a class="g-btn" href="https://www.motogoprime.com/pricing-plans/plans-pricing" target="_blank" rel="noopener" style="margin-top:14px;">Paketleri incele ve satın al</a>
+    <a class="g-btn ikinci" href="index.html?ana=1&amp;ac=firma" style="margin-top:10px;">Paketim var, firmamı ekle</a>
+  </section>
+
+  <!-- GARAJIM -->
+  <section id="vGaraj" hidden></section>
+
+  <footer class="g-yasal">MotoGo Türkiye · 2025'te kuruldu · Tüm hakları saklıdır.<br>Bu proje MotoGo kapsamında yapılmıştır. İzinsiz taklit edilmesi ve kopyalanması kesinlikle yasaktır.</footer>
+</div>
+<input type="file" id="gFotoDosya" accept="image/*" hidden>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  window.MOTOGO_SUPABASE_URL = "https://xdyrgiwastvwqgmpsihc.supabase.co";
+  window.MOTOGO_SUPABASE_KEY = "sb_publishable_wjEQ3JkigYiCIzLMyHCzdg_wCpkIkOT";
+  window.motogoSupabase = window.supabase
+    ? window.supabase.createClient(window.MOTOGO_SUPABASE_URL, window.MOTOGO_SUPABASE_KEY)
+    : null;
+</script>
+<script src="js/brands-data.js"></script>
+<script src="js/garaj.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(function () {});
+    });
+  }
+</script>
+</body>
+</html>
