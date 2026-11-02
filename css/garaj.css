@@ -371,3 +371,11 @@ body.garaj{display:flex;flex-direction:column;}
 .g-app-bar button:hover{border-color:var(--g-sari);}
 .g-app-bar b{font-size:17px;}
 .g-app-frame{flex:1;width:100%;border:0;background:#fff;}
+
+/* son rötuşlar: sayfa altı boşluğu, eşit kartlar, butonlar altta */
+main.g-ana.g-in{padding-bottom:72px;}
+.g-sonuc{gap:20px;align-items:stretch;}
+.g-sonuc .g-firma{display:flex;flex-direction:column;height:100%;box-sizing:border-box;}
+.g-sonuc .g-fic{display:flex;flex-direction:column;flex:1;}
+.g-sonuc .g-fic .g-d{margin-top:auto;padding-top:14px;}
+.g-sonuc .g-fic .adr{margin-bottom:0;}
