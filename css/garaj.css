@@ -379,3 +379,15 @@ main.g-ana.g-in{padding-bottom:72px;}
 .g-sonuc .g-fic{display:flex;flex-direction:column;flex:1;}
 .g-sonuc .g-fic .g-d{margin-top:auto;padding-top:14px;}
 .g-sonuc .g-fic .adr{margin-bottom:0;}
+
+/* uygulama grupları, firma listeli uygulamalar, MotoGo Kart */
+.g-grup{font-size:12.5px;font-weight:700;color:var(--g-sol);margin:16px 0 9px;}
+.g-et{display:block;font-size:12.5px;font-weight:600;color:var(--g-sol);margin:12px 0 7px;}
+.g-kartv{background:linear-gradient(135deg,#1c1e24,#2c2f37);border:1px solid var(--g-cizgi);border-radius:20px;padding:18px;max-width:420px;}
+.g-kartv .nm{font-size:19px;font-weight:800;}
+.g-kartv .no{color:var(--g-sol);font-size:12.5px;}
+.g-kartv .qrw{display:flex;justify-content:center;margin:12px 0;}
+.g-kartv .qr{background:#fff;border-radius:12px;padding:10px;}
+.g-kartv .kod{font:800 30px/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:4px;text-align:center;margin:8px 0 8px;}
+.g-kartv .kb{height:5px;background:#2a2e35;border-radius:5px;overflow:hidden;}
+.g-kartv .kb i{display:block;height:100%;background:var(--g-sari);}

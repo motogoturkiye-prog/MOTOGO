@@ -428,18 +428,34 @@
         '<button type="button" class="g-cikis" id="cikisYap">Bu cihazdan çıkış yap</button>';
     },
     uyg: function () {
-      var L = [
+      var UC = [
         ['E', 'Etkinlik takvimi', 'Motorcu buluşmaları', 'Aç', '', 'etkinlik'],
         ['R', 'Rota önerileri', 'Güzel yollar', 'Aç', '', 'rota'],
+        ['A', 'Aktivite Planım', 'Sürüş planı ve takvim', 'Aç', '', 'aktivite'],
+        ['S', 'Sigorta', 'Trafik ve özel sigorta', 'Aç', '', 'sigorta'],
+        ['K', 'Konaklama', 'Motorcuya uygun oteller', 'Aç', '', 'konaklama'],
+        ['E', 'Ehliyet', 'Sürücü kursları', 'Aç', '', 'ehliyet'],
+        ['S', 'Sürüş güvenliği', 'Eğitim ve güvenlik', 'Aç', '', 'guvenlik'],
+        ['M', 'Mola noktaları', 'Kafe ve restoranlar', 'Aç', '', 'mola'],
+        ['K', 'Kurye Ekspres', 'Kurye hizmeti', 'Aç', '', 'kurye'],
+        ['Y', 'Yakıt', 'İstasyonlar ve indirimler', 'Aç', '', 'yakit'],
+        ['M', 'Market', 'Motorcuya özel marketler', 'Aç', '', 'market'],
+        ['E', 'Ekspertiz', 'Ekspertiz hizmetleri', 'Aç', '', 'ekspertiz'],
+        ['S', 'Motor sözlüğü', 'Terimler ve açıklamaları', 'Aç', '', 'sozluk'],
+        ['K', 'MotoGo Kart', 'Dijital üyelik kartı', 'Aç', '', 'kart']
+      ];
+      var UP = [
         ['F', 'Foto İmaj', 'Fotoğrafına MotoGo çerçevesi', 'Ücretsiz dene', 'g', 'foto'],
         ['M', 'Movi İmaj', 'Videoyu otomatik hazırlar', 'Ücretsiz dene', 'g', 'kurgu'],
         ['R', 'Rota İmaj', 'Rotandan paylaşım videosu', 'Paket', 'p', 'gun'],
-        ['A', 'Aktivite Planım', 'Sürüş planı ve takvim', 'Aç', '', 'aktivite'],
         ['M', 'MARC O.S. 3.0', 'Motosiklet asistanı', 'Paket', 'p', 'marc']
       ];
-      return L.map(function (u) {
+      function sat(u) {
         return '<a class="g-uyg" href="#" data-uyg="' + u[5] + '"><span class="ik">' + u[0] + '</span><span><b>' + u[1] + '</b><small>' + u[2] + '</small></span><span class="d ' + u[4] + '">' + u[3] + '</span></a>';
-      }).join('') + '<div class="g-paket"><b>Tek ödemede 4 uygulama.</b> Foto İmaj ve Movi İmaj ücretsiz denenir, çıktılarda MotoGo logosu olur. Rota İmaj ve MARC O.S. 3.0 ücretlidir. Ücretli üyelik dördünü de açar ve logoyu kaldırır.</div>';
+      }
+      return '<div class="g-grup">Ücretsiz uygulamalar</div>' + UC.map(sat).join('') +
+        '<div class="g-grup">Ücretli uygulamalar</div>' + UP.map(sat).join('') +
+        '<div class="g-paket"><b>Tek ödemede 4 uygulama.</b> Foto İmaj ve Movi İmaj ücretsiz denenir, çıktılarda MotoGo logosu olur. Rota İmaj ve MARC O.S. 3.0 ücretlidir. Ücretli üyelik dördünü de açar ve logoyu kaldırır.</div>';
     }
   };
 
@@ -719,6 +735,17 @@
     kurgu: { ad: 'Movi İmaj', tip: 'frame', src: function () { return 'kurgu.html?uye=' + (ST.rota ? 1 : 0); } },
     gun: { ad: 'Rota İmaj', tip: 'frame', src: function () { return 'rota.html'; }, ucretli: true },
     aktivite: { ad: 'Aktivite Planım', tip: 'frame', src: function () { return 'aktivite.html'; } },
+    kurye: { ad: 'Kurye Ekspres', tip: 'frame', src: function () { return 'kurye.html'; } },
+    sozluk: { ad: 'Motor sözlüğü', tip: 'link', src: function () { return 'sozluk/'; } },
+    kart: { ad: 'MotoGo Kart', tip: 'kart' },
+    ekspertiz: { ad: 'Ekspertiz', tip: 'ekspertiz' },
+    guvenlik: { ad: 'Sürüş güvenliği', tip: 'guvenlik' },
+    sigorta: { ad: 'Sigorta', tip: 'dir' },
+    konaklama: { ad: 'Konaklama', tip: 'dir' },
+    ehliyet: { ad: 'Ehliyet', tip: 'dir' },
+    yakit: { ad: 'Yakıt', tip: 'dir' },
+    market: { ad: 'Market', tip: 'dir' },
+    mola: { ad: 'Mola noktaları', tip: 'dir' },
     marc: { ad: 'MARC O.S. 3.0', tip: 'link', src: function () { return 'marc-os/'; }, ucretli: true }
   };
   function uygAc(id) {
@@ -730,6 +757,17 @@
       goster('vUyg'); return;
     }
     if (u.tip === 'link') { window.location.href = u.src(); return; }
+    if (u.tip === 'dir') { dirAc(id); return; }
+    if (u.tip === 'ekspertiz') { ekspAc(); return; }
+    if (u.tip === 'kart') { kartAc(); return; }
+    if (u.tip === 'guvenlik') {
+      k.innerHTML = '<p class="g-metin">Yükleniyor...</p>'; goster('vUyg');
+      Promise.resolve(SB.from('guvenlik_ipuclari').select('*')).then(function (r2) {
+        var d = (r2 && r2.data) || [];
+        $('yIcerik').innerHTML = d.length ? '<div class="g-sonuc">' + d.map(function (x) { return '<div class="g-firma"><p style="margin:0;font-size:14px;">' + esc(x.ipucu) + '</p></div>'; }).join('') + '</div>' : '<p class="g-metin">Şu an listelenmiş bir ipucu yok.</p>';
+      }, function () { $('yIcerik').innerHTML = '<p class="g-metin">Yüklenemedi, tekrar dene.</p>'; });
+      return;
+    }
     if (u.tip === 'frame') { appAc(u.ad, u.src()); return; }
     k.innerHTML = '<p class="g-metin">Yükleniyor...</p>'; goster('vUyg');
     Promise.resolve(SB.from(u.tablo).select('*')).then(function (r) {
@@ -739,6 +777,127 @@
       else h = '<div class="g-sonuc">' + d.map(function (r2) { return '<div class="g-firma"><b>' + esc(r2.ad) + '</b><small>' + esc(r2.bolge || '') + '</small>' + (r2.not_metni ? '<p>' + esc(r2.not_metni) + '</p>' : '') + '<div class="g-d"><a class="k" href="https://www.google.com/maps/search/' + encodeURIComponent(r2.arama_terimi || r2.ad) + '" target="_blank" rel="noopener">Haritada aç</a></div></div>'; }).join('') + '</div>';
       $('yIcerik').innerHTML = h;
     }, function () { $('yIcerik').innerHTML = '<p class="g-metin">Yüklenemedi, tekrar dene.</p>'; });
+  }
+
+  // ---------- firma listeli uygulamalar (Sigorta, Konaklama, Ehliyet, Yakıt, Market, Mola) ----------
+  var DIRC = {
+    konaklama: { kat: 'konaklama', ad: 'Konaklama', turE: 'Tür', tur: ['Otel', 'Butik Otel', 'Pansiyon', 'Bungalov', 'Kamp', 'Villa'],
+      oz: ['Havuzlu', 'Kahvaltı dahil', 'Yarım pansiyon', 'Tam pansiyon', 'Denize yakın', 'Göl kenarı', 'Dağ ve yayla', 'Motor için kapalı park'], il: true },
+    sigorta: { kat: 'sigorta', ad: 'Sigorta', turE: 'Sigorta türü', tur: ['Trafik Sigortası', 'Özel Sigorta'], il: false },
+    ehliyet: { kat: 'ehliyet', ad: 'Ehliyet', il: true, rehber: true },
+    yakit: { kat: 'yakit', ad: 'Yakıt', turE: 'İstasyon markası', turDin: true, il: true },
+    market: { kat: 'market', ad: 'Market', il: true },
+    mola: { kat: 'mola', ad: 'Mola noktaları', turE: 'Tür', tur: ['Kafe', 'Restoran'], il: true, park: 'Motor için park yeri' }
+  };
+  var DIRS = {}, PROF = null;
+  function liste(a) { var s = {}, o = []; a.forEach(function (x) { if (x && !s[x]) { s[x] = 1; o.push(x); } }); return o.sort(function (p, q) { return p.localeCompare(q, 'tr'); }); }
+  function profilYukle(cb) {
+    if (PROF) return cb();
+    if (!SB || !ST.kod) { PROF = []; return cb(); }
+    Promise.resolve(SB.rpc('uygulama_firmalari_oku', { p_kod: ST.kod })).then(function (r) { PROF = (r && r.data) || []; }, function () { PROF = []; }).then(cb);
+  }
+  function profKart(p, amac) {
+    return firmaKart({ name: p.ad, city: p.il, district: p.ilce, phone: p.telefon, whatsapp: p.whatsapp, address: p.adres, badge: p.rozet, description: p.aciklama, categories: p.ozellikler || [], region: p.tur }, { amac: amac });
+  }
+  function chipSatir(opts, sel, key, coklu) {
+    return '<div class="g-sekme">' + opts.map(function (o) { var s = coklu ? sel.indexOf(o) >= 0 : sel === o; return '<button type="button" data-dk="' + key + '" data-dv="' + esc(o) + '" class="' + (s ? 's' : '') + '">' + esc(o) + '</button>'; }).join('') + '</div>';
+  }
+  function secKutu(et, key, opts, val) {
+    return '<div class="g-alan"><label>' + et + '</label><select data-ds="' + key + '">' + opts.map(function (o) { return '<option' + (o === val ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('') + '</select></div>';
+  }
+  function dirAc(key) {
+    $('yBaslik').textContent = DIRC[key].ad; $('yIcerik').innerHTML = '<p class="g-metin">Yükleniyor...</p>'; goster('vUyg');
+    profilYukle(function () { dirCiz(key); });
+  }
+  function dirCiz(key) {
+    var c = DIRC[key], st = DIRS[key] = DIRS[key] || { tur: 'Tümü', oz: [], il: 'Tümü', ilce: 'Tümü', park: false };
+    var hepsi = PROF.filter(function (p) { return p.kategori === c.kat; });
+    var h = '';
+    if (c.rehber) h += '<div class="g-firma"><b>Motor ehliyeti rehberi</b><p>A1, A2 ve A sınıfları motorun hacmine ve gücüne göre ayrılır. Yaş ve koşullar için resmî kaynağı kontrol et.</p></div>';
+    var turler = c.tur || (c.turDin ? liste(hepsi.map(function (p) { return p.tur; })) : null);
+    if (hepsi.length) {
+      if (turler && turler.length) h += '<label class="g-et">' + c.turE + '</label>' + chipSatir(['Tümü'].concat(turler), st.tur, 'tur', false);
+      if (c.oz) h += '<label class="g-et">Özellik</label>' + chipSatir(c.oz, st.oz, 'oz', true);
+      if (c.park) h += chipSatir([c.park], st.park ? [c.park] : [], 'park', true);
+      if (c.il) {
+        var ils = ['Tümü'].concat(liste(hepsi.map(function (p) { return p.il; })));
+        var ilces = ['Tümü'];
+        if (st.il !== 'Tümü') ilces = ilces.concat(liste(hepsi.filter(function (p) { return p.il === st.il; }).map(function (p) { return p.ilce; })));
+        h += '<div class="g-iki">' + secKutu('İl', 'il', ils, st.il) + secKutu('İlçe', 'ilce', ilces, st.ilce) + '</div>';
+      }
+    }
+    var sonuc = hepsi.filter(function (p) {
+      if (turler && st.tur !== 'Tümü' && p.tur !== st.tur) return false;
+      var f = p.ozellikler || [];
+      for (var i = 0; i < st.oz.length; i++) if (f.indexOf(st.oz[i]) < 0) return false;
+      if (c.il && st.il !== 'Tümü' && p.il !== st.il) return false;
+      if (c.il && st.ilce !== 'Tümü' && p.ilce !== st.ilce) return false;
+      if (c.park && st.park && f.indexOf(c.park) < 0) return false;
+      return true;
+    });
+    if (hepsi.length) h += '<p class="g-etk">' + sonuc.length + ' sonuç</p><div class="g-sonuc">' + (sonuc.length ? sonuc.map(function (p) { return profKart(p, c.ad); }).join('') : '<p class="g-metin">Bu filtrelerle sonuç yok. Bir filtreyi kaldır.</p>') + '</div>';
+    else h += '<div class="g-kutu"><h2>Burada henüz firma yok</h2><p class="g-metin">' + esc(c.ad) + ' bölümüne henüz firma eklenmedi. İlk firma sen olabilirsin.</p><a class="g-btn" href="#" data-go="vFirma">Firmalar için bilgi</a></div>';
+    if (key === 'yakit' && DATA.yakit.length) h += '<div class="g-grup">Yakıt indirimleri</div><div class="g-sonuc">' + DATA.yakit.slice().sort(function (a, b) { return (a.siraNo == null ? 9999 : a.siraNo) - (b.siraNo == null ? 9999 : b.siraNo); }).map(function (f) { return firmaKart(f, { amac: 'Yakıt indirimi' }); }).join('') + '</div>';
+    $('yIcerik').innerHTML = h;
+    Array.prototype.forEach.call($('yIcerik').querySelectorAll('[data-dk]'), function (b) {
+      b.addEventListener('click', function () {
+        var k = b.getAttribute('data-dk'), v = b.getAttribute('data-dv');
+        if (k === 'tur') st.tur = v; else if (k === 'park') st.park = !st.park;
+        else { var i = st.oz.indexOf(v); if (i >= 0) st.oz.splice(i, 1); else st.oz.push(v); }
+        dirCiz(key);
+      });
+    });
+    Array.prototype.forEach.call($('yIcerik').querySelectorAll('select[data-ds]'), function (s) {
+      s.addEventListener('change', function () { if (s.getAttribute('data-ds') === 'il') { st.il = s.value; st.ilce = 'Tümü'; } else st.ilce = s.value; dirCiz(key); });
+    });
+  }
+  // ---------- ekspertiz ----------
+  var EKS = { il: 'Tümü' };
+  function ekspAc() { $('yBaslik').textContent = 'Ekspertiz'; goster('vUyg'); ekspCiz(); }
+  function ekspCiz() {
+    var d = DATA.ekspertiz.slice().sort(function (a, b) { return (a.siraNo == null ? 9999 : a.siraNo) - (b.siraNo == null ? 9999 : b.siraNo); });
+    if (!d.length) { $('yIcerik').innerHTML = '<div class="g-kutu"><h2>Burada henüz firma yok</h2><p class="g-metin">Ekspertiz bölümüne henüz firma eklenmedi. İlk firma sen olabilirsin.</p><a class="g-btn" href="#" data-go="vFirma">Firmalar için bilgi</a></div>'; return; }
+    var ils = ['Tümü'].concat(liste(d.map(function (f) { return f.city; })));
+    var s = d.filter(function (f) { return EKS.il === 'Tümü' || f.city === EKS.il; });
+    $('yIcerik').innerHTML = secKutu('İl', 'il', ils, EKS.il) + '<p class="g-etk">' + s.length + ' sonuç</p><div class="g-sonuc">' + s.map(function (f) { return firmaKart(f, { amac: 'Ekspertiz' }); }).join('') + '</div>';
+    $('yIcerik').querySelector('select').addEventListener('change', function (e) { EKS.il = e.target.value; ekspCiz(); });
+  }
+  // ---------- MotoGo Kart ----------
+  var KART_T = 0;
+  function kartKod() { var n = ''; for (var i = 0; i < 6; i++) n += Math.floor(Math.random() * 10); return n.slice(0, 3) + ' ' + n.slice(3); }
+  function qrCiz(cv, code) {
+    if (!cv) return;
+    var N = 25, sz = 8, x = cv.getContext('2d'), seed = 0;
+    for (var i = 0; i < code.length; i++) seed = (seed * 31 + code.charCodeAt(i)) >>> 0;
+    function rnd() { seed ^= seed << 13; seed >>>= 0; seed ^= seed >>> 17; seed ^= seed << 5; seed >>>= 0; return seed / 4294967295; }
+    x.fillStyle = '#fff'; x.fillRect(0, 0, N * sz, N * sz); x.fillStyle = '#111';
+    for (var r = 0; r < N; r++) for (var c = 0; c < N; c++) {
+      var f = (r < 8 && c < 8) || (r < 8 && c >= N - 8) || (r >= N - 8 && c < 8);
+      if (f) continue; if (rnd() > 0.52) x.fillRect(c * sz, r * sz, sz, sz);
+    }
+    [[0, 0], [0, N - 7], [N - 7, 0]].forEach(function (p) {
+      x.fillStyle = '#111'; x.fillRect(p[1] * sz, p[0] * sz, 7 * sz, 7 * sz);
+      x.fillStyle = '#fff'; x.fillRect((p[1] + 1) * sz, (p[0] + 1) * sz, 5 * sz, 5 * sz);
+      x.fillStyle = '#111'; x.fillRect((p[1] + 2) * sz, (p[0] + 2) * sz, 3 * sz, 3 * sz);
+    });
+  }
+  function kartAc() {
+    $('yBaslik').textContent = 'MotoGo Kart'; goster('vUyg');
+    if (KART_T) { clearInterval(KART_T); KART_T = 0; }
+    var ad = (ST.ad || '').trim() || 'MotoGo Üyesi', kod = kartKod(), kalan = 30;
+    var av = DATA.avantaj.slice().sort(function (a, b) { return (a.siraNo == null ? 9999 : a.siraNo) - (b.siraNo == null ? 9999 : b.siraNo); });
+    $('yIcerik').innerHTML = '<div class="g-kartv"><div class="nm">' + esc(ad) + '</div><div class="no">MotoGo Kart</div><div class="qrw"><div class="qr"><canvas id="kQr" width="200" height="200" style="width:176px;height:176px" aria-label="Kart kodu"></canvas></div></div>' +
+      '<div class="kod" id="kKod">' + kod + '</div><div class="kb"><i id="kBar" style="width:100%"></i></div><p class="g-etk" style="text-align:center;margin:8px 0 0">Kod her 30 saniyede yenilenir.</p></div>' +
+      '<div class="g-grup">İndirimli firmalar (Aksesuar ve ekipman)</div>' +
+      (av.length ? '<div class="g-sonuc">' + av.map(function (f) { return '<div class="g-firma"><div class="a"><div><b>' + esc(f.name) + '</b><small>' + esc((f.description || '') + (f.city ? ' · ' + f.city : '')) + '</small></div>' + (f.badge ? '<span class="g-rozet ind">' + esc(f.badge) + '</span>' : '') + '</div></div>'; }).join('') + '</div>' : '<p class="g-metin">İndirim veren firmalar eklendikçe burada listelenir.</p>') +
+      '<p class="g-etk" style="margin-top:12px">Firmalarda okutma ve doğrulama, firma panelleri devreye alınınca açılır.</p>';
+    qrCiz($('kQr'), kod);
+    KART_T = setInterval(function () {
+      if (!$('kKod')) { clearInterval(KART_T); KART_T = 0; return; }
+      kalan--;
+      if (kalan <= 0) { kalan = 30; kod = kartKod(); $('kKod').textContent = kod; qrCiz($('kQr'), kod); }
+      $('kBar').style.width = (kalan / 30 * 100) + '%';
+    }, 1000);
   }
 
   // ---------- uygulama: tam ekran ----------
